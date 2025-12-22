@@ -17,6 +17,9 @@ Full-stack web application for managing utility services (⚡ Electricity, 💧 
 ![Express v4+](https://img.shields.io/badge/Express-v4+-000000?style=for-the-badge&labelColor=111111&logo=express&logoColor=white)
 ![mssql driver v10+](https://img.shields.io/badge/mssql%20Driver-v10+-004080?style=for-the-badge&labelColor=0078D6&logo=microsoft-sql-server&logoColor=white)
 ![Azure](https://img.shields.io/badge/Azure-0078D5?style=for-the-badge&logo=microsoft-azure&logoColor=white)
+![dotenv v16+](https://img.shields.io/badge/dotenv-v16+-333333?style=for-the-badge&labelColor=4B4B4B&logo=dotenv&logoColor=white)
+![cors v2+](https://img.shields.io/badge/cors-v2+-333333?style=for-the-badge&labelColor=555555&logo=javascript&logoColor=white)
+![nodemon v3+](https://img.shields.io/badge/nodemon-v3+-333333?style=for-the-badge&labelColor=90C53F&logo=nodemon&logoColor=white)
 
 ## 📌 Features 
 - User role management (Admin, Manager, Cashier, Customer)
@@ -66,7 +69,7 @@ tri-meter/
 
 See `SETUP-GUIDE.md` for complete instructions.
 
-## ⚜️ Phase Timeline
+## ⚜️ Milestones
 
 **Phase 0 :** Setup & Planning        
 **Phase 1 :** Database Design       
