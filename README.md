@@ -2,7 +2,9 @@
 
 **PUSL2019 - Information Management and Retrieval Coursework**                  
 
-![Logo](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/th5xamgrr6se0x5ro4g6.png)
+<div>
+  <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
+</div>
 
 ## 🗒️ Overview
 
@@ -20,6 +22,9 @@ Full-stack web application for managing utility services (⚡ Electricity, 💧 
 ![dotenv v16+](https://img.shields.io/badge/dotenv-v16+-333333?style=for-the-badge&labelColor=4B4B4B&logo=dotenv&logoColor=white)
 ![cors v2+](https://img.shields.io/badge/cors-v2+-333333?style=for-the-badge&labelColor=555555&logo=javascript&logoColor=white)
 ![nodemon v3+](https://img.shields.io/badge/nodemon-v3+-333333?style=for-the-badge&labelColor=90C53F&logo=nodemon&logoColor=white)
+![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&labelColor=FF6C37&logo=postman&logoColor=white)
+![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&labelColor=46E3B7&logo=render&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&labelColor=000000&logo=vercel&logoColor=white)
 
 ## 📌 Features 
 - User role management (Admin, Manager, Cashier, Customer)
