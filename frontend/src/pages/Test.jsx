@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import reactLogo from '../assets/react.svg'
-import viteLogo from '/vite.svg'
+import { reactLogo, viteLogo, logo } from '../assets'
 
 function Test() {
   const [count, setCount] = useState(0)
@@ -9,30 +8,45 @@ function Test() {
   const [dbStatus, setDbStatus] = useState({ status: 'loading', message: '' })
 
   useEffect(() => {
+    // Retry helper
+    const fetchWithRetry = async (url, maxRetries = 5) => {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const response = await fetch(url, {
+            signal: AbortSignal.timeout(15000) // 15s timeout per attempt
+          })
+          const data = await response.json()
+          return { success: true, data }
+        } catch (error) {
+          if (i === maxRetries - 1) {
+            return { success: false, error: error.message }
+          }
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, (i + 1) * 2000))
+        }
+      }
+    }
+
     // Test API health endpoint
     const testAPIHealth = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/health`)
-        const data = await response.json()
-        setHealthStatus({
-          status: 'success',
-          message: data.status === 'OK' ? 'connected' : 'failed'
-        })
-      } catch (error) {
+      setHealthStatus({ status: 'loading', message: 'connecting...' })
+      const result = await fetchWithRetry(`${import.meta.env.VITE_API_URL}/health`)
+
+      if (result.success && result.data.status === 'OK') {
+        setHealthStatus({ status: 'success', message: 'connected' })
+      } else {
         setHealthStatus({ status: 'error', message: 'failed' })
       }
     }
 
     // Test database endpoint
     const testDatabase = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/test-db`)
-        const data = await response.json()
-        setDbStatus({
-          status: 'success',
-          message: data.status === 'OK' ? 'connected' : 'failed'
-        })
-      } catch (error) {
+      setDbStatus({ status: 'loading', message: 'connecting...' })
+      const result = await fetchWithRetry(`${import.meta.env.VITE_API_URL}/test-db`)
+
+      if (result.success && result.data.status === 'OK') {
+        setDbStatus({ status: 'success', message: 'connected' })
+      } else {
         setDbStatus({ status: 'error', message: 'failed' })
       }
     }
@@ -48,12 +62,19 @@ function Test() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background p-16">
+    <div className="dark min-h-screen bg-background p-16 relative">
+      {/* Logo */}
+      <img
+        src={logo}
+        alt="Tri-Meter Logo"
+        className="absolute top-8 left-10 h-28 w-auto"
+      />
+
       <div className="mx-auto space-y-10">
         {/* Header */}
         <div className="text-center">
           <h1 className="text-4xl font-bold text-foreground">
-            Tri-Meter Test
+            Test
           </h1>
         </div>
 
@@ -100,7 +121,7 @@ function Test() {
             <img src={reactLogo} alt="React logo" className="h-20 w-20" />
           </div>
           <p className="text-sm text-muted-foreground">
-            This Vite + React template was created by{' '}
+            This Vite + React test page was created by{' '}
             <a
               href="https://github.com/dwainXDL"
               target="_blank"
