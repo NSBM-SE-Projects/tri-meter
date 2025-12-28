@@ -1,0 +1,7 @@
+DB_SERVER=trimeter-db-server.database.windows.net
+DB_DATABASE=trimeter-db
+DB_USERNAME=trimeter-db-user
+DB_PASSWORD=UMS2025!
+DB_PORT=1433
+PORT=5000
+JWT_SECRET=+QNxZhJlX+vr0FxGr7z8ci7RR+iUMaUNzUt+PgrFQ7JhN+H4fv2v1HfpzY0n6s1aQ4MmI06VuPetxi4ECAjqTQ==

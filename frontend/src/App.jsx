@@ -1,7 +1,18 @@
-import Test from './pages/Test'
+import { BrowserRouter } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
+import { AppRouter } from './routes/AppRouter'
 
 function App() {
-  return <Test />
+  return (
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRouter />
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  )
 }
 
 export default App
