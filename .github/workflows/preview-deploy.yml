@@ -1,0 +1,167 @@
+name: Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy-dev:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://nsbm-se-projects.github.io/tri-meter/preview/
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Getting Latest Pull Request Title
+        id: commit_info
+        run: |
+          MESSAGE=$(git log -1 --pretty=%B | head -n 1)
+          echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Seting Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installing Dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Building Frontend
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          VITE_API_URL: https://tri-meter-api.onrender.com/api
+          VITE_BASE_PATH: /tri-meter/preview/
+
+      - name: Deploying to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/dist
+          destination_dir: preview
+          keep_files: false
+          commit_message: |
+            Deployed /dev/ Branch to Preview
+
+            Latest Change: ${{ steps.commit_info.outputs.message }}
+
+  deploy-preview:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Sanitize Branch Name
+        id: sanitize
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          SANITIZED=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "branch_name=$SANITIZED" >> $GITHUB_OUTPUT
+
+      - name: Setting Up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installing Dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Building Frontend Pages
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          VITE_API_URL: https://tri-meter-api.onrender.com/api
+          VITE_BASE_PATH: /tri-meter/preview/${{ steps.sanitize.outputs.branch_name }}/
+
+      - name: Deploying to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./frontend/dist
+          destination_dir: preview/${{ steps.sanitize.outputs.branch_name }}
+          keep_files: true
+
+      - name: Commenting PR with Preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const Branch = '${{ steps.sanitize.outputs.branch_name }}';
+            const url = `https://nsbm-se-projects.github.io/tri-meter/preview/${Branch}/`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 PREVIEW DEPLOYED!\n\n**Preview URL:** ${url}`
+            });
+
+  cleanup-preview:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Switch to gh-pages Branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Sanitize Branch Name
+        id: sanitize
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          SANITIZED=$(echo "$BRANCH_NAME" | sed 's/\//-/g')
+          echo "branch_name=$SANITIZED" >> $GITHUB_OUTPUT
+
+      - name: Removing Preview Directory
+        run: |
+          BRANCH_NAME="${{ steps.sanitize.outputs.branch_name }}"
+          if [ -d "preview/$BRANCH_NAME" ]; then
+            rm -rf "preview/$BRANCH_NAME"
+            echo "REMOVED preview/$BRANCH_NAME"
+          else
+            echo "PREVIEW DIRECTORY NOT FOUND, DEFAULTING..."
+          fi
+
+      - name: Commiting and Pushing Changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "NO CHANGES TO COMMIT"
+          else
+            git commit -m "Cleanup Preview For ${{ github.head_ref }}"
+            git push origin gh-pages
+          fi
+
+      - name: Commenting on Closed PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🧹 PREVIEW DEPLOYMENT CLOSED!'
+            });
