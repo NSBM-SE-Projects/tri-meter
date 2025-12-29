@@ -15,6 +15,9 @@ jobs:
   deploy-preview:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
+    environment:
+      name: GitHub Preview
+      url: https://nsbm-se-projects.github.io/tri-meter/
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -40,6 +43,7 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://tri-meter-api.onrender.com/api
+          VITE_BASE_PATH: /tri-meter/preview/${{ steps.sanitize.outputs.branch_name }}/
 
       - name: Deploying to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
