@@ -44,17 +44,16 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://tri-meter-api.onrender.com/api
-          VITE_BASE_PATH: /tri-meter/preview/
+          VITE_BASE_PATH: /tri-meter/
 
       - name: Deploying to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./frontend/dist
-          destination_dir: preview
           keep_files: false
           commit_message: |
-            Deployed /dev/ Branch to Preview
+            Deploy dev to Root
 
             Latest Change: ${{ steps.commit_info.outputs.message }}
 
