@@ -86,11 +86,12 @@ See `SETUP-GUIDE.md` for complete instructions.
 
 ## 🤼 The Team
 
-**Lead:** [@dwainXDL](https://github.com/dwainXDL)      
-**Frontend Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
-**Documentation & UI Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
-**UI Dev:** [@thiranya123](https://github.com/thiranya123)       
-**Art Dev:** [@kmss-sew](https://github.com/kmss-sew)
+**Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
+**Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
+**Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
+**UI/UX Lead:** [@thiranya123](https://github.com/thiranya123)   
+**UI/UX Design Member:** [@Yameesha](https://github.com/Yameeshaa)         
+**UI/UX Design Member:** [@kmss-sew](https://github.com/kmss-sew)
 
 ## 📫 Contact
 
