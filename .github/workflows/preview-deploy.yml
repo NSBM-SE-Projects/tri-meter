@@ -33,7 +33,7 @@ jobs:
 
       - name: Installing Dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm install
 
       - name: Building Frontend Pages
         working-directory: ./frontend
