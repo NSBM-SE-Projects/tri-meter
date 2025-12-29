@@ -3,9 +3,6 @@ name: Preview Deployment
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
-  push:
-    branches-ignore:
-      - main
 
 permissions:
   contents: write
@@ -17,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: GitHub Preview
-      url: https://nsbm-se-projects.github.io/tri-meter/
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
