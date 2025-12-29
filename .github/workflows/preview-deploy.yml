@@ -20,9 +20,6 @@ jobs:
   deploy-dev:
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: https://nsbm-se-projects.github.io/tri-meter/preview/
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -64,8 +61,6 @@ jobs:
   deploy-preview:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
