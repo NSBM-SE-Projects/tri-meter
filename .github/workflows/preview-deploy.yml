@@ -21,7 +21,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     environment:
-      name: GitHub Preview
+      name: github-pages
       url: https://nsbm-se-projects.github.io/tri-meter/preview/
     steps:
       - name: Checkout Code
@@ -57,15 +57,15 @@ jobs:
           destination_dir: preview
           keep_files: false
           commit_message: |
-            DEPLOYED dev BRANCH TO PREVIEW
+            Deployed /dev/ Branch to Preview
 
-            LATEST CHANGE: ${{ steps.commit_info.outputs.message }}
+            Latest Change: ${{ steps.commit_info.outputs.message }}
 
   deploy-preview:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     environment:
-      name: GitHub Preview
+      name: github-pages
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -118,6 +118,8 @@ jobs:
   cleanup-preview:
     if: github.event.action == 'closed'
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
     steps:
       - name: Switch to gh-pages Branch
         uses: actions/checkout@v4
@@ -149,7 +151,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "NO CHANGES TO COMMIT"
           else
-            git commit -m "Cleanup preview for ${{ github.head_ref }}"
+            git commit -m "Cleanup Preview For ${{ github.head_ref }}"
             git push origin gh-pages
           fi
 
