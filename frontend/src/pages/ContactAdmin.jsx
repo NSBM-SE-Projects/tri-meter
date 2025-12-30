@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button, Input, Label } from "@/components/ui"
 import { Heart } from "lucide-react"
 import { logo } from "../assets"
+import { LoadingOverlay } from "../components/LoadingOverlay"
 
 export default function ContactAdmin() {
   const [formData, setFormData] = useState({
@@ -109,6 +110,9 @@ export default function ContactAdmin() {
 
   return (
     <div className="flex flex-col p-6 bg-black min-h-svh md:p-8">
+      {/* Loading Overlay */}
+      {isSubmitting && <LoadingOverlay />}
+      
       {/* Logo */}
       <Link to="/" className="flex items-center gap-0 mx-auto lg:mx-0 pt-7 lg:pt-0 cursor-pointer">
         <img
