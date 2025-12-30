@@ -14,14 +14,14 @@ export function LoginForm({
   return (
     <form className={cn("flex flex-col gap-8", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="mb-2 text-4xl font-bold text-white">Login to your account</h1>
-        <p className="mb-8 text-lg text-gray-500">
+        <h1 className="mb-1 text-4xl font-bold text-white">Login to your account</h1>
+        <p className="mb-8 text-lg text-gray-400">
           Tri-Meter: Utility Management System
         </p>
       </div>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="username" className="text-lg">Username</Label>
+          <Label htmlFor="username" className="text-lg text-gray-300">Username</Label>
           <Input
             id="username"
             type="text"
@@ -31,7 +31,7 @@ export function LoginForm({
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center">
-            <Label htmlFor="password" className="text-lg">Password</Label>
+            <Label htmlFor="password" className="text-lg text-gray-300">Password</Label>
             <a href="#" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:text-white hover:underline">
               Forgot your password?
             </a>
