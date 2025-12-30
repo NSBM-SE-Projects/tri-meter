@@ -7,29 +7,26 @@ import { logo } from "../assets"
 
 export default function ContactAdmin() {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
+    subject: "",
     message: ""
   })
   const [errors, setErrors] = useState({
-    name: "",
     email: "",
+    subject: "",
     message: ""
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null) // 'success' | 'error'
+  const [inquiryId, setInquiryId] = useState(null)
 
   const validateForm = () => {
     const newErrors = {
-      name: "",
       email: "",
+      subject: "",
       message: ""
     }
     let isValid = true
-
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
-      isValid = false
-    }
 
     // Email validation
     if (!formData.email.trim()) {
@@ -37,6 +34,12 @@ export default function ContactAdmin() {
       isValid = false
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email"
+      isValid = false
+    }
+
+    // Subject validation
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required"
       isValid = false
     }
 
@@ -50,13 +53,44 @@ export default function ContactAdmin() {
     return isValid
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!validateForm()) return
 
-    // Handle form submission here
-    console.log("Contact form submitted:", formData)
+    setIsSubmitting(true)
+    setSubmitStatus(null)
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL
+      const response = await fetch(`${API_URL}/api/inquiries`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to submit inquiry')
+      }
+
+      setSubmitStatus('success')
+      setInquiryId(data.data.inquiryId)
+      // Reset form
+      setFormData({
+        email: "",
+        subject: "",
+        message: ""
+      })
+    } catch (error) {
+      console.error('Inquiry submission error:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -86,7 +120,7 @@ export default function ContactAdmin() {
       </Link>
 
       {/* Centered Contact Form */}
-      <div className="flex items-start p-5 lg:p-0 pt-16 md:pt-32 lg:pt-44 justify-center flex-1">
+      <div className="flex items-start p-5 lg:p-0 pt-10 md:pt-32 lg:pt-44 justify-center flex-1">
         <div className="w-full max-w-md">
           <form className={cn("flex flex-col gap-6")} onSubmit={handleSubmit}>
             <div className="flex flex-col items-center gap-1 text-center">
@@ -97,25 +131,6 @@ export default function ContactAdmin() {
             </div>
 
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="name" className="text-base text-gray-300">
-                  Full Name
-                </Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className={cn(
-                    "text-sm text-white rounded-lg h-11",
-                    errors.name && "border-red-700 focus-visible:ring-red-700"
-                  )}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-700">{errors.name}</p>
-                )}
-              </div>
-
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="email" className="text-base text-gray-300">
                   Email
@@ -133,6 +148,25 @@ export default function ContactAdmin() {
                 />
                 {errors.email && (
                   <p className="text-sm text-red-700">{errors.email}</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="subject" className="text-base text-gray-300">
+                  Subject
+                </Label>
+                <Input
+                  id="subject"
+                  type="text"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  className={cn(
+                    "text-sm text-white rounded-lg h-11",
+                    errors.subject && "border-red-700 focus-visible:ring-red-700"
+                  )}
+                />
+                {errors.subject && (
+                  <p className="text-sm text-red-700">{errors.subject}</p>
                 )}
               </div>
 
@@ -156,11 +190,24 @@ export default function ContactAdmin() {
                 )}
               </div>
 
+              {/* Status Messages */}
+              {submitStatus === 'success' && (
+                <div className="mt-5 p-3 text-sm text-green-500 bg-green-950 border border-green-700 rounded-lg">
+                  Your inquiry <span className="font-semibold">#{inquiryId}</span> has been submitted successfully! We'll get back to you soon : )
+                </div>
+              )}
+              {submitStatus === 'error' && (
+                <div className="mt-5 p-3 text-sm text-red-700 bg-red-950 border border-red-800 rounded-lg">
+                  Failed to submit inquiry. Please try again later.
+                </div>
+              )}
+
               <Button
                 type="submit"
-                className="w-full mt-2 text-base font-semibold text-black bg-white rounded-lg h-11 hover:bg-gray-200"
+                disabled={isSubmitting}
+                className="w-full mt-7 text-base font-semibold text-black bg-white rounded-lg h-11 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Request
+                {isSubmitting ? 'Sending...' : 'Send Request'}
               </Button>
             </div>
 
