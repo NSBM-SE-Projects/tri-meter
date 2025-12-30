@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,9 +33,9 @@ export function LoginForm({
         <div className="flex flex-col gap-2">
           <div className="flex items-center">
             <Label htmlFor="password" className="text-lg">Password</Label>
-            <a href="#" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:text-white hover:underline">
+            <Link to="/contact-admin" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:text-white hover:underline">
               Forgot your password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <Input
@@ -62,9 +63,9 @@ export function LoginForm({
       </div>
       <div className="text-base text-center">
         Don&apos;t have an account?{" "}
-        <a href="#" className="underline underline-offset-4">
+        <Link to="/contact-admin" className="underline underline-offset-4 hover:text-gray-300">
           Contact Admin
-        </a>
+        </Link>
       </div>
     </form>
   );
