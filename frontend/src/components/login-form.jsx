@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff } from "lucide-react"
 import { LoadingOverlay } from "./LoadingOverlay"
+import { Link } from "react-router-dom"
 
 export function LoginForm({
   className,
@@ -140,9 +141,9 @@ export function LoginForm({
         <div className="flex flex-col gap-2">
           <div className="flex items-center">
             <Label htmlFor="password" className="text-lg text-gray-300">Password</Label>
-            <a href="#" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:text-white hover:underline">
+            <Link to="/contact-admin" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:underline hover:text-gray-300">
               Forgot your password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <Input
@@ -177,9 +178,9 @@ export function LoginForm({
       </div>
       <div className="text-base text-center">
         Don&apos;t have an account?{" "}
-        <a href="#" className="underline underline-offset-4">
+        <Link to="/contact-admin" className="underline underline-offset-4 hover:text-gray-300">
           Contact Admin
-        </a>
+        </Link>
       </div>
     </form>
     </>
