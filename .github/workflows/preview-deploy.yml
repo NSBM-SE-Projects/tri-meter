@@ -20,9 +20,6 @@ jobs:
   deploy-dev:
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: https://nsbm-se-projects.github.io/tri-meter/preview/
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -47,25 +44,22 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://tri-meter-api.onrender.com/api
-          VITE_BASE_PATH: /tri-meter/preview/
+          VITE_BASE_PATH: /tri-meter/
 
       - name: Deploying to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./frontend/dist
-          destination_dir: preview
           keep_files: false
           commit_message: |
-            Deployed /dev/ Branch to Preview
+            Deploy dev to Root
 
             Latest Change: ${{ steps.commit_info.outputs.message }}
 
   deploy-preview:
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -163,5 +157,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '🧹 PREVIEW DEPLOYMENT CLOSED!'
+              body: '🧹 PREVIEW DEPLOYMENT CLOSED!...'
             });

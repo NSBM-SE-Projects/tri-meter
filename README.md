@@ -5,6 +5,9 @@
 <div>
   <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
 </div>
+<div>
+  <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
+</div>
 
 ## 🗒️ Overview
 
@@ -25,6 +28,8 @@ Full-stack web application for managing utility services (⚡ Electricity, 💧 
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&labelColor=FF6C37&logo=postman&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&labelColor=46E3B7&logo=render&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&labelColor=000000&logo=vercel&logoColor=white)
+![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-222222?style=for-the-badge&labelColor=222222&logo=github&logoColor=white)
+![bcrypt](https://img.shields.io/badge/bcrypt-4A4A4A?style=for-the-badge)
 
 ## 📌 Features 
 - User role management (Admin, Manager, Cashier, Customer)
@@ -86,6 +91,12 @@ See `SETUP-GUIDE.md` for complete instructions.
 
 ## 🤼 The Team
 
+**Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
+**Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
+**Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
+**UI/UX Lead:** [@thiranya123](https://github.com/thiranya123)   
+**UI/UX Design Member:** [@Yameesha](https://github.com/Yameeshaa)         
+**UI/UX Design Member:** [@kmss-sew](https://github.com/kmss-sew)
 **Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
 **Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
 **Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
