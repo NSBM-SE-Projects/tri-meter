@@ -8,14 +8,20 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
-  "keywords": ["ums", "mssql", "azure"],
+  "keywords": [
+    "ums",
+    "mssql",
+    "azure"
+  ],
   "author": "Tri-Meter Team",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "mssql": "^10.0.2",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "cors": "^2.8.5"
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mssql": "^10.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
