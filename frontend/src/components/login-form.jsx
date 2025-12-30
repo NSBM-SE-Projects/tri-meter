@@ -14,16 +14,17 @@ export function LoginForm({
   return (
     <form className={cn("flex flex-col gap-8", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="mb-10 text-4xl font-bold text-white">Login to your account</h1>
-        
+        <h1 className="mb-2 text-4xl font-bold text-white">Login to your account</h1>
+        <p className="mb-8 text-lg text-gray-500">
+          Tri-Meter: Utility Management System
+        </p>
       </div>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email" className="text-lg">Email</Label>
+          <Label htmlFor="Username" className="text-lg">Username</Label>
           <Input
-            id="email"
-            type="email"
-            placeholder="m@example.com"
+            id="username"
+            type="text"
             required
             className="text-base rounded-lg h-14"
           />
@@ -31,7 +32,7 @@ export function LoginForm({
         <div className="flex flex-col gap-2">
           <div className="flex items-center">
             <Label htmlFor="password" className="text-lg">Password</Label>
-            <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
+            <a href="#" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:text-white hover:underline">
               Forgot your password?
             </a>
           </div>
@@ -45,12 +46,12 @@ export function LoginForm({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-gray-400 hover:text-white"
             >
               {showPassword ? (
-                <EyeOff className="w-5 h-5" />
+                <EyeOff className="w-6 h-6" />
               ) : (
-                <Eye className="w-5 h-5" />
+                <Eye className="w-6 h-6" />
               )}
             </button>
           </div>
@@ -62,7 +63,7 @@ export function LoginForm({
       <div className="text-base text-center">
         Don&apos;t have an account?{" "}
         <a href="#" className="underline underline-offset-4">
-          Sign up
+          Contact Admin
         </a>
       </div>
     </form>
