@@ -1,7 +1,7 @@
-import Test from './pages/Test'
+import Login from './pages/Login'
 
 function App() {
-  return <Test />
+  return <Login />
 }
 
 export default App
