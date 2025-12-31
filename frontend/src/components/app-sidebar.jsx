@@ -44,12 +44,12 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: LayoutDashboardIcon,
     },
     {
       title: "Customers",
-      url: "#",
+      url: "/customers",
       icon: UsersIcon,
     },
     {
