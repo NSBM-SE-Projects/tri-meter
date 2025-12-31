@@ -32,6 +32,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Separator } from "@/components/ui/separator"
 import { Search, Plus, MoreHorizontal, Filter } from "lucide-react"
 import { useState } from "react"
 
@@ -134,6 +145,127 @@ export default function ServiceConnections() {
   const [utilityTypeFilter, setUtilityTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [customerFilter, setCustomerFilter] = useState("")
+  const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false)
+
+  // Form state
+  const [formData, setFormData] = useState({
+    customer: "",
+    utilityTypes: [],
+    meterNumber: "",
+    tariffPlan: "",
+    installationCharge: "",
+    initialReading: "0",
+    houseNo: "",
+    street: "",
+    city: ""
+  })
+
+  const [formErrors, setFormErrors] = useState({})
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value }
+
+      // Auto-fill installation charge based on utility type
+      if (field === "utilityTypes" && value.length > 0) {
+        const charges = {
+          "Electricity": "$100",
+          "Water": "$80",
+          "Gas": "$120"
+        }
+        updated.installationCharge = charges[value[0]] || ""
+      }
+
+      return updated
+    })
+
+    // Clear error for this field
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const handleUtilityTypeChange = (type, checked) => {
+    setFormData(prev => {
+      const updated = { ...prev }
+      if (checked) {
+        updated.utilityTypes = [type] // Only one can be selected
+        const charges = {
+          "Electricity": "$100 (Electricity)",
+          "Water": "$80 (Water)",
+          "Gas": "$120 (Gas)"
+        }
+        updated.installationCharge = charges[type] || ""
+      } else {
+        updated.utilityTypes = updated.utilityTypes.filter(t => t !== type)
+        updated.installationCharge = ""
+      }
+      return updated
+    })
+  }
+
+  const validateForm = () => {
+    const errors = {}
+
+    if (!formData.customer) {
+      errors.customer = "Customer is required"
+    }
+
+    if (formData.utilityTypes.length === 0) {
+      errors.utilityTypes = "Utility Type is required"
+    }
+
+    if (!formData.meterNumber.trim()) {
+      errors.meterNumber = "Meter Number is required"
+    }
+
+    if (!formData.tariffPlan) {
+      errors.tariffPlan = "Tariff Plan is required"
+    }
+
+    if (!formData.initialReading.trim()) {
+      errors.initialReading = "Initial Reading is required"
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSubmit = () => {
+    if (validateForm()) {
+      console.log("Form submitted:", formData)
+      // Reset form
+      setFormData({
+        customer: "",
+        utilityTypes: [],
+        meterNumber: "",
+        tariffPlan: "",
+        installationCharge: "",
+        initialReading: "0",
+        houseNo: "",
+        street: "",
+        city: ""
+      })
+      setFormErrors({})
+      setIsRegisterDialogOpen(false)
+    }
+  }
+
+  const handleCancel = () => {
+    setFormData({
+      customer: "",
+      utilityTypes: [],
+      meterNumber: "",
+      tariffPlan: "",
+      installationCharge: "",
+      initialReading: "0",
+      houseNo: "",
+      street: "",
+      city: ""
+    })
+    setFormErrors({})
+    setIsRegisterDialogOpen(false)
+  }
 
   const filteredConnections = serviceConnectionsData.filter(connection => {
     const matchesSearch = connection.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -195,7 +327,7 @@ export default function ServiceConnections() {
                     Manage customer utility service connections
                   </p>
                 </div>
-                <Button>
+                <Button onClick={() => setIsRegisterDialogOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Register Connection
                 </Button>
@@ -372,6 +504,199 @@ export default function ServiceConnections() {
           </main>
         </div>
       </div>
+
+      {/* Register Service Connection Dialog */}
+      <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Register Service Connection</DialogTitle>
+            <DialogDescription>
+              Fill in the service connection details below
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-28 pt-10 pb-24 space-y-6">
+            {/* Customer */}
+            <div className="space-y-2">
+              <Label htmlFor="customer">
+                Customer<span className="text-red-500">*</span>
+              </Label>
+              <Select value={formData.customer} onValueChange={(value) => handleInputChange("customer", value)}>
+                <SelectTrigger className={formErrors.customer ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="john-smith">John Smith</SelectItem>
+                  <SelectItem value="jane-doe">Jane Doe</SelectItem>
+                  <SelectItem value="abc-corp">ABC Corp</SelectItem>
+                  <SelectItem value="sarah-wilson">Sarah Wilson</SelectItem>
+                </SelectContent>
+              </Select>
+              {formErrors.customer && (
+                <p className="text-sm text-red-500">{formErrors.customer}</p>
+              )}
+            </div>
+
+            {/* Utility Type */}
+            <div className="space-y-2">
+              <Label>
+                Utility Type<span className="text-red-500">*</span>
+              </Label>
+              <div className="flex gap-6">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="electricity"
+                    checked={formData.utilityTypes.includes("Electricity")}
+                    onCheckedChange={(checked) => handleUtilityTypeChange("Electricity", checked)}
+                  />
+                  <label htmlFor="electricity" className="text-sm font-medium cursor-pointer">
+                    Electricity
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="water"
+                    checked={formData.utilityTypes.includes("Water")}
+                    onCheckedChange={(checked) => handleUtilityTypeChange("Water", checked)}
+                  />
+                  <label htmlFor="water" className="text-sm font-medium cursor-pointer">
+                    Water
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="gas"
+                    checked={formData.utilityTypes.includes("Gas")}
+                    onCheckedChange={(checked) => handleUtilityTypeChange("Gas", checked)}
+                  />
+                  <label htmlFor="gas" className="text-sm font-medium cursor-pointer">
+                    Gas
+                  </label>
+                </div>
+              </div>
+              {formErrors.utilityTypes && (
+                <p className="text-sm text-red-500">{formErrors.utilityTypes}</p>
+              )}
+            </div>
+
+            {/* Meter Number */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="meterNumber">
+                  Meter Number<span className="text-red-500">*</span>
+                </Label>
+                <span className="text-xs text-muted-foreground">Unique</span>
+              </div>
+              <Input
+                id="meterNumber"
+                value={formData.meterNumber}
+                onChange={(e) => handleInputChange("meterNumber", e.target.value)}
+                className={formErrors.meterNumber ? "border-red-500" : ""}
+                placeholder="E-12345"
+              />
+              {formErrors.meterNumber && (
+                <p className="text-sm text-red-500">{formErrors.meterNumber}</p>
+              )}
+            </div>
+
+            {/* Tariff Plan */}
+            <div className="space-y-2">
+              <Label htmlFor="tariffPlan">
+                Tariff Plan<span className="text-red-500">*</span>
+              </Label>
+              <Select value={formData.tariffPlan} onValueChange={(value) => handleInputChange("tariffPlan", value)}>
+                <SelectTrigger className={formErrors.tariffPlan ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select tariff plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="residential">Residential</SelectItem>
+                  <SelectItem value="commercial">Commercial</SelectItem>
+                  <SelectItem value="industrial">Industrial</SelectItem>
+                </SelectContent>
+              </Select>
+              {formErrors.tariffPlan && (
+                <p className="text-sm text-red-500">{formErrors.tariffPlan}</p>
+              )}
+            </div>
+
+            {/* Installation Charge */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="installationCharge">Installation Charge</Label>
+                <span className="text-xs text-muted-foreground">
+                  Auto-filled: $100 Electricity, $80 Water, $120 Gas
+                </span>
+              </div>
+              <Input
+                id="installationCharge"
+                value={formData.installationCharge}
+                readOnly
+                className="bg-muted"
+              />
+            </div>
+
+            {/* Initial Reading */}
+            <div className="space-y-2">
+              <Label htmlFor="initialReading">
+                Initial Reading<span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="initialReading"
+                type="number"
+                value={formData.initialReading}
+                onChange={(e) => handleInputChange("initialReading", e.target.value)}
+                className={formErrors.initialReading ? "border-red-500" : ""}
+              />
+              {formErrors.initialReading && (
+                <p className="text-sm text-red-500">{formErrors.initialReading}</p>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Service Address */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Service Address (if different)</h3>
+
+              <div className="space-y-2">
+                <Label htmlFor="houseNo">House No.</Label>
+                <Input
+                  id="houseNo"
+                  value={formData.houseNo}
+                  onChange={(e) => handleInputChange("houseNo", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="street">Street</Label>
+                <Input
+                  id="street"
+                  value={formData.street}
+                  onChange={(e) => handleInputChange("street", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-6 space-x-2">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>
+              Register Connection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 }
