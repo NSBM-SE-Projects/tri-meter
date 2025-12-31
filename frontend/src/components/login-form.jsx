@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -143,9 +143,9 @@ export function LoginForm({
         <div className="flex flex-col gap-2">
           <div className="flex items-center">
             <Label htmlFor="password" className="text-lg">Password</Label>
-            <a href="#" className="ml-auto text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+            <Link to="/contact-admin" className="ml-auto text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
               Forgot your password?
-            </a>
+            </Link>
           </div>
           <div className="relative">
             <Input
@@ -177,6 +177,12 @@ export function LoginForm({
         <Button type="submit" disabled={isLoading} className="w-full mt-4 text-lg font-semibold rounded-lg h-14 disabled:opacity-50 disabled:cursor-not-allowed">
           Login
         </Button>
+      </div>
+      <div className="text-base text-center">
+        Don&apos;t have an account?{" "}
+        <Link to="/contact-admin" className="underline underline-offset-4 hover:text-gray-300">
+          Contact Admin
+        </Link>
       </div>
     </form>
     </>
