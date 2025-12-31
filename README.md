@@ -5,9 +5,6 @@
 <div>
   <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
 </div>
-<div>
-  <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
-</div>
 
 ## 🗒️ Overview
 
@@ -91,12 +88,6 @@ See `SETUP-GUIDE.md` for complete instructions.
 
 ## 🤼 The Team
 
-**Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
-**Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
-**Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
-**UI/UX Lead:** [@thiranya123](https://github.com/thiranya123)   
-**UI/UX Design Member:** [@Yameesha](https://github.com/Yameeshaa)         
-**UI/UX Design Member:** [@kmss-sew](https://github.com/kmss-sew)
 **Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
 **Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
 **Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
