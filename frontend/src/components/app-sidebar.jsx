@@ -59,7 +59,7 @@ const data = {
     },
     {
       title: "Meter Readings",
-      url: "#",
+      url: "/meter-readings",
       icon: GaugeIcon,
     },
     {
