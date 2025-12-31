@@ -49,4 +49,5 @@ backup/
 .claude
 .playwright-mcp
 CLAUDE.md
+.mcp.json
 
