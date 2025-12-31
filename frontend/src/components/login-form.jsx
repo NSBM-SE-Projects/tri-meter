@@ -1,16 +1,17 @@
 import { useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff } from "lucide-react"
 import { LoadingOverlay } from "./LoadingOverlay"
-import { Link } from "react-router-dom"
 
 export function LoginForm({
   className,
   ...props
 }) {
+  const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -77,7 +78,8 @@ export function LoginForm({
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.data))
 
-        // TODO: Add redirection later
+        // Redirect to dashboard
+        navigate('/dashboard')
       } else {
         // Handle error from backend
         setErrors({
@@ -116,14 +118,14 @@ export function LoginForm({
       {isLoading && <LoadingOverlay />}
       <form onSubmit={handleSubmit} className={cn("flex flex-col gap-8", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="mb-1 text-4xl font-bold text-white">Login to your account</h1>
-        <p className="mb-8 text-lg text-gray-400">
+        <h1 className="mb-1 text-4xl font-bold">Login to your account</h1>
+        <p className="mb-8 text-lg text-muted-foreground">
           Tri-Meter: Utility Management System
         </p>
       </div>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="username" className="text-lg text-gray-300">Username</Label>
+          <Label htmlFor="username" className="text-lg text-foreground">Username</Label>
           <Input
             id="username"
             type="text"
@@ -135,13 +137,13 @@ export function LoginForm({
             )}
           />
           {errors.username && (
-            <p className="text-sm text-red-700">{errors.username}</p>
+            <p className="text-sm text-destructive">{errors.username}</p>
           )}
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center">
-            <Label htmlFor="password" className="text-lg text-gray-300">Password</Label>
-            <Link to="/contact-admin" className="ml-auto text-sm text-gray-50 underline-offset-4 hover:underline hover:text-gray-300">
+            <Label htmlFor="password" className="text-lg">Password</Label>
+            <Link to="/contact-admin" className="ml-auto text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
               Forgot your password?
             </Link>
           </div>
@@ -159,7 +161,7 @@ export function LoginForm({
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-gray-400 hover:text-white"
+              className="absolute transition-colors -translate-y-1/2 right-4 top-1/2 text-muted-foreground hover:text-foreground"
             >
               {showPassword ? (
                 <EyeOff className="w-6 h-6" />
@@ -169,16 +171,16 @@ export function LoginForm({
             </button>
           </div>
           {errors.password && (
-            <p className="text-sm text-red-700">{errors.password}</p>
+            <p className="text-sm text-destructive">{errors.password}</p>
           )}
         </div>
-        <Button type="submit" disabled={isLoading} className="w-full mt-4 text-lg font-semibold text-black bg-white rounded-lg h-14 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
+        <Button type="submit" disabled={isLoading} className="w-full mt-4 text-lg font-semibold rounded-lg h-14 disabled:opacity-50 disabled:cursor-not-allowed">
           Login
         </Button>
       </div>
       <div className="text-base text-center">
         Don&apos;t have an account?{" "}
-        <Link to="/contact-admin" className="underline underline-offset-4 hover:text-gray-300">
+        <Link to="/contact-admin" className="underline underline-offset-4">
           Contact Admin
         </Link>
       </div>
