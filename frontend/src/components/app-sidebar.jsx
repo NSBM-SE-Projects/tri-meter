@@ -1,6 +1,6 @@
 import { BarChart3, BadgeDollarSign, CreditCard, GaugeIcon, HelpCircleIcon, LayoutDashboardIcon, PlugIcon, Receipt, SearchIcon, SettingsIcon, ShieldCheck, UsersIcon } from "lucide-react"
 import { NavMain, NavSecondary, NavUser } from "@/components"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupLabel } from "@/components/ui"
 import { logo } from "../assets"
 
 const data = {
@@ -68,18 +68,21 @@ const data = {
 export function AppSidebar({ ...props }) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <div className="flex h-full w-full flex-col bg-neutral-900">
-        <SidebarHeader className="border-b border-neutral-700 px-3 py-3">
-          <a href="#" className="flex items-center justify-center gap-2 rounded-md px-2 py-2 transition-colors hover:bg-neutral-800">
+      <div className="flex h-full w-full flex-col bg-sidebar-background">
+        <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+          <a href="#" className="flex items-center justify-center gap-2 rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent lg:justify-start">
             <img src={logo} alt="Tri-Meter Logo" className="w-8 h-8" />
-            <span className="text-lg font-bold text-gray-200">Tri-Meter</span>
+            <span className="text-lg font-bold text-sidebar-foreground">Tri-Meter</span>
           </a>
         </SidebarHeader>
         <SidebarContent className="flex-1">
-          <NavMain items={data.navMain} />
+          <SidebarGroup>
+            <SidebarGroupLabel>Home</SidebarGroupLabel>
+            <NavMain items={data.navMain} />
+          </SidebarGroup>
           <NavSecondary items={data.navSecondary} className="mt-auto" />
         </SidebarContent>
-        <SidebarFooter className="border-t border-neutral-700">
+        <SidebarFooter className="border-t border-sidebar-border">
           <NavUser user={data.user} />
         </SidebarFooter>
       </div>

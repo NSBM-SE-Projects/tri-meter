@@ -13,10 +13,10 @@ export function NavSecondary({ items, ...props }) {
         <SidebarMenu className="gap-4 lg:gap-3">
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url} className="text-gray-200">
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <a href={item.url} className="text-sidebar-foreground font-medium">
                   <item.icon strokeWidth={2.0} />
-                  <span className="text-gray-200 font-medium">{item.title}</span>
+                  <span className="text-sidebar-foreground">{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

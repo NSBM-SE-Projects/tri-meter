@@ -30,19 +30,19 @@ export function NavUser({ user }) {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" className="h-16 px-2 data-[state=open]:bg-neutral-900">
+            <SidebarMenuButton size="lg" className="h-16 px-2 data-[state=open]:bg-sidebar-accent">
               <Avatar className="h-10 w-10 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg bg-neutral-800 text-gray-200">{initials}</AvatarFallback>
+                <AvatarFallback className="rounded-lg bg-sidebar-accent text-sidebar-foreground">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-semibold text-gray-200">{user.name}</span>
-                <span className="truncate text-xs text-gray-400">{user.role}</span>
+                <span className="truncate text-sm font-semibold text-sidebar-foreground">{user.name}</span>
+                <span className="truncate text-xs text-muted-foreground">{user.role}</span>
               </div>
-              <MoreVerticalIcon className="ml-auto size-4 text-gray-300" strokeWidth={3} />
+              <MoreVerticalIcon className="ml-auto size-4 text-sidebar-foreground" strokeWidth={3} />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-52 p-2 rounded-lg border-gray-900" side={isMobile ? "bottom" : "right"} align="end" sideOffset={4}>
+          <DropdownMenuContent className="w-52 p-2 rounded-lg" side={isMobile ? "bottom" : "right"} align="end" sideOffset={17}>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-2">
                 <p className="text-sm font-medium leading-none">{user.name}</p>
