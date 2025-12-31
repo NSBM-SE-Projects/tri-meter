@@ -205,7 +205,7 @@ const columns = [
           Target
         </Label>
         <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background"
+          className="w-16 h-8 text-right bg-transparent border-transparent shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background"
           defaultValue={row.original.target}
           id={`${row.original.id}-target`} />
       </form>
@@ -228,7 +228,7 @@ const columns = [
           Limit
         </Label>
         <Input
-          className="h-8 w-16 border-transparent bg-transparent text-right shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background"
+          className="w-16 h-8 text-right bg-transparent border-transparent shadow-none hover:bg-input/30 focus-visible:border focus-visible:bg-background"
           defaultValue={row.original.limit}
           id={`${row.original.id}-limit`} />
       </form>
@@ -250,7 +250,7 @@ const columns = [
             Reviewer
           </Label>
           <Select>
-            <SelectTrigger className="h-8 w-40" id={`${row.original.id}-reviewer`}>
+            <SelectTrigger className="w-40 h-8" id={`${row.original.id}-reviewer`}>
               <SelectValue placeholder="Assign reviewer" />
             </SelectTrigger>
             <SelectContent align="end">
@@ -376,42 +376,12 @@ export function DataTable({
   return (
     <Tabs
       defaultValue="outline"
-      className="flex w-full flex-col justify-start gap-6">
-      <div className="flex items-center justify-between px-4 lg:px-6">
+      className="flex flex-col justify-start w-full gap-6">
+      <div className="flex items-center justify-end px-4 lg:px-6">
         <Label htmlFor="view-selector" className="sr-only">
           View
         </Label>
-        <Select defaultValue="outline">
-          <SelectTrigger className="@4xl/main:hidden flex w-fit" id="view-selector">
-            <SelectValue placeholder="Select a view" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="outline">Outline</SelectItem>
-            <SelectItem value="past-performance">Past Performance</SelectItem>
-            <SelectItem value="key-personnel">Key Personnel</SelectItem>
-            <SelectItem value="focus-documents">Focus Documents</SelectItem>
-          </SelectContent>
-        </Select>
-        <TabsList className="@4xl/main:flex hidden">
-          <TabsTrigger value="outline">Outline</TabsTrigger>
-          <TabsTrigger value="past-performance" className="gap-1">
-            Past Performance{" "}
-            <Badge
-              variant="secondary"
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30">
-              3
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="key-personnel" className="gap-1">
-            Key Personnel{" "}
-            <Badge
-              variant="secondary"
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30">
-              2
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="focus-documents">Focus Documents</TabsTrigger>
-        </TabsList>
+
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -443,16 +413,12 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm">
-            <PlusIcon />
-            <span className="hidden lg:inline">Add Section</span>
-          </Button>
         </div>
       </div>
       <TabsContent
         value="outline"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-        <div className="overflow-hidden rounded-lg border">
+        className="relative flex flex-col gap-4 px-4 overflow-auto lg:px-6">
+        <div className="overflow-hidden border rounded-lg">
           <DndContext
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -493,41 +459,12 @@ export function DataTable({
             </Table>
           </DndContext>
         </div>
-        <div className="flex items-center justify-between px-4">
-          <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
-          <div className="flex w-full items-center gap-8 lg:w-fit">
-            <div className="hidden items-center gap-2 lg:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                Rows per page
-              </Label>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value))
-                }}>
-                <SelectTrigger className="w-20" id="rows-per-page">
-                  <SelectValue placeholder={table.getState().pagination.pageSize} />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
-            </div>
-            <div className="ml-auto flex items-center gap-2 lg:ml-0">
+        <div className="flex items-center justify-end px-4">
+          <div className="flex items-center w-full gap-8 lg:w-fit">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
+                className="hidden w-8 h-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}>
                 <span className="sr-only">Go to first page</span>
@@ -564,15 +501,7 @@ export function DataTable({
           </div>
         </div>
       </TabsContent>
-      <TabsContent value="past-performance" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="key-personnel" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
-      <TabsContent value="focus-documents" className="flex flex-col px-4 lg:px-6">
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      </TabsContent>
+      
     </Tabs>
   );
 }
@@ -606,7 +535,7 @@ function TableCellViewer({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="link" className="w-fit px-0 text-left text-foreground">
+        <Button variant="link" className="px-0 text-left w-fit text-foreground">
           {item.header}
         </Button>
       </SheetTrigger>
@@ -617,7 +546,7 @@ function TableCellViewer({
             Showing total visitors for the last 6 months
           </SheetDescription>
         </SheetHeader>
-        <div className="flex flex-1 flex-col gap-4 overflow-y-auto py-4 text-sm">
+        <div className="flex flex-col flex-1 gap-4 py-4 overflow-y-auto text-sm">
           {!isMobile && (
             <>
               <ChartContainer config={chartConfig}>
@@ -741,7 +670,7 @@ function TableCellViewer({
             </div>
           </form>
         </div>
-        <SheetFooter className="mt-auto flex gap-2 sm:flex-col sm:space-x-0">
+        <SheetFooter className="flex gap-2 mt-auto sm:flex-col sm:space-x-0">
           <Button className="w-full">Submit</Button>
           <SheetClose asChild>
             <Button variant="outline" className="w-full">

@@ -18,7 +18,7 @@ export default function Dashboard() {
               <div>
                 <h1 className="text-3xl font-bold">Dashboard</h1>
                 <p className="text-muted-foreground">
-                  Welcome to your Tri-Meter dashboard
+                  Welcome back, Dwain Dias!
                 </p>
               </div>
 
@@ -26,9 +26,9 @@ export default function Dashboard() {
 
               <ChartAreaInteractive />
 
-              <div className="rounded-lg border bg-card">
+              <div className="border rounded-lg bg-card">
                 <div className="p-6">
-                  <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+                  <h2 className="mb-4 text-xl font-semibold">Recent Activity</h2>
                   <DataTable data={data} />
                 </div>
               </div>
