@@ -44,5 +44,9 @@ tmp/
 resources/
 plan/
 backup/
+
+# Claude
+.claude
+.playwright-mcp
 CLAUDE.md
 
