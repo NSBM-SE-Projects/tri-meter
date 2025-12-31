@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import ServiceConnections from './pages/ServiceConnections'
 import MeterReadings from './pages/MeterReadings'
+import Bills from './pages/Bills'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/service-connections" element={<ServiceConnections />} />
         <Route path="/meter-readings" element={<MeterReadings />} />
+        <Route path="/bills" element={<Bills />} />
       </Routes>
     </HashRouter>
   )

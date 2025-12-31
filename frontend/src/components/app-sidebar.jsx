@@ -64,7 +64,7 @@ const data = {
     },
     {
       title: "Bills",
-      url: "#",
+      url: "/bills",
       icon: FileTextIcon,
     },
     {
