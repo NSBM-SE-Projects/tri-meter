@@ -21,7 +21,7 @@ const getStatusColor = (status) => {
   }
 }
 
-export const customerColumns = [
+export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
   {
     accessorKey: "id",
     header: "ID",
@@ -89,6 +89,8 @@ export const customerColumns = [
     id: "actions",
     header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
+      const customer = row.original
+
       return (
         <div className="text-center">
           <DropdownMenu>
@@ -99,9 +101,18 @@ export const customerColumns = [
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onViewDetails(customer)}>
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(customer)}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={() => onDelete(customer)}
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -109,3 +120,10 @@ export const customerColumns = [
     },
   },
 ]
+
+// Keep backward compatibility
+export const customerColumns = createCustomerColumns(
+  () => {},
+  () => {},
+  () => {}
+)
