@@ -4,8 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button, Input, Label } from "@/components/ui"
 import { Heart } from "lucide-react"
 import { logo } from "../assets"
-import { LoadingOverlay } from "../components/LoadingOverlay"
-import { ModeToggle } from "@/components/mode-toggle"
+import { LoadingOverlay, ModeToggle } from "@/components"
 
 export default function ContactAdmin() {
   const [formData, setFormData] = useState({

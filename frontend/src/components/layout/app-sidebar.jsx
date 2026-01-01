@@ -1,7 +1,7 @@
 import { BarChart3, BadgeDollarSign, CreditCard, GaugeIcon, HelpCircleIcon, LayoutDashboardIcon, PlugIcon, Receipt, SearchIcon, SettingsIcon, ShieldCheck, UsersIcon } from "lucide-react"
 import { NavMain, NavSecondary, NavUser } from "@/components"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupLabel } from "@/components/ui"
-import { logo } from "../assets"
+import { logo } from "../../assets"
 import { useAuth } from "@/context/AuthContext"
 
 const data = {

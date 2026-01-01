@@ -1,21 +1,21 @@
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
+  Button,
+  Badge,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components"
 
 const getStatusColor = (status) => {
   switch (status) {
     case "Active":
-      return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+      return "bg-green-600/25 text-green-500 hover:bg-green-600/40"
     case "Inactive":
-      return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+      return "bg-red-600/25 text-red-500 hover:bg-red-600/40"
     case "Pending":
-      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+      return "bg-yellow-600/25 text-yellow-500 hover:bg-yellow-600/40"
     default:
       return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
   }
@@ -24,9 +24,9 @@ const getStatusColor = (status) => {
 export const customerColumns = [
   {
     accessorKey: "id",
-    header: "ID",
+    header: () => <div className="pl-4">ID</div>,
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("id")}</div>
+      <div className="font-normal pl-4">{row.getValue("id")}</div>
     ),
   },
   {
@@ -36,18 +36,20 @@ export const customerColumns = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4"
         >
           Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => <div className="font-normal">{row.getValue("name")}</div>,
   },
   {
     accessorKey: "type",
-    header: "Type",
-    cell: ({ row }) => <div>{row.getValue("type")}</div>,
+    header: () => <div className="pl-4">Type</div>,
+    cell: ({ row }) => <div className="pl-4">{row.getValue("type")}</div>,
+    filterFn: "multiSelect",
   },
   {
     accessorKey: "phone",
@@ -58,17 +60,7 @@ export const customerColumns = [
   },
   {
     accessorKey: "email",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Email
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: "Email",
     cell: ({ row }) => (
       <div className="text-muted-foreground">{row.getValue("email")}</div>
     ),
@@ -84,6 +76,7 @@ export const customerColumns = [
         </Badge>
       )
     },
+    filterFn: "multiSelect",
   },
   {
     id: "actions",
@@ -101,7 +94,7 @@ export const customerColumns = [
             <DropdownMenuContent align="end">
               <DropdownMenuItem>View Details</DropdownMenuItem>
               <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-500">Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
