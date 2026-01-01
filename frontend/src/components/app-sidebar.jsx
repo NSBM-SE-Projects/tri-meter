@@ -1,61 +1,25 @@
-import * as React from "react"
-import {
-  ArrowUpCircleIcon,
-  BarChartIcon,
-  CableIcon,
-  CameraIcon,
-  ClipboardListIcon,
-  DatabaseIcon,
-  FileCodeIcon,
-  FileIcon,
-  FileTextIcon,
-  FolderIcon,
-  GaugeIcon,
-  HelpCircleIcon,
-  LayoutDashboardIcon,
-  ListIcon,
-  SearchIcon,
-  SettingsIcon,
-  UsersIcon,
-  WalletIcon,
-} from "lucide-react"
-
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
+import { BarChart3, BadgeDollarSign, CreditCard, GaugeIcon, HelpCircleIcon, LayoutDashboardIcon, PlugIcon, Receipt, SearchIcon, SettingsIcon, ShieldCheck, UsersIcon } from "lucide-react"
+import { NavMain, NavSecondary, NavUser } from "@/components"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupLabel } from "@/components/ui"
 import { logo } from "../assets"
+import { useAuth } from "@/context/AuthContext"
 
 const data = {
-  user: {
-    name: "Username",
-    email: "User Role",
-    avatar: "/avatars/user.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "#",
       icon: LayoutDashboardIcon,
     },
     {
       title: "Customers",
-      url: "/customers",
+      url: "#",
       icon: UsersIcon,
     },
     {
       title: "Service Connections",
       url: "#",
-      icon: CableIcon,
+      icon: PlugIcon,
     },
     {
       title: "Meter Readings",
@@ -65,123 +29,73 @@ const data = {
     {
       title: "Bills",
       url: "#",
-      icon: FileTextIcon,
+      icon: Receipt,
     },
     {
       title: "Payments",
       url: "#",
-      icon: WalletIcon,
+      icon: CreditCard,
+    },
+    {
+      title: "Tariffs",
+      url: "#",
+      icon: BadgeDollarSign,
     },
     {
       title: "Reports",
       url: "#",
-      icon: BarChartIcon,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: CameraIcon,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      icon: BarChart3,
     },
     {
-      title: "Proposal",
-      icon: FileTextIcon,
+      title: "System Users",
       url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: FileCodeIcon,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      icon: ShieldCheck,
     },
   ],
   navSecondary: [
     {
-      title: "Settings",
-      url: "#",
-      icon: SettingsIcon,
-    },
-    {
       title: "Get Help",
-      url: "#",
+      url: "#/contact-admin",
       icon: HelpCircleIcon,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: SearchIcon,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: DatabaseIcon,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: FileIcon,
     },
   ],
 }
 
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
+  const { user } = useAuth()
+
+  const userData = user
+    ? {
+        name: user.fullName || user.username,
+        role: user.role,
+        avatar: user.profilePhoto || null
+      }
+    : {
+        name: "Guest",
+        role: "Invalid login",
+        avatar: null,
+      }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-2">
-              <a href="#" className="flex items-center gap-2">
-                <img src={logo} alt="Tri-Meter Logo" className="w-8 h-8" />
-                <span className="text-lg font-bold">Tri-Meter</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <div className="flex h-full w-full flex-col bg-sidebar-background">
+        <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
+          <a href="#" className="flex items-center justify-center gap-2 rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent lg:justify-start">
+            <img src={logo} alt="Tri-Meter Logo" className="w-8 h-8" />
+            <span className="text-lg font-bold text-sidebar-foreground">Tri-Meter</span>
+          </a>
+        </SidebarHeader>
+        <SidebarContent className="flex-1">
+          <SidebarGroup>
+            <SidebarGroupLabel>Home</SidebarGroupLabel>
+            <NavMain items={data.navMain} />
+          </SidebarGroup>
+          <NavSecondary items={data.navSecondary} className="mt-auto" />
+        </SidebarContent>
+        <SidebarFooter className="border-t border-sidebar-border">
+          <NavUser user={userData} />
+        </SidebarFooter>
+      </div>
     </Sidebar>
   );
 }

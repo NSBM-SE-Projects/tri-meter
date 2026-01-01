@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Eye, EyeOff } from "lucide-react"
 import { LoadingOverlay } from "./LoadingOverlay"
+import { useAuth } from "@/context/AuthContext"
 
 export function LoginForm({
   className,
   ...props
 }) {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -58,40 +60,17 @@ export function LoginForm({
     setErrors({ username: "", password: "" })
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
-        })
-      })
+      // Login function (authContext)
+      await login(formData.username, formData.password)
 
-      const data = await response.json()
+      console.log('Login Successful!')
 
-      if (response.ok) {
-        console.log('Login Successful:', data)
-
-        // Store JWT token and user data
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.data))
-
-        // Redirect to dashboard
-        navigate('/dashboard')
-      } else {
-        // Handle error from backend
-        setErrors({
-          username: "",
-          password: data.message || 'Login failed'
-        })
-      }
+      navigate('/dashboard')
     } catch (error) {
       console.error('LOGIN ERROR:', error)
       setErrors({
         username: "",
-        password: 'Network error, please try again...'
+        password: error.message || 'Login failed'
       })
     } finally {
       setIsLoading(false)
@@ -125,7 +104,7 @@ export function LoginForm({
       </div>
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="username" className="text-lg">Username</Label>
+          <Label htmlFor="username" className="text-lg text-foreground">Username</Label>
           <Input
             id="username"
             type="text"
@@ -180,7 +159,7 @@ export function LoginForm({
       </div>
       <div className="text-base text-center">
         Don&apos;t have an account?{" "}
-        <Link to="/contact-admin" className="underline underline-offset-4 hover:text-gray-300">
+        <Link to="/contact-admin" className="underline underline-offset-4">
           Contact Admin
         </Link>
       </div>

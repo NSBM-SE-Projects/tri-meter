@@ -1,3 +1,6 @@
+CREATE DATABASE "trimeter-db";
+GO;
+
 -- Tri-Meter UMS - Database Schema (DDL Script)
 -- Database: MS SQL Server
 
@@ -33,12 +36,12 @@ GO
 
 -- 2. Utility Table (Lookup Table)
 CREATE TABLE Utility (
-    U_ID            INT             IDENTITY(1,1) PRIMARY KEY,
-    U_Name          VARCHAR(20)     NOT NULL CHECK (U_Name IN ('Electricity', 'Water', 'Gas')),
-    U_Unit          VARCHAR(10)     NOT NULL,
-    U_Description   VARCHAR(MAX)    NULL,
+    Ut_ID            INT             IDENTITY(1,1) PRIMARY KEY,
+    Ut_Name          VARCHAR(20)     NOT NULL CHECK (Ut_Name IN ('Electricity', 'Water', 'Gas')),
+    Ut_Unit          VARCHAR(10)     NOT NULL,
+    Ut_Description   VARCHAR(MAX)    NULL,
 
-    CONSTRAINT UQ_U_Name UNIQUE (U_Name)
+    CONSTRAINT UQ_Ut_Name UNIQUE (Ut_Name)
 );
 GO
 
@@ -80,6 +83,7 @@ CREATE TABLE [User] (
     U_IDCard            VARCHAR(255)    NULL,
     U_RegistrationDate  DATE            NOT NULL DEFAULT GETDATE(),
     U_Status            VARCHAR(20)     NOT NULL DEFAULT 'Working' CHECK (U_Status IN ('Working', 'On Leave', 'Resigned')),
+    U_ProfilePhoto      VARCHAR(500)    NULL,
 
     CONSTRAINT FK_U_Address FOREIGN KEY (A_ID) REFERENCES Address(A_ID),
     CONSTRAINT UQ_U_Username UNIQUE (U_Username),
@@ -90,12 +94,12 @@ GO
 -- 6. Meter Table
 CREATE TABLE Meter (
     M_ID                INT             IDENTITY(1,1) PRIMARY KEY,
-    U_ID                INT             NOT NULL,
+    Ut_ID               INT             NOT NULL,
     M_Number            VARCHAR(50)     NOT NULL,
     M_InstallationDate  DATE            NOT NULL,
     M_Status            VARCHAR(20)     NOT NULL DEFAULT 'Active' CHECK (M_Status IN ('Active', 'Faulty', 'Replaced')),
 
-    CONSTRAINT FK_M_Utility FOREIGN KEY (U_ID) REFERENCES Utility(U_ID),
+    CONSTRAINT FK_M_Utility FOREIGN KEY (Ut_ID) REFERENCES Utility(Ut_ID),
     CONSTRAINT UQ_M_Number UNIQUE (M_Number)
 );
 GO
@@ -103,14 +107,14 @@ GO
 -- 7. Tariff Table
 CREATE TABLE Tariff (
     T_ID                INT             IDENTITY(1,1) PRIMARY KEY,
-    U_ID                INT             NOT NULL,
+    Ut_ID               INT             NOT NULL,
     T_CustomerType      VARCHAR(20)     NOT NULL CHECK (T_CustomerType IN ('Household', 'Business', 'Government')),
     T_ValidFrom         DATE            NOT NULL,
     T_ValidTo           DATE            NULL,
     T_Description       TEXT            NULL,
 
-    CONSTRAINT FK_T_Utility FOREIGN KEY (U_ID) REFERENCES Utility(U_ID),
-    CONSTRAINT UQ_T_Details UNIQUE (U_ID, T_CustomerType, T_ValidFrom)
+    CONSTRAINT FK_T_Utility FOREIGN KEY (Ut_ID) REFERENCES Utility(Ut_ID),
+    CONSTRAINT UQ_T_Details UNIQUE (Ut_ID, T_CustomerType, T_ValidFrom)
 );
 GO
 
@@ -258,7 +262,7 @@ CREATE INDEX IX_C_Status ON Customer(C_Status);
 CREATE INDEX IX_C_Type ON Customer(C_Type);
 
 -- Meter indexes
-CREATE INDEX IX_M_Utility ON Meter(U_ID);
+CREATE INDEX IX_M_Utility ON Meter(Ut_ID);
 CREATE INDEX IX_M_Status ON Meter(M_Status);
 
 -- ServiceConnection indexes
