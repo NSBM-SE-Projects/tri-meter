@@ -8,12 +8,12 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "#/dashboard",
       icon: LayoutDashboardIcon,
     },
     {
       title: "Customers",
-      url: "#",
+      url: "#/customers",
       icon: UsersIcon,
     },
     {
@@ -78,9 +78,9 @@ export function AppSidebar({ ...props }) {
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <div className="flex h-full w-full flex-col bg-sidebar-background">
-        <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
-          <a href="#" className="flex items-center justify-center gap-2 rounded-md px-2 py-2 transition-colors hover:bg-sidebar-accent lg:justify-start">
+      <div className="flex flex-col w-full h-full bg-sidebar-background">
+        <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
+          <a href="#" className="flex items-center justify-center gap-2 px-2 py-2 transition-colors rounded-md hover:bg-sidebar-accent lg:justify-start">
             <img src={logo} alt="Tri-Meter Logo" className="w-8 h-8" />
             <span className="text-lg font-bold text-sidebar-foreground">Tri-Meter</span>
           </a>
