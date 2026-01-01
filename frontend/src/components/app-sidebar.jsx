@@ -2,13 +2,9 @@ import { BarChart3, BadgeDollarSign, CreditCard, GaugeIcon, HelpCircleIcon, Layo
 import { NavMain, NavSecondary, NavUser } from "@/components"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupLabel } from "@/components/ui"
 import { logo } from "../assets"
+import { useAuth } from "@/context/AuthContext"
 
 const data = {
-  user: {
-    name: "Username",
-    role: "Role",
-    avatar: "/avatars/user.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -66,6 +62,20 @@ const data = {
 }
 
 export function AppSidebar({ ...props }) {
+  const { user } = useAuth()
+
+  const userData = user
+    ? {
+        name: user.fullName || user.username,
+        role: user.role,
+        avatar: user.profilePhoto || null
+      }
+    : {
+        name: "Guest",
+        role: "Invalid login",
+        avatar: null,
+      }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <div className="flex h-full w-full flex-col bg-sidebar-background">
@@ -83,7 +93,7 @@ export function AppSidebar({ ...props }) {
           <NavSecondary items={data.navSecondary} className="mt-auto" />
         </SidebarContent>
         <SidebarFooter className="border-t border-sidebar-border">
-          <NavUser user={data.user} />
+          <NavUser user={userData} />
         </SidebarFooter>
       </div>
     </Sidebar>

@@ -1,4 +1,5 @@
 import { LogOutIcon, MoreVerticalIcon, SettingsIcon, UserCircleIcon } from "lucide-react"
+import { useAuth } from "@/context/AuthContext"
 
 import {
   Avatar,
@@ -23,7 +24,13 @@ import {
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar()
+  const { logout } = useAuth()
   const initials = user.name?.substring(0, 2).toUpperCase() || "U"
+
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/login'
+  }
 
   return (
     <SidebarMenu>
@@ -57,7 +64,7 @@ export function NavUser({ user }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>
