@@ -9,24 +9,25 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Search, ChevronLeft, ChevronRight, Columns, ChevronDown } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, Filter, ChevronDown } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import {
+  Button,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import {
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  Badge,
+  Input,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components"
 
 /**
  * Reusable DataTable component with TanStack Table
@@ -36,7 +37,9 @@ import {
  * @param {Array} props.data - Data array
  * @param {string} props.filterColumn - Column key to filter by (optional)
  * @param {string} props.filterPlaceholder - Placeholder for filter input (optional)
- * @param {boolean} props.showColumnToggle - Show column visibility toggle (default: true)
+ * @param {Array} props.filterConfig - Filter configuration array (optional)
+ *   Example: [{ id: 'type', label: 'Customer Type', options: ['Household', 'Business'] }]
+ * @param {boolean} props.showColumnToggle - Show filter dropdown (default: true)
  * @param {boolean} props.showPagination - Show pagination controls (default: true)
  */
 export function DataTable({
@@ -44,13 +47,41 @@ export function DataTable({
   data,
   filterColumn,
   filterPlaceholder = "Filter...",
+  filterConfig = [],
   showColumnToggle = true,
   showPagination = true,
 }) {
   const [sorting, setSorting] = React.useState([])
   const [columnFilters, setColumnFilters] = React.useState([])
-  const [columnVisibility, setColumnVisibility] = React.useState({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [activeFilters, setActiveFilters] = React.useState({})
+
+  // Apply filters
+  React.useEffect(() => {
+    const filters = Object.entries(activeFilters)
+      .filter(([_, values]) => values.length > 0)
+      .map(([id, values]) => ({ id, value: values }))
+    setColumnFilters(filters)
+  }, [activeFilters])
+
+  const toggleFilter = (filterId, value) => {
+    setActiveFilters(prev => {
+      const current = prev[filterId] || []
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value]
+      return { ...prev, [filterId]: updated }
+    })
+  }
+
+  const clearAllFilters = () => {
+    setActiveFilters({})
+  }
+
+  const totalActiveFilters = Object.values(activeFilters).reduce(
+    (sum, values) => sum + values.length,
+    0
+  )
 
   const table = useReactTable({
     data,
@@ -61,13 +92,17 @@ export function DataTable({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
+    },
+    filterFns: {
+      multiSelect: (row, columnId, filterValue) => {
+        if (!filterValue || filterValue.length === 0) return true
+        return filterValue.includes(row.getValue(columnId))
+      },
     },
   })
 
@@ -88,32 +123,58 @@ export function DataTable({
               />
             </div>
           )}
-          {showColumnToggle && (
+          {showColumnToggle && filterConfig.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                  <Columns className="mr-2 h-4 w-4" />
-                  Columns <ChevronDown className="ml-2 h-4 w-4" />
+                <Button variant="outline" className="ml-auto relative">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                  {totalActiveFilters > 0 && (
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                      {totalActiveFilters}
+                    </Badge>
+                  )}
+                  <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-auto">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
+              <DropdownMenuContent align="end" className="w-auto">
+                {filterConfig.map((filter, index) => (
+                  <React.Fragment key={filter.id}>
+                    <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-semibold text-center">
+                      {filter.label}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <div className="px-1 py-1.5 space-y-0">
+                      {filter.options.map((option) => (
+                        <DropdownMenuCheckboxItem
+                          key={option}
+                          checked={(activeFilters[filter.id] || []).includes(option)}
+                          onCheckedChange={() => toggleFilter(filter.id, option)}
+                          className="cursor-pointer"
+                        >
+                          {option}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </div>
+                    {index < filterConfig.length - 1 && <DropdownMenuSeparator />}
+                  </React.Fragment>
+                ))}
+
+                {totalActiveFilters > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="p-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-center text-xs"
+                        onClick={clearAllFilters}
                       >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
+                        Clear All Filters
+                      </Button>
+                    </div>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}

@@ -1,4 +1,4 @@
-import { logo } from "../assets"
+import { logo } from "../../assets"
 import { Loader2 } from "lucide-react"
 
 export function LoadingOverlay() {

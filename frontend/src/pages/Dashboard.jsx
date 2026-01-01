@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SectionCards } from "@/components/section-cards"
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
-import { activityColumns } from "@/components/activity-columns"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import {
+  AppSidebar,
+  SiteHeader,
+  SectionCards,
+  ChartAreaInteractive,
+  DataTable,
+  activityColumns,
+  SidebarProvider,
+} from "@/components"
 import { Heart, Loader2 } from "lucide-react"
 import { getDashboardStats, getRecentActivity } from "@/services/dashboardService"
 import { useAuth } from "@/context/AuthContext"
