@@ -4,57 +4,54 @@ import { Badge } from "@/components/ui/badge"
 
 export const activityColumns = [
   {
-    accessorKey: "header",
+    accessorKey: "activityType",
+    header: () => <div className="text-center">Type</div>,
+    cell: ({ row }) => (
+      <div className="text-center">
+        <Badge variant="outline" className="text-xs">
+          {row.getValue("activityType")}
+        </Badge>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "description",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Title
+          Description
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("header")}</div>,
+    cell: ({ row }) => <div className="font-medium">{row.getValue("description")}</div>,
   },
   {
-    accessorKey: "type",
-    header: () => <div className="text-center">Type</div>,
-    cell: ({ row }) => (
-      <div className="text-center">
-        <Badge variant="outline" className="text-xs">
-          {row.getValue("type")}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: () => <div className="text-center">Status</div>,
-    cell: ({ row }) => {
-      const status = row.getValue("status")
+    accessorKey: "activityDate",
+    header: ({ column }) => {
       return (
-        <div className="text-center">
-        <Badge
-          variant={status === "Done" ? "default" : "secondary"}
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          {status}
-        </Badge>
-        </div>
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
       )
+    },
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("activityDate"))
+      return <div className="text-sm">{date.toLocaleDateString()}</div>
     },
   },
   {
-    accessorKey: "reviewer",
-    header: "Reviewer",
+    accessorKey: "performedBy",
+    header: "Performed By",
     cell: ({ row }) => {
-      const reviewer = row.getValue("reviewer")
-      return reviewer === "Assign reviewer" ? (
-        <span className="text-muted-foreground text-sm">{reviewer}</span>
-      ) : (
-        <span className="text-sm">{reviewer}</span>
-      )
+      return <span className="text-sm">{row.getValue("performedBy")}</span>
     },
   },
 ]
