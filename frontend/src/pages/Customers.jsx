@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react"
 import { getAllCustomers, createCustomer, deleteCustomer, updateCustomer } from "@/services/customerService"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { DataTable } from "@/components/data-table"
-import { createCustomerColumns } from "@/components/customer-columns"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
+import {
+  AppSidebar,
+  SiteHeader,
+  DataTable,
+  SidebarProvider,
+  Button,
+} from "@/components"
+import { CustomerForm } from "@/components"
+import { createCustomerColumns } from "@/components/tables/customer-columns"
+import { UserPlus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { UserPlus, Upload } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
 
 export default function Customers() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -26,23 +27,8 @@ export default function Customers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [uploadedFile, setUploadedFile] = useState(null)
   const [customers, setCustomers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-
-  // Form state
-  const [formData, setFormData] = useState({
-    fullName: "",
-    customerType: "Household",
-    identityValidation: "",
-    phone: "",
-    email: "",
-    houseNo: "",
-    street: "",
-    city: ""
-  })
-
-  const [formErrors, setFormErrors] = useState({})
 
   // Fetch customers on component mount
   useEffect(() => {
@@ -62,130 +48,27 @@ export default function Customers() {
     }
   }
 
-  const validateForm = () => {
-    const errors = {}
+  const handleCustomerAdded = async (formData, uploadedFile) => {
+    try {
+      setIsLoading(true)
 
-    // Full Name validation
-    if (!formData.fullName.trim()) {
-      errors.fullName = "Full Name is required"
+      // Create customer
+      const newCustomer = await createCustomer(formData)
+
+      // Add to customers list
+      setCustomers(prev => [newCustomer, ...prev])
+
+      // Show success message
+      alert("Customer added successfully!")
+
+      // Refresh customer list
+      await fetchCustomers()
+    } catch (error) {
+      console.error("Failed to create customer:", error)
+      alert(error.message || "Failed to add customer. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
-
-    // Identity Validation
-    if (!formData.identityValidation.trim()) {
-      errors.identityValidation = "Identity Validation is required"
-    } else if (formData.customerType === "Household") {
-      // NIC validation (old: 9 digits + V, new: 12 digits)
-      if (!/^(\d{9}[vVxX]|\d{12})$/.test(formData.identityValidation)) {
-        errors.identityValidation = "Invalid NIC format (9 digits + V or 12 digits)"
-      }
-    }
-
-    // Phone validation
-    if (!formData.phone.trim()) {
-      errors.phone = "Phone number is required"
-    } else if (!/^\d{9}$/.test(formData.phone)) {
-      errors.phone = "Phone must be 9 digits"
-    }
-
-    // Email validation
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Invalid email format"
-    }
-
-    // House No validation
-    if (!formData.houseNo.trim()) {
-      errors.houseNo = "House No is required"
-    }
-
-    // Street validation
-    if (!formData.street.trim()) {
-      errors.street = "Street is required"
-    }
-
-    // City validation
-    if (!formData.city.trim()) {
-      errors.city = "City is required"
-    }
-
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error for this field when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setUploadedFile(file)
-      console.log("File uploaded:", file.name)
-      // Here you would typically upload the file to your backend
-    }
-  }
-
-  const triggerFileUpload = () => {
-    document.getElementById("idFileUpload").click()
-  }
-
-  const handleSubmit = async () => {
-    if (validateForm()) {
-      try {
-        setIsLoading(true)
-
-        // Create customer
-        const newCustomer = await createCustomer(formData)
-
-        // Add to customers list
-        setCustomers(prev => [newCustomer, ...prev])
-
-        // Show success message
-        alert("Customer added successfully!")
-
-        // Reset form and close dialog
-        setFormData({
-          fullName: "",
-          customerType: "Household",
-          identityValidation: "",
-          phone: "",
-          email: "",
-          houseNo: "",
-          street: "",
-          city: ""
-        })
-        setFormErrors({})
-        setUploadedFile(null)
-        setIsAddDialogOpen(false)
-
-        // Refresh customer list
-        await fetchCustomers()
-      } catch (error) {
-        console.error("Failed to create customer:", error)
-        alert(error.message || "Failed to add customer. Please try again.")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-  }
-
-  const handleCancel = () => {
-    setFormData({
-      fullName: "",
-      customerType: "Household",
-      identityValidation: "",
-      phone: "",
-      email: "",
-      houseNo: "",
-      street: "",
-      city: ""
-    })
-    setFormErrors({})
-    setUploadedFile(null)
-    setIsAddDialogOpen(false)
   }
 
   // Action handlers
@@ -196,16 +79,6 @@ export default function Customers() {
 
   const handleEdit = (customer) => {
     setSelectedCustomer(customer)
-    setFormData({
-      fullName: customer.name || "",
-      customerType: customer.type || "Household",
-      identityValidation: customer.idProof || "",
-      phone: customer.phone?.replace("+94", "") || "",
-      email: customer.email || "",
-      houseNo: customer.houseNo || "",
-      street: customer.street || "",
-      city: customer.city || ""
-    })
     setIsEditDialogOpen(true)
   }
 
@@ -235,48 +108,33 @@ export default function Customers() {
     }
   }
 
-  const handleEditSubmit = async () => {
-    if (validateForm()) {
-      try {
-        setIsLoading(true)
+  const handleEditSuccess = async (formData) => {
+    try {
+      setIsLoading(true)
 
-        // Update customer
-        const updatedCustomer = await updateCustomer(selectedCustomer.id, {
-          ...formData,
-          status: selectedCustomer.status
-        })
+      // Update customer
+      const updatedCustomer = await updateCustomer(selectedCustomer.id, {
+        ...formData,
+        status: selectedCustomer.status
+      })
 
-        // Update in customers list
-        setCustomers(prev => prev.map(c =>
-          c.id === selectedCustomer.id ? updatedCustomer : c
-        ))
+      // Update in customers list
+      setCustomers(prev => prev.map(c =>
+        c.id === selectedCustomer.id ? updatedCustomer : c
+      ))
 
-        alert("Customer updated successfully!")
+      alert("Customer updated successfully!")
 
-        // Reset form and close dialog
-        setFormData({
-          fullName: "",
-          customerType: "Household",
-          identityValidation: "",
-          phone: "",
-          email: "",
-          houseNo: "",
-          street: "",
-          city: ""
-        })
-        setFormErrors({})
-        setUploadedFile(null)
-        setIsEditDialogOpen(false)
-        setSelectedCustomer(null)
+      setIsEditDialogOpen(false)
+      setSelectedCustomer(null)
 
-        // Refresh customer list
-        await fetchCustomers()
-      } catch (error) {
-        console.error("Failed to update customer:", error)
-        alert(error.message || "Failed to update customer. Please try again.")
-      } finally {
-        setIsLoading(false)
-      }
+      // Refresh customer list
+      await fetchCustomers()
+    } catch (error) {
+      console.error("Failed to update customer:", error)
+      alert(error.message || "Failed to update customer. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -310,7 +168,7 @@ export default function Customers() {
 
               <div className="border rounded-lg bg-card">
                 <div className="p-6">
-                  <p className="text-lg font-normal">Customer List</p>
+                  <p className="text-lg font-medium">Customer List</p>
                   <p className="text-sm text-muted-foreground pb-3">
                     A list of all registered customers in the system
                   </p>
@@ -329,6 +187,18 @@ export default function Customers() {
                         data={customers}
                         filterColumn="name"
                         filterPlaceholder="Search customers..."
+                        filterConfig={[
+                          {
+                            id: 'type',
+                            label: 'Type',
+                            options: ['Household', 'Business', 'Government']
+                          },
+                          {
+                            id: 'status',
+                            label: 'Status',
+                            options: ['Active', 'Pending', 'Inactive']
+                          }
+                        ]}
                         showColumnToggle={true}
                       />
                     )}
@@ -341,210 +211,11 @@ export default function Customers() {
       </div>
 
       {/* Add Customer Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-[98vw] sm:max-w-[90vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
-          <DialogHeader className="px-3 sm:px-6 md:px-8">
-            <DialogTitle className="text-lg sm:text-xl md:text-2xl">Add New Customer</DialogTitle>
-            <DialogDescription className="text-sm">
-              Fill in the customer information below
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-3 sm:px-6 md:px-8 lg:px-20 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-10 md:pb-16 space-y-4 sm:space-y-6">
-            {/* Customer Information */}
-            <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold">Customer Information</h3>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="fullName">
-                  Full Name<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="fullName"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  className={formErrors.fullName ? "border-red-500" : ""}
-                />
-                {formErrors.fullName && (
-                  <p className="text-sm text-red-500">{formErrors.fullName}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label>
-                  Customer Type<span className="text-red-500">*</span>
-                </Label>
-                <RadioGroup
-                  value={formData.customerType}
-                  onValueChange={(value) => handleInputChange("customerType", value)}
-                  className="flex flex-col sm:flex-row gap-3 sm:gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Household" id="household" />
-                    <Label htmlFor="household" className="font-normal cursor-pointer">
-                      Household
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Business" id="business" />
-                    <Label htmlFor="business" className="font-normal cursor-pointer">
-                      Business
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Government" id="government" />
-                    <Label htmlFor="government" className="font-normal cursor-pointer">
-                      Government
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="identityValidation">
-                  Identity Validation (NIC/BRN/GOV)<span className="text-red-500">*</span>
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="identityValidation"
-                    value={formData.identityValidation}
-                    onChange={(e) => handleInputChange("identityValidation", e.target.value)}
-                    className={`flex-1 ${formErrors.identityValidation ? "border-red-500" : ""}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={triggerFileUpload}
-                    className="shrink-0"
-                  >
-                    <Upload className="w-4 h-4" />
-                  </Button>
-                  <input
-                    id="idFileUpload"
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </div>
-                {uploadedFile && (
-                  <p className="text-sm text-green-600">
-                    File uploaded: {uploadedFile.name}
-                  </p>
-                )}
-                {formErrors.identityValidation && (
-                  <p className="text-sm text-red-500">{formErrors.identityValidation}</p>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Contact Information */}
-            <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold">Contact Information</h3>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="phone">
-                  Phone No.<span className="text-red-500">*</span>
-                </Label>
-                <div className="flex">
-                  <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted">
-                    <span className="text-sm">+94</span>
-                  </div>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value.replaceAll(/\D/g, ""))}
-                    className={`rounded-l-none ${formErrors.phone ? "border-red-500" : ""}`}
-                    maxLength={9}
-                    placeholder="771234567"
-                  />
-                </div>
-                {formErrors.phone && (
-                  <p className="text-sm text-red-500">{formErrors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={formErrors.email ? "border-red-500" : ""}
-                />
-                {formErrors.email && (
-                  <p className="text-sm text-red-500">{formErrors.email}</p>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Address */}
-            <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold">Address</h3>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="houseNo">
-                  House No.<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="houseNo"
-                  value={formData.houseNo}
-                  onChange={(e) => handleInputChange("houseNo", e.target.value)}
-                  className={formErrors.houseNo ? "border-red-500" : ""}
-                />
-                {formErrors.houseNo && (
-                  <p className="text-sm text-red-500">{formErrors.houseNo}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="street">
-                  Street<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="street"
-                  value={formData.street}
-                  onChange={(e) => handleInputChange("street", e.target.value)}
-                  className={formErrors.street ? "border-red-500" : ""}
-                />
-                {formErrors.street && (
-                  <p className="text-sm text-red-500">{formErrors.street}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="city">
-                  City<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  className={formErrors.city ? "border-red-500" : ""}
-                />
-                {formErrors.city && (
-                  <p className="text-sm text-red-500">{formErrors.city}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="pt-4 px-3 sm:px-6 md:px-8 pb-2 flex-col-reverse sm:flex-row gap-2">
-            <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} className="w-full sm:w-auto">
-              Save Customer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CustomerForm
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={handleCustomerAdded}
+      />
 
       {/* View Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -636,216 +307,24 @@ export default function Customers() {
       </Dialog>
 
       {/* Edit Customer Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-[98vw] sm:max-w-[90vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
-          <DialogHeader className="px-3 sm:px-6 md:px-8">
-            <DialogTitle className="text-lg sm:text-xl md:text-2xl">Edit Customer</DialogTitle>
-            <DialogDescription className="text-sm">
-              Update customer information
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-3 sm:px-6 md:px-8 lg:px-20 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-10 md:pb-16 space-y-4 sm:space-y-6">
-            {/* Customer Information */}
-            <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold">Customer Information</h3>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editFullName">
-                  Full Name<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="editFullName"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  className={formErrors.fullName ? "border-red-500" : ""}
-                />
-                {formErrors.fullName && (
-                  <p className="text-sm text-red-500">{formErrors.fullName}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label>
-                  Customer Type<span className="text-red-500">*</span>
-                </Label>
-                <RadioGroup
-                  value={formData.customerType}
-                  onValueChange={(value) => handleInputChange("customerType", value)}
-                  className="flex flex-col sm:flex-row gap-3 sm:gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Household" id="edit-household" />
-                    <Label htmlFor="edit-household" className="font-normal cursor-pointer">
-                      Household
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Business" id="edit-business" />
-                    <Label htmlFor="edit-business" className="font-normal cursor-pointer">
-                      Business
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Government" id="edit-government" />
-                    <Label htmlFor="edit-government" className="font-normal cursor-pointer">
-                      Government
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editIdentityValidation">
-                  Identity Validation (NIC/BRN/GOV)<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="editIdentityValidation"
-                  value={formData.identityValidation}
-                  onChange={(e) => handleInputChange("identityValidation", e.target.value)}
-                  className={formErrors.identityValidation ? "border-red-500" : ""}
-                />
-                {formErrors.identityValidation && (
-                  <p className="text-sm text-red-500">{formErrors.identityValidation}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label>
-                  Status<span className="text-red-500">*</span>
-                </Label>
-                <RadioGroup
-                  value={selectedCustomer?.status || "Active"}
-                  onValueChange={(value) => {
-                    setSelectedCustomer(prev => prev ? {...prev, status: value} : null)
-                  }}
-                  className="flex flex-col sm:flex-row gap-3 sm:gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Active" id="edit-status-active" />
-                    <Label htmlFor="edit-status-active" className="font-normal cursor-pointer">
-                      Active
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Inactive" id="edit-status-inactive" />
-                    <Label htmlFor="edit-status-inactive" className="font-normal cursor-pointer">
-                      Inactive
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Contact Information */}
-            <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold">Contact Information</h3>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editPhone">
-                  Phone No.<span className="text-red-500">*</span>
-                </Label>
-                <div className="flex">
-                  <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted">
-                    <span className="text-sm">+94</span>
-                  </div>
-                  <Input
-                    id="editPhone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value.replaceAll(/\D/g, ""))}
-                    className={`rounded-l-none ${formErrors.phone ? "border-red-500" : ""}`}
-                    maxLength={9}
-                    placeholder="771234567"
-                  />
-                </div>
-                {formErrors.phone && (
-                  <p className="text-sm text-red-500">{formErrors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editEmail">Email</Label>
-                <Input
-                  id="editEmail"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={formErrors.email ? "border-red-500" : ""}
-                />
-                {formErrors.email && (
-                  <p className="text-sm text-red-500">{formErrors.email}</p>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Address */}
-            <div className="space-y-3 sm:space-y-4">
-              <h3 className="text-base sm:text-lg font-semibold">Address</h3>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editHouseNo">
-                  House No.<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="editHouseNo"
-                  value={formData.houseNo}
-                  onChange={(e) => handleInputChange("houseNo", e.target.value)}
-                  className={formErrors.houseNo ? "border-red-500" : ""}
-                />
-                {formErrors.houseNo && (
-                  <p className="text-sm text-red-500">{formErrors.houseNo}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editStreet">
-                  Street<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="editStreet"
-                  value={formData.street}
-                  onChange={(e) => handleInputChange("street", e.target.value)}
-                  className={formErrors.street ? "border-red-500" : ""}
-                />
-                {formErrors.street && (
-                  <p className="text-sm text-red-500">{formErrors.street}</p>
-                )}
-              </div>
-
-              <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="editCity">
-                  City<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="editCity"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  className={formErrors.city ? "border-red-500" : ""}
-                />
-                {formErrors.city && (
-                  <p className="text-sm text-red-500">{formErrors.city}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="pt-4 px-3 sm:px-6 md:px-8 pb-2 flex-col-reverse sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => {
-              setIsEditDialogOpen(false)
-              setFormErrors({})
-            }} className="w-full sm:w-auto">
-              Cancel
-            </Button>
-            <Button onClick={handleEditSubmit} className="w-full sm:w-auto">
-              Update Customer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedCustomer && (
+        <CustomerForm
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSuccess={handleEditSuccess}
+          initialData={{
+            fullName: selectedCustomer.name || "",
+            customerType: selectedCustomer.type || "Household",
+            identityValidation: selectedCustomer.idProof || "",
+            phone: selectedCustomer.phone?.replace("+94", "") || "",
+            email: selectedCustomer.email || "",
+            houseNo: selectedCustomer.houseNo || "",
+            street: selectedCustomer.street || "",
+            city: selectedCustomer.city || ""
+          }}
+          isEdit={true}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

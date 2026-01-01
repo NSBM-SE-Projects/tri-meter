@@ -1,13 +1,12 @@
 import { ArrowUpDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Button, Badge } from "@/components"
 
 export const activityColumns = [
   {
     accessorKey: "activityType",
-    header: () => <div className="text-center">Type</div>,
+    header: () => <div className="pl-4">Type</div>,
     cell: ({ row }) => (
-      <div className="text-center">
+      <div className="pl-4">
         <Badge variant="outline" className="text-xs">
           {row.getValue("activityType")}
         </Badge>
@@ -21,6 +20,7 @@ export const activityColumns = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4"
         >
           Description
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -36,6 +36,7 @@ export const activityColumns = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4"
         >
           Date
           <ArrowUpDown className="ml-2 h-4 w-4" />

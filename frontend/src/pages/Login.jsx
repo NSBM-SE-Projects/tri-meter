@@ -1,7 +1,6 @@
-import { LoginForm } from "@/components/login-form"
+import { LoginForm, ModeToggle } from "@/components"
 import { sidebarImage, logo } from "../assets"
 import { Heart } from "lucide-react"
-import { ModeToggle } from "@/components/mode-toggle"
 
 export default function Login() {
   return (
