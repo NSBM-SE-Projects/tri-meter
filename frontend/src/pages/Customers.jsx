@@ -1,37 +1,11 @@
+import { useState } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/data-table"
+import { customerColumns } from "@/components/customer-columns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
@@ -43,8 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Search, UserPlus, MoreHorizontal, Filter } from "lucide-react"
-import { useState } from "react"
+import { UserPlus, Upload } from "lucide-react"
 
 // Sample customer data
 const customersData = [
@@ -99,10 +72,8 @@ const customersData = [
 ]
 
 export default function Customers() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [typeFilter, setTypeFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -175,10 +146,24 @@ export default function Customers() {
     }
   }
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setUploadedFile(file)
+      console.log("File uploaded:", file.name)
+      // Here you would typically upload the file to your backend
+    }
+  }
+
+  const triggerFileUpload = () => {
+    document.getElementById("idFileUpload").click()
+  }
+
   const handleSubmit = () => {
     if (validateForm()) {
       // Here you would typically send data to backend
       console.log("Form submitted:", formData)
+      console.log("Uploaded file:", uploadedFile)
       // Reset form and close dialog
       setFormData({
         fullName: "",
@@ -191,6 +176,7 @@ export default function Customers() {
         city: ""
       })
       setFormErrors({})
+      setUploadedFile(null)
       setIsAddDialogOpen(false)
     }
   }
@@ -207,31 +193,8 @@ export default function Customers() {
       city: ""
     })
     setFormErrors({})
+    setUploadedFile(null)
     setIsAddDialogOpen(false)
-  }
-
-  const filteredCustomers = customersData.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || customer.status === statusFilter
-    const matchesType = typeFilter === "all" || customer.type === typeFilter
-
-    return matchesSearch && matchesStatus && matchesType
-  })
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
-      case "Inactive":
-        return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-      case "Pending":
-        return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-      default:
-        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
-    }
   }
 
   return (
@@ -240,144 +203,38 @@ export default function Customers() {
         <AppSidebar />
         <div className="flex flex-col flex-1">
           <SiteHeader />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold">Customers</h1>
                   <p className="text-muted-foreground">
                     Manage all customer accounts
                   </p>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                   <UserPlus className="w-4 h-4 mr-2" />
                   Add Customer
                 </Button>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search:"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-md pl-10"
-                  />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Filter className="w-4 h-4" />
-                      Filter
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <div className="p-2 space-y-2">
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Status</label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Customer Type</label>
-                        <Select value={typeFilter} onValueChange={setTypeFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Household">Household</SelectItem>
-                            <SelectItem value="Business">Business</SelectItem>
-                            <SelectItem value="Government">Government</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer List</CardTitle>
-                  <CardDescription>
+              <div className="border rounded-lg bg-card">
+                <div className="p-6">
+                  <p className="text-lg font-normal">Customer List</p>
+                  <p className="text-sm text-muted-foreground pb-3">
                     A list of all registered customers in the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-center">Act</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredCustomers.length > 0 ? (
-                          filteredCustomers.map((customer) => (
-                            <TableRow key={customer.id}>
-                              <TableCell className="font-medium">
-                                {customer.id}
-                              </TableCell>
-                              <TableCell>{customer.name}</TableCell>
-                              <TableCell>{customer.type}</TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {customer.phone}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {customer.email}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={getStatusColor(customer.status)}>
-                                  {customer.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
-                                      <MoreHorizontal className="w-4 h-4" />
-                                      <span className="sr-only">Open menu</span>
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-600">
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={7} className="text-center text-muted-foreground">
-                              No customers found
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                  </p>
+                  <div className="overflow-x-auto px-6">
+                    <DataTable
+                      columns={customerColumns}
+                      data={customersData}
+                      filterColumn="name"
+                      filterPlaceholder="Search customers..."
+                      showColumnToggle={true}
+                    />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </main>
         </div>
@@ -385,20 +242,20 @@ export default function Customers() {
 
       {/* Add Customer Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Add New Customer</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[98vw] sm:max-w-[90vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
+          <DialogHeader className="px-3 sm:px-6 md:px-8">
+            <DialogTitle className="text-lg sm:text-xl md:text-2xl">Add New Customer</DialogTitle>
+            <DialogDescription className="text-sm">
               Fill in the customer information below
             </DialogDescription>
           </DialogHeader>
 
-          <div className="px-28 pt-10 pb-24 space-y-6">
+          <div className="px-3 sm:px-6 md:px-8 lg:px-20 pt-4 sm:pt-6 md:pt-8 pb-6 sm:pb-10 md:pb-16 space-y-4 sm:space-y-6">
             {/* Customer Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Customer Information</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-semibold">Customer Information</h3>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="fullName">
                   Full Name<span className="text-red-500">*</span>
                 </Label>
@@ -413,14 +270,14 @@ export default function Customers() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label>
                   Customer Type<span className="text-red-500">*</span>
                 </Label>
                 <RadioGroup
                   value={formData.customerType}
                   onValueChange={(value) => handleInputChange("customerType", value)}
-                  className="flex gap-6"
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-6"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="Household" id="household" />
@@ -443,16 +300,39 @@ export default function Customers() {
                 </RadioGroup>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="identityValidation">
                   Identity Validation (NIC/BRN/GOV)<span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="identityValidation"
-                  value={formData.identityValidation}
-                  onChange={(e) => handleInputChange("identityValidation", e.target.value)}
-                  className={formErrors.identityValidation ? "border-red-500" : ""}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="identityValidation"
+                    value={formData.identityValidation}
+                    onChange={(e) => handleInputChange("identityValidation", e.target.value)}
+                    className={`flex-1 ${formErrors.identityValidation ? "border-red-500" : ""}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={triggerFileUpload}
+                    className="shrink-0"
+                  >
+                    <Upload className="w-4 h-4" />
+                  </Button>
+                  <input
+                    id="idFileUpload"
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </div>
+                {uploadedFile && (
+                  <p className="text-sm text-green-600">
+                    File uploaded: {uploadedFile.name}
+                  </p>
+                )}
                 {formErrors.identityValidation && (
                   <p className="text-sm text-red-500">{formErrors.identityValidation}</p>
                 )}
@@ -462,10 +342,10 @@ export default function Customers() {
             <Separator />
 
             {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Contact Information</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-semibold">Contact Information</h3>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="phone">
                   Phone No.<span className="text-red-500">*</span>
                 </Label>
@@ -487,7 +367,7 @@ export default function Customers() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -505,10 +385,10 @@ export default function Customers() {
             <Separator />
 
             {/* Address */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Address</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base sm:text-lg font-semibold">Address</h3>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="houseNo">
                   House No.<span className="text-red-500">*</span>
                 </Label>
@@ -523,7 +403,7 @@ export default function Customers() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="street">
                   Street<span className="text-red-500">*</span>
                 </Label>
@@ -538,7 +418,7 @@ export default function Customers() {
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="city">
                   City<span className="text-red-500">*</span>
                 </Label>
@@ -555,11 +435,11 @@ export default function Customers() {
             </div>
           </div>
 
-          <DialogFooter className="pt-6 space-x-2">
-            <Button variant="outline" onClick={handleCancel}>
+          <DialogFooter className="pt-4 px-3 sm:px-6 md:px-8 pb-2 flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} className="w-full sm:w-auto">
               Save Customer
             </Button>
           </DialogFooter>

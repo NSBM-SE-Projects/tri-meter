@@ -5,9 +5,6 @@
 <div>
   <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
 </div>
-<div>
-  <img src="./assets/logo/readme.png" alt="Tri-Meter Logo" height="300"/>
-</div>
 
 ## 🗒️ Overview
 
@@ -22,14 +19,14 @@ Full-stack web application for managing utility services (⚡ Electricity, 💧 
 ![Express v4+](https://img.shields.io/badge/Express-v4+-000000?style=for-the-badge&labelColor=111111&logo=express&logoColor=white)
 ![mssql driver v10+](https://img.shields.io/badge/mssql%20Driver-v10+-004080?style=for-the-badge&labelColor=0078D6&logo=microsoft-sql-server&logoColor=white)
 ![Azure](https://img.shields.io/badge/Azure-0078D5?style=for-the-badge&logo=microsoft-azure&logoColor=white)
-![dotenv v16+](https://img.shields.io/badge/dotenv-v16+-333333?style=for-the-badge&labelColor=4B4B4B&logo=dotenv&logoColor=white)
-![cors v2+](https://img.shields.io/badge/cors-v2+-333333?style=for-the-badge&labelColor=555555&logo=javascript&logoColor=white)
-![nodemon v3+](https://img.shields.io/badge/nodemon-v3+-333333?style=for-the-badge&labelColor=90C53F&logo=nodemon&logoColor=white)
 ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&labelColor=FF6C37&logo=postman&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&labelColor=46E3B7&logo=render&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&labelColor=000000&logo=vercel&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-222222?style=for-the-badge&labelColor=222222&logo=github&logoColor=white)
-![bcrypt](https://img.shields.io/badge/bcrypt-4A4A4A?style=for-the-badge)
+![Radix UI v1+](https://img.shields.io/badge/Radix_UI-v1+-161618?style=for-the-badge&labelColor=161618&logo=radixui&logoColor=white)
+![Recharts v2+](https://img.shields.io/badge/Recharts-v2+-FF4500?style=for-the-badge&labelColor=FF4500&logo=recharts&logoColor=white)
+![Lucide Icons v0.42+](https://img.shields.io/badge/Lucide-v0.42+-000000?style=for-the-badge&labelColor=000000&logo=lucide&logoColor=white)
+
 
 ## 📌 Features 
 - User role management (Admin, Manager, Cashier, Customer)
@@ -91,12 +88,6 @@ See `SETUP-GUIDE.md` for complete instructions.
 
 ## 🤼 The Team
 
-**Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
-**Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
-**Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         
-**UI/UX Lead:** [@thiranya123](https://github.com/thiranya123)   
-**UI/UX Design Member:** [@Yameesha](https://github.com/Yameeshaa)         
-**UI/UX Design Member:** [@kmss-sew](https://github.com/kmss-sew)
 **Project Lead:** [@dwainXDL](https://github.com/dwainXDL)      
 **Software Development Lead:** [@PWTMihisara](https://github.com/PWTMihisara)      
 **Technical Documentation Lead:** [@drnykteresteinwayne](https://github.com/drnykteresteinwayne)         

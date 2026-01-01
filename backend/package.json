@@ -1,6 +1,6 @@
 {
   "name": "tri-meter-backend",
-  "version": "1.2.1",
+  "version": "2.1.0",
   "description": "UMS Backend API - Node.js + Express + MS SQL Server",
   "main": "src/server.js",
   "type": "module",

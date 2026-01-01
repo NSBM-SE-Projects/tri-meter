@@ -7,6 +7,13 @@ export default {
   ],
   theme: {
   	extend: {
+  		screens: {
+  			sm: '500px',
+  			md: '700px',
+  			lg: '1500px',
+  			xl: '1280px',
+  			'2xl': '1536px',
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
@@ -66,6 +73,7 @@ export default {
   		}
   	}
   },
+  // eslint-disable-next-line no-undef
   plugins: [require("tailwindcss-animate")],
 }
 
