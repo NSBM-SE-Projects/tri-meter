@@ -240,34 +240,34 @@ export default function Customers() {
         <AppSidebar />
         <div className="flex flex-col flex-1">
           <SiteHeader />
-          <main className="flex-1 p-6">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+          <main className="flex-1 p-2 sm:p-4">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold">Customers</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold">Customers</h1>
                   <p className="text-muted-foreground">
                     Manage all customer accounts
                   </p>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                   <UserPlus className="w-4 h-4 mr-2" />
                   Add Customer
                 </Button>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Search:"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-md pl-10"
+                    className="w-full sm:max-w-md pl-10"
                   />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" className="w-full sm:w-auto gap-2">
                       <Filter className="w-4 h-4" />
                       Filter
                     </Button>
@@ -314,8 +314,8 @@ export default function Customers() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border rounded-lg">
-                    <Table>
+                  <div className="border rounded-lg overflow-x-auto scroll-smooth -mx-1 px-1">
+                    <Table className="min-w-[640px] w-full">
                       <TableHeader>
                         <TableRow>
                           <TableHead>ID</TableHead>
@@ -385,18 +385,18 @@ export default function Customers() {
 
       {/* Add Customer Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Add New Customer</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
+          <DialogHeader className="px-4 sm:px-8 md:px-12">
+            <DialogTitle className="text-lg sm:text-xl md:text-2xl">Add New Customer</DialogTitle>
+            <DialogDescription className="text-sm">
               Fill in the customer information below
             </DialogDescription>
           </DialogHeader>
 
-          <div className="px-28 pt-10 pb-24 space-y-6">
+          <div className="px-4 sm:px-8 md:px-12 lg:px-28 pt-6 sm:pt-10 pb-8 sm:pb-12 md:pb-24 space-y-6">
             {/* Customer Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Customer Information</h3>
+              <h3 className="text-base sm:text-lg font-semibold">Customer Information</h3>
 
               <div className="space-y-2">
                 <Label htmlFor="fullName">
@@ -420,7 +420,7 @@ export default function Customers() {
                 <RadioGroup
                   value={formData.customerType}
                   onValueChange={(value) => handleInputChange("customerType", value)}
-                  className="flex gap-6"
+                  className="flex flex-col sm:flex-row gap-3 sm:gap-6"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="Household" id="household" />
@@ -463,7 +463,7 @@ export default function Customers() {
 
             {/* Contact Information */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Contact Information</h3>
+              <h3 className="text-base sm:text-lg font-semibold">Contact Information</h3>
 
               <div className="space-y-2">
                 <Label htmlFor="phone">
@@ -506,7 +506,7 @@ export default function Customers() {
 
             {/* Address */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Address</h3>
+              <h3 className="text-base sm:text-lg font-semibold">Address</h3>
 
               <div className="space-y-2">
                 <Label htmlFor="houseNo">
@@ -555,11 +555,11 @@ export default function Customers() {
             </div>
           </div>
 
-          <DialogFooter className="pt-6 space-x-2">
-            <Button variant="outline" onClick={handleCancel}>
+          <DialogFooter className="pt-6 px-4 sm:px-8 md:px-12 flex-col-reverse sm:flex-row gap-2">
+            <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} className="w-full sm:w-auto">
               Save Customer
             </Button>
           </DialogFooter>
