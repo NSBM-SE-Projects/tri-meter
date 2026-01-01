@@ -18,7 +18,7 @@ const data = {
     },
     {
       title: "Service Connections",
-      url: "/service-connections",
+      url: "#/service-connections",
       icon: PlugIcon,
     },
     {

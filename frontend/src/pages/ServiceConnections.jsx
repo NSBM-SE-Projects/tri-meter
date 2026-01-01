@@ -1,30 +1,16 @@
+import { useState, useEffect } from "react"
+import { getAllServiceConnections, createServiceConnection, deleteServiceConnection, updateServiceConnection } from "@/services/serviceConnectionService"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/data-table"
+import { createServiceConnectionColumns } from "@/components/service-connection-columns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -40,14 +26,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { Search, Plus, MoreHorizontal, Filter } from "lucide-react"
-import { useState } from "react"
+import { Plus, Search } from "lucide-react"
 
-// Sample service connection data
-const serviceConnectionsData = [
+// Sample customer data for dropdown
+const sampleCustomers = [
+  { id: "1", name: "John Smith", type: "Household" },
+  { id: "2", name: "Dwain Dias", type: "Business" },
+  { id: "3", name: "Ashen Perera", type: "Household" },
+  { id: "4", name: "Sarah Johnson", type: "Household" },
+  { id: "5", name: "Mike Brown", type: "Business" },
+  { id: "6", name: "Emily Chen", type: "Household" },
+  { id: "7", name: "David Wilson", type: "Business" },
+  { id: "8", name: "Lisa Anderson", type: "Industrial" },
+  { id: "9", name: "Robert Taylor", type: "Household" },
+  { id: "10", name: "Jennifer Martinez", type: "Business" },
+  { id: "11", name: "ABC Corporation", type: "Business" },
+  { id: "12", name: "Sarah Wilson", type: "Household" },
+  { id: "13", name: "Green Valley Hotel", type: "Business" },
+  { id: "14", name: "Tech Solutions Ltd", type: "Industrial" },
+  { id: "15", name: "Maria Garcia", type: "Household" },
+]
+
+// Sample test data for frontend testing
+const sampleConnectionsData = [
   {
     id: "1",
     customerName: "John Smith",
@@ -118,7 +119,7 @@ const serviceConnectionsData = [
     meterNumber: "W-89012",
     installationDate: "3rd Nov 2024",
     tariffPlan: "Industrial",
-    status: "Active",
+    status: "Pending",
   },
   {
     id: "9",
@@ -141,11 +142,14 @@ const serviceConnectionsData = [
 ]
 
 export default function ServiceConnections() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [utilityTypeFilter, setUtilityTypeFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [customerFilter, setCustomerFilter] = useState("")
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false)
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedConnection, setSelectedConnection] = useState(null)
+  const [connections, setConnections] = useState(sampleConnectionsData)
+  const [isLoading, setIsLoading] = useState(false)
+  const [customerSearch, setCustomerSearch] = useState("")
 
   // Form state
   const [formData, setFormData] = useState({
@@ -157,10 +161,61 @@ export default function ServiceConnections() {
     initialReading: "0",
     houseNo: "",
     street: "",
-    city: ""
+    city: "",
+    status: "Active"
   })
 
   const [formErrors, setFormErrors] = useState({})
+
+  // Fetch service connections on component mount
+  useEffect(() => {
+    fetchConnections()
+  }, [])
+
+  const fetchConnections = async () => {
+    try {
+      setIsLoading(true)
+      // TODO: Uncomment when backend is ready
+      // const data = await getAllServiceConnections()
+      // setConnections(data)
+
+      // Using sample data for frontend testing
+      setConnections(sampleConnectionsData)
+    } catch (error) {
+      console.error("Failed to fetch service connections:", error)
+      // Fallback to sample data if API fails
+      setConnections(sampleConnectionsData)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const validateForm = () => {
+    const errors = {}
+
+    if (!formData.customer) {
+      errors.customer = "Customer is required"
+    }
+
+    if (formData.utilityTypes.length === 0) {
+      errors.utilityTypes = "Utility Type is required"
+    }
+
+    if (!formData.meterNumber.trim()) {
+      errors.meterNumber = "Meter Number is required"
+    }
+
+    if (!formData.tariffPlan) {
+      errors.tariffPlan = "Tariff Plan is required"
+    }
+
+    if (!formData.initialReading.trim()) {
+      errors.initialReading = "Initial Reading is required"
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleInputChange = (field, value) => {
     setFormData(prev => {
@@ -169,9 +224,9 @@ export default function ServiceConnections() {
       // Auto-fill installation charge based on utility type
       if (field === "utilityTypes" && value.length > 0) {
         const charges = {
-          "Electricity": "$100",
-          "Water": "$80",
-          "Gas": "$120"
+          "Electricity": "$100 (Electricity)",
+          "Water": "$80 (Water)",
+          "Gas": "$120 (Gas)"
         }
         updated.installationCharge = charges[value[0]] || ""
       }
@@ -204,50 +259,57 @@ export default function ServiceConnections() {
     })
   }
 
-  const validateForm = () => {
-    const errors = {}
-
-    if (!formData.customer) {
-      errors.customer = "Customer is required"
-    }
-
-    if (formData.utilityTypes.length === 0) {
-      errors.utilityTypes = "Utility Type is required"
-    }
-
-    if (!formData.meterNumber.trim()) {
-      errors.meterNumber = "Meter Number is required"
-    }
-
-    if (!formData.tariffPlan) {
-      errors.tariffPlan = "Tariff Plan is required"
-    }
-
-    if (!formData.initialReading.trim()) {
-      errors.initialReading = "Initial Reading is required"
-    }
-
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      console.log("Form submitted:", formData)
-      // Reset form
-      setFormData({
-        customer: "",
-        utilityTypes: [],
-        meterNumber: "",
-        tariffPlan: "",
-        installationCharge: "",
-        initialReading: "0",
-        houseNo: "",
-        street: "",
-        city: ""
-      })
-      setFormErrors({})
-      setIsRegisterDialogOpen(false)
+      try {
+        setIsLoading(true)
+
+        // TODO: Uncomment when backend is ready
+        // const newConnection = await createServiceConnection(formData)
+
+        // Using local data for frontend testing
+        const newConnection = {
+          id: String(connections.length + 1),
+          customerName: formData.customer,
+          utilityType: formData.utilityTypes[0],
+          meterNumber: formData.meterNumber,
+          installationDate: new Date().toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          }),
+          tariffPlan: formData.tariffPlan,
+          status: formData.status,
+        }
+
+        // Add to connections list
+        setConnections(prev => [newConnection, ...prev])
+
+        // Show success message
+        alert("Service connection registered successfully!")
+
+        // Reset form and close dialog
+        setFormData({
+          customer: "",
+          utilityTypes: [],
+          meterNumber: "",
+          tariffPlan: "",
+          installationCharge: "",
+          initialReading: "0",
+          houseNo: "",
+          street: "",
+          city: "",
+          status: "Active"
+        })
+        setFormErrors({})
+        setCustomerSearch("")
+        setIsRegisterDialogOpen(false)
+      } catch (error) {
+        console.error("Failed to create service connection:", error)
+        alert(error.message || "Failed to register service connection. Please try again.")
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -261,56 +323,128 @@ export default function ServiceConnections() {
       initialReading: "0",
       houseNo: "",
       street: "",
-      city: ""
+      city: "",
+      status: "Active"
     })
     setFormErrors({})
+    setCustomerSearch("")
     setIsRegisterDialogOpen(false)
   }
 
-  const filteredConnections = serviceConnectionsData.filter(connection => {
-    const matchesSearch = connection.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      connection.meterNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  // Action handlers
+  const handleViewDetails = (connection) => {
+    setSelectedConnection(connection)
+    setIsViewDialogOpen(true)
+  }
 
-    const matchesUtilityType = utilityTypeFilter === "all" || connection.utilityType === utilityTypeFilter
-    const matchesStatus = statusFilter === "all" || connection.status === statusFilter
+  const handleEdit = (connection) => {
+    setSelectedConnection(connection)
+    setFormData({
+      customer: connection.customer || "",
+      utilityTypes: [connection.utilityType] || [],
+      meterNumber: connection.meterNumber || "",
+      tariffPlan: connection.tariffPlan || "",
+      installationCharge: connection.installationCharge || "",
+      initialReading: connection.initialReading || "0",
+      houseNo: connection.houseNo || "",
+      street: connection.street || "",
+      city: connection.city || "",
+      status: connection.status || "Active"
+    })
+    setIsEditDialogOpen(true)
+  }
 
-    return matchesSearch && matchesUtilityType && matchesStatus
-  })
+  const handleDelete = (connection) => {
+    setSelectedConnection(connection)
+    setIsDeleteDialogOpen(true)
+  }
 
-  const getUtilityTypeBadgeColor = (type) => {
-    switch (type) {
-      case "Electricity":
-        return "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 border-yellow-500/20"
-      case "Water":
-        return "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20"
-      case "Gas":
-        return "bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 border-orange-500/20"
-      default:
-        return "bg-gray-500/10 text-gray-600 hover:bg-gray-500/20"
+  const confirmDelete = async () => {
+    if (!selectedConnection) return
+
+    try {
+      setIsLoading(true)
+
+      // TODO: Uncomment when backend is ready
+      // await deleteServiceConnection(selectedConnection.id)
+
+      // Using local data for frontend testing
+      // Remove from connections list
+      setConnections(prev => prev.filter(c => c.id !== selectedConnection.id))
+
+      alert("Service connection deleted successfully!")
+      setIsDeleteDialogOpen(false)
+      setSelectedConnection(null)
+    } catch (error) {
+      console.error("Failed to delete service connection:", error)
+      alert(error.message || "Failed to delete service connection. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "text-green-600"
-      case "Disconnected":
-        return "text-red-600"
-      default:
-        return "text-gray-600"
+  const handleEditSubmit = async () => {
+    if (validateForm()) {
+      try {
+        setIsLoading(true)
+
+        // TODO: Uncomment when backend is ready
+        // const updatedConnection = await updateServiceConnection(selectedConnection.id, {
+        //   ...formData,
+        //   status: selectedConnection.status
+        // })
+
+        // Using local data for frontend testing
+        const updatedConnection = {
+          ...selectedConnection,
+          meterNumber: formData.meterNumber,
+          tariffPlan: formData.tariffPlan,
+          status: selectedConnection.status
+        }
+
+        // Update in connections list
+        setConnections(prev => prev.map(c =>
+          c.id === selectedConnection.id ? updatedConnection : c
+        ))
+
+        alert("Service connection updated successfully!")
+
+        // Reset form and close dialog
+        setFormData({
+          customer: "",
+          utilityTypes: [],
+          meterNumber: "",
+          tariffPlan: "",
+          installationCharge: "",
+          initialReading: "0",
+          houseNo: "",
+          street: "",
+          city: "",
+          status: "Active"
+        })
+        setFormErrors({})
+        setIsEditDialogOpen(false)
+        setSelectedConnection(null)
+      } catch (error) {
+        console.error("Failed to update service connection:", error)
+        alert(error.message || "Failed to update service connection. Please try again.")
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
-  const getStatusDot = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-600"
-      case "Disconnected":
-        return "bg-red-600"
-      default:
-        return "bg-gray-600"
-    }
-  }
+  // Filter customers based on search
+  const filteredCustomers = sampleCustomers.filter(customer =>
+    customer.name.toLowerCase().includes(customerSearch.toLowerCase())
+  )
+
+  // Create columns with action handlers
+  const connectionColumns = createServiceConnectionColumns(
+    handleViewDetails,
+    handleEdit,
+    handleDelete
+  )
 
   return (
     <SidebarProvider>
@@ -318,186 +452,46 @@ export default function ServiceConnections() {
         <AppSidebar />
         <div className="flex flex-col flex-1">
           <SiteHeader />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
-                  <h1 className="text-3xl font-bold">Service Connection</h1>
+                  <h1 className="text-3xl font-bold">Service Connections</h1>
                   <p className="text-muted-foreground">
                     Manage customer utility service connections
                   </p>
                 </div>
-                <Button onClick={() => setIsRegisterDialogOpen(true)}>
+                <Button onClick={() => setIsRegisterDialogOpen(true)} className="w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
                   Register Connection
                 </Button>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search:"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-md pl-10"
-                  />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Filter className="w-4 h-4" />
-                      Filters:
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <div className="p-2 space-y-2">
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Utility Type</label>
-                        <Select value={utilityTypeFilter} onValueChange={setUtilityTypeFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Electricity">Electricity</SelectItem>
-                            <SelectItem value="Water">Water</SelectItem>
-                            <SelectItem value="Gas">Gas</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Status</label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Disconnected">Disconnected</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Customer</label>
-                        <Input
-                          placeholder="Customer name..."
-                          value={customerFilter}
-                          onChange={(e) => setCustomerFilter(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Service Connection List</CardTitle>
-                  <CardDescription>
+              <div className="border rounded-lg bg-card">
+                <div className="p-6">
+                  <p className="text-lg font-normal">Service Connection List</p>
+                  <p className="pb-3 text-sm text-muted-foreground">
                     A list of all service connections in the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Customer Name</TableHead>
-                          <TableHead>Utility Type</TableHead>
-                          <TableHead>Meter Number</TableHead>
-                          <TableHead>Installation Date</TableHead>
-                          <TableHead>Tariff Plan</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-center">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredConnections.length > 0 ? (
-                          filteredConnections.map((connection) => (
-                            <TableRow key={connection.id}>
-                              <TableCell className="font-medium">
-                                {connection.id}
-                              </TableCell>
-                              <TableCell>{connection.customerName}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={getUtilityTypeBadgeColor(connection.utilityType)}>
-                                  {connection.utilityType}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {connection.meterNumber}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {connection.installationDate}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {connection.tariffPlan}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-2 h-2 rounded-full ${getStatusDot(connection.status)}`} />
-                                  <span className={getStatusColor(connection.status)}>
-                                    {connection.status}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
-                                      <MoreHorizontal className="w-4 h-4" />
-                                      <span className="sr-only">Open menu</span>
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-600">
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={8} className="text-center text-muted-foreground">
-                              No service connections found
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                  </p>
+                  <div className="px-6 overflow-x-auto">
+                    {isLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <p className="text-muted-foreground">Loading service connections...</p>
+                      </div>
+                    ) : connections.length === 0 ? (
+                      <div className="flex items-center justify-center py-8">
+                        <p className="text-muted-foreground">No service connections found. Register your first connection!</p>
+                      </div>
+                    ) : (
+                      <DataTable
+                        columns={connectionColumns}
+                        data={connections}
+                        filterColumn="customerName"
+                        filterPlaceholder="Search connections..."
+                        showColumnToggle={false}
+                      />
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Pagination */}
-              <div className="flex justify-end">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    &lt;
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    1
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    2
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    3
-                  </Button>
-                  <span className="px-2">...</span>
-                  <Button variant="outline" size="sm">
-                    123
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    &gt;
-                  </Button>
                 </div>
               </div>
             </div>
@@ -507,29 +501,57 @@ export default function ServiceConnections() {
 
       {/* Register Service Connection Dialog */}
       <Dialog open={isRegisterDialogOpen} onOpenChange={setIsRegisterDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Register Service Connection</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-[98vw] sm:max-w-[90vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
+          <DialogHeader className="px-3 sm:px-6 md:px-8">
+            <DialogTitle className="text-lg sm:text-xl md:text-2xl">Register Service Connection</DialogTitle>
+            <DialogDescription className="text-sm">
               Fill in the service connection details below
             </DialogDescription>
           </DialogHeader>
 
-          <div className="px-28 pt-10 pb-24 space-y-6">
+          <div className="px-3 pt-4 pb-6 space-y-4 sm:px-6 md:px-8 lg:px-20 sm:pt-6 md:pt-8 sm:pb-10 md:pb-16 sm:space-y-6">
             {/* Customer */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <Label htmlFor="customer">
                 Customer<span className="text-red-500">*</span>
               </Label>
-              <Select value={formData.customer} onValueChange={(value) => handleInputChange("customer", value)}>
+              <Select
+                value={formData.customer}
+                onValueChange={(value) => {
+                  handleInputChange("customer", value)
+                  setCustomerSearch("") // Reset search when selection is made
+                }}
+              >
                 <SelectTrigger className={formErrors.customer ? "border-red-500" : ""}>
                   <SelectValue placeholder="Select customer" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="john-smith">John Smith</SelectItem>
-                  <SelectItem value="jane-doe">Jane Doe</SelectItem>
-                  <SelectItem value="abc-corp">ABC Corp</SelectItem>
-                  <SelectItem value="sarah-wilson">Sarah Wilson</SelectItem>
+                  <div className="sticky top-0 z-10 p-2 border-b bg-background">
+                    <div className="relative">
+                      <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search customers..."
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                        className="h-8 pl-8"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-[200px] overflow-y-auto">
+                    {filteredCustomers.length > 0 ? (
+                      filteredCustomers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.name}>
+                          {customer.name}
+                          <span className="ml-2 text-xs text-muted-foreground">({customer.type})</span>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-center text-muted-foreground">
+                        No customers found
+                      </div>
+                    )}
+                  </div>
                 </SelectContent>
               </Select>
               {formErrors.customer && (
@@ -538,11 +560,11 @@ export default function ServiceConnections() {
             </div>
 
             {/* Utility Type */}
-            <div className="space-y-2">
+            <div className="space-y-1.7 sm:space-y-2">
               <Label>
                 Utility Type<span className="text-red-500">*</span>
               </Label>
-              <div className="flex gap-6">
+              <div className="flex flex-col gap-12 sm:flex-row sm:gap-32">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="electricity"
@@ -580,12 +602,11 @@ export default function ServiceConnections() {
             </div>
 
             {/* Meter Number */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="meterNumber">
                   Meter Number<span className="text-red-500">*</span>
                 </Label>
-                <span className="text-xs text-muted-foreground">Unique</span>
               </div>
               <Input
                 id="meterNumber"
@@ -600,7 +621,7 @@ export default function ServiceConnections() {
             </div>
 
             {/* Tariff Plan */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <Label htmlFor="tariffPlan">
                 Tariff Plan<span className="text-red-500">*</span>
               </Label>
@@ -609,9 +630,9 @@ export default function ServiceConnections() {
                   <SelectValue placeholder="Select tariff plan" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="residential">Residential</SelectItem>
-                  <SelectItem value="commercial">Commercial</SelectItem>
-                  <SelectItem value="industrial">Industrial</SelectItem>
+                  <SelectItem value="Residential">Residential</SelectItem>
+                  <SelectItem value="Commercial">Commercial</SelectItem>
+                  <SelectItem value="Industrial">Industrial</SelectItem>
                 </SelectContent>
               </Select>
               {formErrors.tariffPlan && (
@@ -620,12 +641,9 @@ export default function ServiceConnections() {
             </div>
 
             {/* Installation Charge */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="installationCharge">Installation Charge</Label>
-                <span className="text-xs text-muted-foreground">
-                  Auto-filled: $100 Electricity, $80 Water, $120 Gas
-                </span>
               </div>
               <Input
                 id="installationCharge"
@@ -636,7 +654,7 @@ export default function ServiceConnections() {
             </div>
 
             {/* Initial Reading */}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <Label htmlFor="initialReading">
                 Initial Reading<span className="text-red-500">*</span>
               </Label>
@@ -655,10 +673,10 @@ export default function ServiceConnections() {
             <Separator />
 
             {/* Service Address */}
-            <div className="space-y-4">
-              <h3 className="font-semibold">Service Address (if different)</h3>
+            <div className="space-y-3 sm:space-y-4">
+              <h3 className="text-base font-semibold sm:text-lg">Service Address</h3>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="houseNo">House No.</Label>
                 <Input
                   id="houseNo"
@@ -667,7 +685,7 @@ export default function ServiceConnections() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="street">Street</Label>
                 <Input
                   id="street"
@@ -676,7 +694,7 @@ export default function ServiceConnections() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Input
                   id="city"
@@ -687,12 +705,200 @@ export default function ServiceConnections() {
             </div>
           </div>
 
-          <DialogFooter className="pt-6 space-x-2">
-            <Button variant="outline" onClick={handleCancel}>
+          <DialogFooter className="flex-col-reverse gap-2 px-3 pt-4 pb-2 sm:px-6 md:px-8 sm:flex-row">
+            <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} className="w-full sm:w-auto">
               Register Connection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Service Connection Details</DialogTitle>
+            <DialogDescription>
+              View service connection information
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedConnection && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Connection ID</p>
+                  <p className="text-base">{selectedConnection.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Status</p>
+                  <p className="text-base">{selectedConnection.status}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="mb-3 text-lg font-semibold">Connection Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Customer Name</p>
+                    <p className="text-base">{selectedConnection.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Utility Type</p>
+                    <p className="text-base">{selectedConnection.utilityType}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Meter Number</p>
+                    <p className="text-base">{selectedConnection.meterNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Installation Date</p>
+                    <p className="text-base">{selectedConnection.installationDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Tariff Plan</p>
+                    <p className="text-base">{selectedConnection.tariffPlan}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Connection Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-[98vw] sm:max-w-[90vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
+          <DialogHeader className="px-3 sm:px-6 md:px-8">
+            <DialogTitle className="text-lg sm:text-xl md:text-2xl">Edit Service Connection</DialogTitle>
+            <DialogDescription className="text-sm">
+              Update service connection information
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-3 pt-4 pb-6 space-y-4 sm:px-6 md:px-8 lg:px-20 sm:pt-6 md:pt-8 sm:pb-10 md:pb-16 sm:space-y-6">
+            {/* Meter Number */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="editMeterNumber">
+                Meter Number<span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="editMeterNumber"
+                value={formData.meterNumber}
+                onChange={(e) => handleInputChange("meterNumber", e.target.value)}
+                className={formErrors.meterNumber ? "border-red-500" : ""}
+              />
+              {formErrors.meterNumber && (
+                <p className="text-sm text-red-500">{formErrors.meterNumber}</p>
+              )}
+            </div>
+
+            {/* Tariff Plan */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="editTariffPlan">
+                Tariff Plan<span className="text-red-500">*</span>
+              </Label>
+              <Select value={formData.tariffPlan} onValueChange={(value) => handleInputChange("tariffPlan", value)}>
+                <SelectTrigger className={formErrors.tariffPlan ? "border-red-500" : ""}>
+                  <SelectValue placeholder="Select tariff plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Residential">Residential</SelectItem>
+                  <SelectItem value="Commercial">Commercial</SelectItem>
+                  <SelectItem value="Industrial">Industrial</SelectItem>
+                </SelectContent>
+              </Select>
+              {formErrors.tariffPlan && (
+                <p className="text-sm text-red-500">{formErrors.tariffPlan}</p>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label>
+                Status<span className="text-red-500">*</span>
+              </Label>
+              <RadioGroup
+                value={selectedConnection?.status || "Active"}
+                onValueChange={(value) => {
+                  setSelectedConnection(prev => prev ? {...prev, status: value} : null)
+                }}
+                className="flex flex-col gap-3 sm:flex-row sm:gap-6"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Active" id="edit-status-active" />
+                  <Label htmlFor="edit-status-active" className="font-normal cursor-pointer">
+                    Active
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Disconnected" id="edit-status-disconnected" />
+                  <Label htmlFor="edit-status-disconnected" className="font-normal cursor-pointer">
+                    Disconnected
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Pending" id="edit-status-pending" />
+                  <Label htmlFor="edit-status-pending" className="font-normal cursor-pointer">
+                    Pending
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col-reverse gap-2 px-3 pt-4 pb-2 sm:px-6 md:px-8 sm:flex-row">
+            <Button variant="outline" onClick={() => {
+              setIsEditDialogOpen(false)
+              setFormErrors({})
+            }} className="w-full sm:w-auto">
+              Cancel
+            </Button>
+            <Button onClick={handleEditSubmit} className="w-full sm:w-auto">
+              Update Connection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Service Connection</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this service connection?
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedConnection && (
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                This will permanently delete service connection <span className="font-semibold">{selectedConnection.meterNumber}</span> for <span className="font-semibold">{selectedConnection.customerName}</span> (ID: {selectedConnection.id}) from the system.
+              </p>
+              <p className="mt-2 text-sm text-red-600">
+                This action cannot be undone.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
