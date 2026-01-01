@@ -24,7 +24,7 @@ export const login = async (req, res) => {
     // Find user by username
     const result = await pool.request()
       .input('username', username)
-      .query('SELECT U_ID, U_Username, U_Password, U_FullName, U_Role, U_Status FROM [User] WHERE U_Username = @username');
+      .query('SELECT U_ID, U_Username, U_Password, U_FullName, U_Role, U_Status, U_ProfilePhoto FROM [User] WHERE U_Username = @username');
 
     if (result.recordset.length === 0) {
       return res.status(401).json({
@@ -77,6 +77,7 @@ export const login = async (req, res) => {
         username: user.U_Username,
         fullName: user.U_FullName,
         role: user.U_Role,
+        profilePhoto: user.U_ProfilePhoto,
       }
     });
 
