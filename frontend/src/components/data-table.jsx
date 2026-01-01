@@ -55,6 +55,7 @@ export function DataTable({
   const table = useReactTable({
     data,
     columns,
+    getRowId: (row, index) => `${row.id || 'row'}-${index}`,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),

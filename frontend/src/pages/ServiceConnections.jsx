@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { getAllServiceConnections, createServiceConnection, deleteServiceConnection, updateServiceConnection } from "@/services/serviceConnectionService"
+import { getAllCustomers } from "@/services/customerService"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarProvider } from "@/components/ui/sidebar"
@@ -28,126 +29,14 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, Search } from "lucide-react"
 
-// Sample customer data for dropdown
-const sampleCustomers = [
-  { id: "1", name: "John Smith", type: "Household" },
-  { id: "2", name: "Dwain Dias", type: "Business" },
-  { id: "3", name: "Ashen Perera", type: "Household" },
-  { id: "4", name: "Sarah Johnson", type: "Household" },
-  { id: "5", name: "Mike Brown", type: "Business" },
-  { id: "6", name: "Emily Chen", type: "Household" },
-  { id: "7", name: "David Wilson", type: "Business" },
-  { id: "8", name: "Lisa Anderson", type: "Industrial" },
-  { id: "9", name: "Robert Taylor", type: "Household" },
-  { id: "10", name: "Jennifer Martinez", type: "Business" },
-  { id: "11", name: "ABC Corporation", type: "Business" },
-  { id: "12", name: "Sarah Wilson", type: "Household" },
-  { id: "13", name: "Green Valley Hotel", type: "Business" },
-  { id: "14", name: "Tech Solutions Ltd", type: "Industrial" },
-  { id: "15", name: "Maria Garcia", type: "Household" },
-]
-
-// Sample test data for frontend testing
-const sampleConnectionsData = [
-  {
-    id: "1",
-    customerName: "John Smith",
-    utilityType: "Electricity",
-    meterNumber: "E-12345",
-    installationDate: "11th Dec 2024",
-    tariffPlan: "Residential",
-    status: "Active",
-  },
-  {
-    id: "2",
-    customerName: "Dwain Dias",
-    utilityType: "Water",
-    meterNumber: "W-23456",
-    installationDate: "15th Nov 2024",
-    tariffPlan: "Commercial",
-    status: "Active",
-  },
-  {
-    id: "3",
-    customerName: "Ashen",
-    utilityType: "Gas",
-    meterNumber: "G-34567",
-    installationDate: "20th Oct 2024",
-    tariffPlan: "Residential",
-    status: "Disconnected",
-  },
-  {
-    id: "4",
-    customerName: "Sarah Johnson",
-    utilityType: "Electricity",
-    meterNumber: "E-45678",
-    installationDate: "5th Dec 2024",
-    tariffPlan: "Industrial",
-    status: "Active",
-  },
-  {
-    id: "5",
-    customerName: "Mike Brown",
-    utilityType: "Water",
-    meterNumber: "W-56789",
-    installationDate: "1st Nov 2024",
-    tariffPlan: "Residential",
-    status: "Disconnected",
-  },
-  {
-    id: "6",
-    customerName: "Emily Chen",
-    utilityType: "Electricity",
-    meterNumber: "E-67890",
-    installationDate: "10th Dec 2024",
-    tariffPlan: "Residential",
-    status: "Active",
-  },
-  {
-    id: "7",
-    customerName: "David Wilson",
-    utilityType: "Gas",
-    meterNumber: "G-78901",
-    installationDate: "25th Oct 2024",
-    tariffPlan: "Commercial",
-    status: "Active",
-  },
-  {
-    id: "8",
-    customerName: "Lisa Anderson",
-    utilityType: "Water",
-    meterNumber: "W-89012",
-    installationDate: "3rd Nov 2024",
-    tariffPlan: "Industrial",
-    status: "Pending",
-  },
-  {
-    id: "9",
-    customerName: "Robert Taylor",
-    utilityType: "Electricity",
-    meterNumber: "E-90123",
-    installationDate: "18th Nov 2024",
-    tariffPlan: "Residential",
-    status: "Disconnected",
-  },
-  {
-    id: "10",
-    customerName: "Jennifer Martinez",
-    utilityType: "Gas",
-    meterNumber: "G-01234",
-    installationDate: "8th Dec 2024",
-    tariffPlan: "Commercial",
-    status: "Active",
-  },
-]
-
 export default function ServiceConnections() {
   const [isRegisterDialogOpen, setIsRegisterDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedConnection, setSelectedConnection] = useState(null)
-  const [connections, setConnections] = useState(sampleConnectionsData)
+  const [connections, setConnections] = useState([])
+  const [customers, setCustomers] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [customerSearch, setCustomerSearch] = useState("")
 
@@ -167,26 +56,39 @@ export default function ServiceConnections() {
 
   const [formErrors, setFormErrors] = useState({})
 
-  // Fetch service connections on component mount
+  // Fetch service connections and customers on component mount
   useEffect(() => {
     fetchConnections()
+    fetchCustomers()
   }, [])
 
   const fetchConnections = async () => {
     try {
       setIsLoading(true)
-      // TODO: Uncomment when backend is ready
-      // const data = await getAllServiceConnections()
-      // setConnections(data)
-
-      // Using sample data for frontend testing
-      setConnections(sampleConnectionsData)
+      const data = await getAllServiceConnections()
+      // Deduplicate service connections by ID
+      const uniqueConnections = data.filter((connection, index, self) =>
+        index === self.findIndex((c) => c.id === connection.id)
+      )
+      setConnections(uniqueConnections)
     } catch (error) {
       console.error("Failed to fetch service connections:", error)
-      // Fallback to sample data if API fails
-      setConnections(sampleConnectionsData)
+      alert("Failed to load service connections. Please check your connection.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchCustomers = async () => {
+    try {
+      const data = await getAllCustomers()
+      // Deduplicate customers by ID (customers with multiple phones appear multiple times)
+      const uniqueCustomers = data.filter((customer, index, self) =>
+        index === self.findIndex((c) => c.id === customer.id)
+      )
+      setCustomers(uniqueCustomers)
+    } catch (error) {
+      console.error("Failed to fetch customers:", error)
     }
   }
 
@@ -225,8 +127,8 @@ export default function ServiceConnections() {
       if (field === "utilityTypes" && value.length > 0) {
         const charges = {
           "Electricity": "$100 (Electricity)",
-          "Water": "$80 (Water)",
-          "Gas": "$120 (Gas)"
+          "Water": "$75 (Water)",
+          "Gas": "$155 (Gas)"
         }
         updated.installationCharge = charges[value[0]] || ""
       }
@@ -247,8 +149,8 @@ export default function ServiceConnections() {
         updated.utilityTypes = [type] // Only one can be selected
         const charges = {
           "Electricity": "$100 (Electricity)",
-          "Water": "$80 (Water)",
-          "Gas": "$120 (Gas)"
+          "Water": "$75 (Water)",
+          "Gas": "$155 (Gas)"
         }
         updated.installationCharge = charges[type] || ""
       } else {
@@ -264,26 +166,10 @@ export default function ServiceConnections() {
       try {
         setIsLoading(true)
 
-        // TODO: Uncomment when backend is ready
-        // const newConnection = await createServiceConnection(formData)
+        const newConnection = await createServiceConnection(formData)
 
-        // Using local data for frontend testing
-        const newConnection = {
-          id: String(connections.length + 1),
-          customerName: formData.customer,
-          utilityType: formData.utilityTypes[0],
-          meterNumber: formData.meterNumber,
-          installationDate: new Date().toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          }),
-          tariffPlan: formData.tariffPlan,
-          status: formData.status,
-        }
-
-        // Add to connections list
-        setConnections(prev => [newConnection, ...prev])
+        // Refresh connections list
+        await fetchConnections()
 
         // Show success message
         alert("Service connection registered successfully!")
@@ -365,12 +251,10 @@ export default function ServiceConnections() {
     try {
       setIsLoading(true)
 
-      // TODO: Uncomment when backend is ready
-      // await deleteServiceConnection(selectedConnection.id)
+      await deleteServiceConnection(selectedConnection.id)
 
-      // Using local data for frontend testing
-      // Remove from connections list
-      setConnections(prev => prev.filter(c => c.id !== selectedConnection.id))
+      // Refresh connections list
+      await fetchConnections()
 
       alert("Service connection deleted successfully!")
       setIsDeleteDialogOpen(false)
@@ -388,24 +272,13 @@ export default function ServiceConnections() {
       try {
         setIsLoading(true)
 
-        // TODO: Uncomment when backend is ready
-        // const updatedConnection = await updateServiceConnection(selectedConnection.id, {
-        //   ...formData,
-        //   status: selectedConnection.status
-        // })
-
-        // Using local data for frontend testing
-        const updatedConnection = {
-          ...selectedConnection,
-          meterNumber: formData.meterNumber,
-          tariffPlan: formData.tariffPlan,
+        await updateServiceConnection(selectedConnection.id, {
+          ...formData,
           status: selectedConnection.status
-        }
+        })
 
-        // Update in connections list
-        setConnections(prev => prev.map(c =>
-          c.id === selectedConnection.id ? updatedConnection : c
-        ))
+        // Refresh connections list
+        await fetchConnections()
 
         alert("Service connection updated successfully!")
 
@@ -435,7 +308,7 @@ export default function ServiceConnections() {
   }
 
   // Filter customers based on search
-  const filteredCustomers = sampleCustomers.filter(customer =>
+  const filteredCustomers = customers.filter(customer =>
     customer.name.toLowerCase().includes(customerSearch.toLowerCase())
   )
 
@@ -540,8 +413,8 @@ export default function ServiceConnections() {
                   </div>
                   <div className="max-h-[200px] overflow-y-auto">
                     {filteredCustomers.length > 0 ? (
-                      filteredCustomers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.name}>
+                      filteredCustomers.map((customer, index) => (
+                        <SelectItem key={`${customer.id}-${index}`} value={customer.name}>
                           {customer.name}
                           <span className="ml-2 text-xs text-muted-foreground">({customer.type})</span>
                         </SelectItem>
@@ -834,7 +707,7 @@ export default function ServiceConnections() {
                 onValueChange={(value) => {
                   setSelectedConnection(prev => prev ? {...prev, status: value} : null)
                 }}
-                className="flex flex-col gap-3 sm:flex-row sm:gap-6"
+                className="flex flex-col gap-12 sm:flex-row sm:gap-32"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Active" id="edit-status-active" />
