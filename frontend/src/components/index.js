@@ -13,10 +13,12 @@ export { SectionCards } from "./dashboard/section-cards"
 export { DataTable } from "./tables/data-table"
 export { activityColumns } from "./tables/activity-columns"
 export { customerColumns, createCustomerColumns } from "./tables/customer-columns"
+export { meterReadingColumns, createMeterReadingColumns } from "./tables/meter-reading-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"
 export { CustomerForm } from "./forms/customer-form"
+export { MeterReadingForm } from "./forms/meter-reading-form"
 
 // Dialog components
 export { ViewDialog } from "./dialogs/ViewDialog"
@@ -54,6 +56,7 @@ export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectL
 export { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 export { Toggle } from "./ui/toggle"
 export { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
+export { Textarea } from "./ui/textarea"
 
 // UI Components - Data Display
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "./ui/table"

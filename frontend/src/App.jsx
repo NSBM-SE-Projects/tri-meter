@@ -4,10 +4,8 @@ import Login from './pages/Login'
 import ContactAdmin from './pages/ContactAdmin'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
-<<<<<<< HEAD
 import ServiceConnections from './pages/ServiceConnections'
 import MeterReadings from './pages/MeterReadings'
->>>>>>> main
 
 function App() {
   return (
@@ -23,10 +21,8 @@ function App() {
         <Route path="/contact-admin" element={<ContactAdmin />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/customers" element={<Customers />} />
-<<<<<<< HEAD
         <Route path="/service-connections" element={<ServiceConnections />} />
         <Route path="/meter-readings" element={<MeterReadings />} />
->>>>>>> main
       </Routes>
     </HashRouter>
   )

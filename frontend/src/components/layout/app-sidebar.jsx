@@ -18,12 +18,12 @@ const data = {
     },
     {
       title: "Service Connections",
-      url: "#",
+      url: "#/service-connections",
       icon: PlugIcon,
     },
     {
       title: "Meter Readings",
-      url: "#",
+      url: "#/meter-readings",
       icon: GaugeIcon,
     },
     {
