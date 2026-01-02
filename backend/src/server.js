@@ -11,6 +11,7 @@ import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler.j
 import systemRoutes from './routes/system.js';
 import authRoutes from './routes/auth.js';
 import inquiryRoutes from './routes/inquiry.js';
+import billRoutes from './routes/bill.js';
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use(requestLogger);
 app.use('/api', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/inquiries', inquiryRoutes);
+app.use('/api/bills', billRoutes);
 
 // ===== ERROR HANDLERS =====
 

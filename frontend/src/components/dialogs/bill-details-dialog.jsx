@@ -6,8 +6,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { format } from "date-fns"
+import { Printer, Mail } from "lucide-react"
 
-export function BillDetailsDialog({ open, onOpenChange, billData }) {
+export function BillDetailsDialog({ open, onOpenChange, billData, onSendEmail }) {
   if (!billData) return null
 
   const handlePrint = () => {
@@ -15,13 +16,9 @@ export function BillDetailsDialog({ open, onOpenChange, billData }) {
   }
 
   const handleSendEmail = () => {
-    console.log("Send email:", billData)
-    // Implement send email functionality
-  }
-
-  const handleRecordPayment = () => {
-    console.log("Record payment:", billData)
-    // Implement record payment functionality
+    if (onSendEmail) {
+      onSendEmail()
+    }
   }
 
   return (
@@ -96,14 +93,13 @@ export function BillDetailsDialog({ open, onOpenChange, billData }) {
 
         {/* Action Buttons */}
         <div className="flex gap-3 pt-4 border-t print:hidden">
-          <Button variant="outline" onClick={handlePrint} className="flex-1">
+          <Button onClick={handlePrint} className="flex-1" variant="outline">
+            <Printer className="w-4 h-4 mr-2" />
             Print Bill
           </Button>
-          <Button variant="outline" onClick={handleSendEmail} className="flex-1">
+          <Button onClick={handleSendEmail} className="flex-1">
+            <Mail className="w-4 h-4 mr-2" />
             Send Email
-          </Button>
-          <Button onClick={handleRecordPayment} className="flex-1">
-            Record Payment
           </Button>
         </div>
       </DialogContent>

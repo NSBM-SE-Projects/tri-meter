@@ -33,103 +33,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Search, Plus, MoreHorizontal, Filter, Eye, Printer, Mail } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { GenerateBillForm } from "@/components/forms/generate-bill-form"
 import { BillDetailsDialog } from "@/components/dialogs/bill-details-dialog"
-
-// Sample bills data
-const billsData = [
-  {
-    id: "B-001",
-    customerName: "John S.",
-    period: "Dec 2024",
-    amount: "$45.00",
-    dueDate: "Jan 10",
-    status: "Unpaid",
-    utilityType: "Electricity",
-  },
-  {
-    id: "B-002",
-    customerName: "Jane Doe",
-    period: "Dec 2024",
-    amount: "$32.50",
-    dueDate: "Jan 10",
-    status: "Paid",
-    utilityType: "Water",
-  },
-  {
-    id: "B-003",
-    customerName: "ABC Corp",
-    period: "Dec 2024",
-    amount: "$120.00",
-    dueDate: "Jan 10",
-    status: "Partially Paid",
-    utilityType: "Gas",
-  },
-  {
-    id: "B-004",
-    customerName: "Sarah Wilson",
-    period: "Nov 2024",
-    amount: "$50.00",
-    dueDate: "Dec 10",
-    status: "Paid",
-    utilityType: "Electricity",
-  },
-  {
-    id: "B-005",
-    customerName: "Mike Brown",
-    period: "Dec 2024",
-    amount: "$28.75",
-    dueDate: "Jan 10",
-    status: "Unpaid",
-    utilityType: "Water",
-  },
-  {
-    id: "B-006",
-    customerName: "Emily Chen",
-    period: "Nov 2024",
-    amount: "$65.00",
-    dueDate: "Dec 10",
-    status: "Paid",
-    utilityType: "Gas",
-  },
-  {
-    id: "B-007",
-    customerName: "David Wilson",
-    period: "Dec 2024",
-    amount: "$38.50",
-    dueDate: "Jan 10",
-    status: "Partially Paid",
-    utilityType: "Electricity",
-  },
-  {
-    id: "B-008",
-    customerName: "Lisa Anderson",
-    period: "Nov 2024",
-    amount: "$42.00",
-    dueDate: "Dec 10",
-    status: "Unpaid",
-    utilityType: "Water",
-  },
-  {
-    id: "B-009",
-    customerName: "Robert Taylor",
-    period: "Dec 2024",
-    amount: "$55.25",
-    dueDate: "Jan 10",
-    status: "Paid",
-    utilityType: "Gas",
-  },
-  {
-    id: "B-010",
-    customerName: "Jennifer Martinez",
-    period: "Dec 2024",
-    amount: "$47.80",
-    dueDate: "Jan 10",
-    status: "Unpaid",
-    utilityType: "Electricity",
-  },
-]
+import { apiRequest } from "@/lib/api"
 
 export default function Bills() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -140,17 +47,45 @@ export default function Bills() {
   const [isGenerateBillOpen, setIsGenerateBillOpen] = useState(false)
   const [isBillDetailsOpen, setIsBillDetailsOpen] = useState(false)
   const [selectedBillData, setSelectedBillData] = useState(null)
+  const [billsData, setBillsData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const itemsPerPage = 10
 
+  // Fetch bills from API
+  useEffect(() => {
+    fetchBills()
+  }, [statusFilter, utilityFilter, searchQuery])
+
+  const fetchBills = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams()
+      if (statusFilter !== 'all') params.append('status', statusFilter)
+      if (utilityFilter !== 'all') params.append('utilityType', utilityFilter)
+      if (searchQuery) params.append('search', searchQuery)
+
+      const queryString = params.toString()
+      const endpoint = queryString ? `/bills?${queryString}` : '/bills'
+
+      const response = await apiRequest(endpoint)
+
+      if (response.success) {
+        setBillsData(response.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch bills:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const filteredBills = billsData.filter(bill => {
-    const matchesSearch = bill.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      bill.customerName.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || bill.status === statusFilter
-    const matchesUtility = utilityFilter === "all" || bill.utilityType === utilityFilter
     const matchesPeriod = periodFilter === "all" || bill.period === periodFilter
-
-    return matchesSearch && matchesStatus && matchesUtility && matchesPeriod
+    return matchesPeriod
   })
 
   // Pagination
@@ -172,65 +107,52 @@ export default function Bills() {
     }
   }
 
-  const handleViewBill = (bill) => {
-    // Mock bill details (replace with actual API call)
-    const billData = {
-      billId: bill.id,
-      customerName: bill.customerName,
-      customerId: "#CUST-001",
-      utility: bill.utilityType,
-      meter: "E-12345",
-      billingPeriod: `${bill.period}`,
-      previousReading: 1150,
-      currentReading: 1250,
-      consumption: 100,
-      unit: "kWh",
-      charges: [
-        { description: "First 100 kWh @ $0.10", amount: 10.00 },
-        { description: "Fixed Charges", amount: 0.00 },
-        { description: "Previous Balance", amount: 15.00 },
-        { description: "Late Fee", amount: 5.00 },
-      ],
-      totalAmount: parseFloat(bill.amount.replace('$', '')),
-      dueDate: bill.dueDate,
-      status: bill.status,
-    }
+  const handleViewBill = async (bill) => {
+    try {
+      const response = await apiRequest(`/bills/${bill.id}`)
 
-    setSelectedBillData(billData)
-    setIsBillDetailsOpen(true)
+      if (response.success) {
+        setSelectedBillData(response.data)
+        setIsBillDetailsOpen(true)
+      }
+    } catch (err) {
+      console.error('Failed to fetch bill details:', err)
+      alert('Failed to load bill details. Please try again.')
+    }
   }
 
-  const handlePrintBill = (bill) => {
-    // Mock bill details (replace with actual API call)
-    const billData = {
-      billId: bill.id,
-      customerName: bill.customerName,
-      customerId: "#CUST-001",
-      utility: bill.utilityType,
-      meter: "E-12345",
-      billingPeriod: `${bill.period}`,
-      previousReading: 1150,
-      currentReading: 1250,
-      consumption: 100,
-      unit: "kWh",
-      charges: [
-        { description: "First 100 kWh @ $0.10", amount: 10.00 },
-        { description: "Fixed Charges", amount: 0.00 },
-        { description: "Previous Balance", amount: 15.00 },
-        { description: "Late Fee", amount: 5.00 },
-      ],
-      totalAmount: parseFloat(bill.amount.replace('$', '')),
-      dueDate: bill.dueDate,
-      status: bill.status,
+  const handlePrintBill = async (bill) => {
+    try {
+      const response = await apiRequest(`/bills/${bill.id}`)
+
+      if (response.success) {
+        setSelectedBillData(response.data)
+        setIsBillDetailsOpen(true)
+
+        // Trigger print after a short delay to allow dialog to render
+        setTimeout(() => {
+          window.print()
+        }, 100)
+      }
+    } catch (err) {
+      console.error('Failed to fetch bill details:', err)
+      alert('Failed to load bill details for printing. Please try again.')
     }
+  }
 
-    setSelectedBillData(billData)
-    setIsBillDetailsOpen(true)
+  const handleSendEmail = async (bill) => {
+    try {
+      const response = await apiRequest(`/bills/${bill.id}/send-email`, {
+        method: 'POST'
+      })
 
-    // Trigger print after a short delay to allow dialog to render
-    setTimeout(() => {
-      window.print()
-    }, 100)
+      if (response.success) {
+        alert(response.message)
+      }
+    } catch (err) {
+      console.error('Failed to send bill email:', err)
+      alert('Failed to send bill email. Please try again.')
+    }
   }
 
   return (
@@ -335,6 +257,7 @@ export default function Bills() {
                           <TableHead className="min-w-[80px]">ID</TableHead>
                           <TableHead className="min-w-[150px]">Name</TableHead>
                           <TableHead className="min-w-[100px]">Period</TableHead>
+                          <TableHead className="min-w-[120px]">Consumption</TableHead>
                           <TableHead className="min-w-[100px]">Amount</TableHead>
                           <TableHead className="min-w-[100px]">Due Date</TableHead>
                           <TableHead className="min-w-[120px]">Status</TableHead>
@@ -342,15 +265,30 @@ export default function Bills() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedBills.length > 0 ? (
+                        {loading ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                              Loading bills...
+                            </TableCell>
+                          </TableRow>
+                        ) : error ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center text-red-500 py-8">
+                              Error: {error}
+                            </TableCell>
+                          </TableRow>
+                        ) : paginatedBills.length > 0 ? (
                           paginatedBills.map((bill) => (
                             <TableRow key={bill.id}>
                               <TableCell className="font-medium">
-                                {bill.id}
+                                {bill.billId}
                               </TableCell>
-                              <TableCell className="whitespace-nowrap">{bill.customerName}</TableCell>
+                              <TableCell className="whitespace-nowrap">{bill.name}</TableCell>
                               <TableCell className="text-muted-foreground">
                                 {bill.period}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {bill.consumption} {bill.unit}
                               </TableCell>
                               <TableCell className="text-muted-foreground">
                                 {bill.amount}
@@ -380,7 +318,7 @@ export default function Bills() {
                                       <Printer className="w-4 h-4 mr-2" />
                                       Print
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleSendEmail(bill)}>
                                       <Mail className="w-4 h-4 mr-2" />
                                       Send Email
                                     </DropdownMenuItem>
@@ -391,7 +329,7 @@ export default function Bills() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center text-muted-foreground">
+                            <TableCell colSpan={8} className="text-center text-muted-foreground">
                               No bills found
                             </TableCell>
                           </TableRow>
@@ -462,33 +400,39 @@ export default function Bills() {
       <GenerateBillForm
         open={isGenerateBillOpen}
         onOpenChange={setIsGenerateBillOpen}
-        onSuccess={(data) => {
-          // Generate mock bill data (replace with actual API call)
-          const billData = {
-            billId: "B-001234",
-            customerName: "John Smith",
-            customerId: "#CUST-001",
-            utility: "Electricity",
-            meter: "E-12345",
-            billingPeriod: "Dec 1 - Dec 31, 2024",
-            previousReading: 1150,
-            currentReading: 1250,
-            consumption: 100,
-            unit: "kWh",
-            charges: [
-              { description: "First 100 kWh @ $0.10", amount: 10.00 },
-              { description: "Fixed Charges", amount: 0.00 },
-              { description: "Previous Balance", amount: 15.00 },
-              { description: "Late Fee", amount: 5.00 },
-            ],
-            totalAmount: 30.00,
-            dueDate: "Jan 15, 2025",
-            status: "Unpaid (5 days overdue)",
-          }
+        onSuccess={async (formData) => {
+          try {
+            // Generate the bill
+            const response = await apiRequest('/bills', {
+              method: 'POST',
+              body: JSON.stringify({
+                customerId: parseInt(formData.customer),
+                serviceConnectionId: parseInt(formData.meterServiceConnection),
+                periodFrom: formData.periodFrom.toISOString().split('T')[0],
+                periodTo: formData.periodTo.toISOString().split('T')[0]
+              })
+            })
 
-          setSelectedBillData(billData)
-          setIsBillDetailsOpen(true)
-          setIsGenerateBillOpen(false)
+            if (response.success) {
+              // Extract the bill ID from the response (e.g., "B-045" -> "45")
+              const billId = response.data.billId.replace('B-', '')
+
+              // Fetch full bill details
+              const detailsResponse = await apiRequest(`/bills/${billId}`)
+
+              if (detailsResponse.success) {
+                setSelectedBillData(detailsResponse.data)
+                setIsBillDetailsOpen(true)
+                setIsGenerateBillOpen(false)
+
+                // Refresh bills list
+                fetchBills()
+              }
+            }
+          } catch (err) {
+            console.error('Failed to generate bill:', err)
+            alert('Failed to generate bill. ' + err.message)
+          }
         }}
       />
 
@@ -497,6 +441,22 @@ export default function Bills() {
         open={isBillDetailsOpen}
         onOpenChange={setIsBillDetailsOpen}
         billData={selectedBillData}
+        onSendEmail={async () => {
+          if (selectedBillData) {
+            const billId = selectedBillData.billId.replace('B-', '')
+            try {
+              const response = await apiRequest(`/bills/${billId}/send-email`, {
+                method: 'POST'
+              })
+              if (response.success) {
+                alert(response.message)
+              }
+            } catch (err) {
+              console.error('Failed to send bill email:', err)
+              alert('Failed to send bill email. Please try again.')
+            }
+          }
+        }}
       />
     </SidebarProvider>
   )

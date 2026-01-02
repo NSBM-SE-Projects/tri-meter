@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
+import { apiRequest } from "@/lib/api"
 
 export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -35,18 +36,57 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
     estimatedAmount: 0,
   })
 
-  // Sample data - replace with actual API calls
-  const customers = [
-    { id: "1", name: "John Smith", customerId: "#CUST-001" },
-    { id: "2", name: "Jane Doe", customerId: "#CUST-002" },
-    { id: "3", name: "ABC Corp", customerId: "#CUST-003" },
-  ]
+  // Real data from API
+  const [customers, setCustomers] = useState([])
+  const [meterConnections, setMeterConnections] = useState([])
+  const [loadingCustomers, setLoadingCustomers] = useState(false)
+  const [loadingConnections, setLoadingConnections] = useState(false)
 
-  const meterConnections = [
-    { id: "1", meter: "E-12345", customer: "John Smith", utility: "Electricity" },
-    { id: "2", meter: "W-67890", customer: "Jane Doe", utility: "Water" },
-    { id: "3", meter: "G-11223", customer: "ABC Corp", utility: "Gas" },
-  ]
+  // Fetch customers on mount
+  useEffect(() => {
+    if (open) {
+      fetchCustomers()
+    }
+  }, [open])
+
+  // Fetch service connections when customer changes
+  useEffect(() => {
+    if (formData.customer) {
+      fetchServiceConnections(formData.customer)
+      // Reset meter/service connection when customer changes
+      setFormData(prev => ({ ...prev, meterServiceConnection: "" }))
+    } else {
+      setMeterConnections([])
+    }
+  }, [formData.customer])
+
+  const fetchCustomers = async () => {
+    try {
+      setLoadingCustomers(true)
+      const response = await apiRequest('/bills/customers')
+      if (response.success) {
+        setCustomers(response.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch customers:', err)
+    } finally {
+      setLoadingCustomers(false)
+    }
+  }
+
+  const fetchServiceConnections = async (customerId) => {
+    try {
+      setLoadingConnections(true)
+      const response = await apiRequest(`/bills/service-connections/${customerId}`)
+      if (response.success) {
+        setMeterConnections(response.data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch service connections:', err)
+    } finally {
+      setLoadingConnections(false)
+    }
+  }
 
   // Calculate preview when form data changes
   useEffect(() => {
@@ -139,9 +179,10 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
             <Select
               value={formData.customer}
               onValueChange={(value) => handleInputChange("customer", value)}
+              disabled={loadingCustomers}
             >
               <SelectTrigger className={formErrors.customer ? "border-red-500" : ""}>
-                <SelectValue placeholder="Select customer" />
+                <SelectValue placeholder={loadingCustomers ? "Loading customers..." : "Select customer"} />
               </SelectTrigger>
               <SelectContent>
                 {customers.map((customer) => (
@@ -163,9 +204,18 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
             <Select
               value={formData.meterServiceConnection}
               onValueChange={(value) => handleInputChange("meterServiceConnection", value)}
+              disabled={!formData.customer || loadingConnections}
             >
               <SelectTrigger className={formErrors.meterServiceConnection ? "border-red-500" : ""}>
-                <SelectValue placeholder="Select meter/service connection" />
+                <SelectValue placeholder={
+                  !formData.customer
+                    ? "Select customer first"
+                    : loadingConnections
+                      ? "Loading connections..."
+                      : meterConnections.length === 0
+                        ? "No connections available"
+                        : "Select meter/service connection"
+                } />
               </SelectTrigger>
               <SelectContent>
                 {meterConnections.map((connection) => (
