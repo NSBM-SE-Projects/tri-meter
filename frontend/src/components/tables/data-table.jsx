@@ -107,11 +107,11 @@ export function DataTable({
   })
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full overflow-hidden">
       {(filterColumn || showColumnToggle) && (
-        <div className="flex items-center py-4 gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center py-4 gap-2">
           {filterColumn && (
-            <div className="relative w-72 max-w-md">
+            <div className="relative w-full sm:w-72 max-w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={filterPlaceholder}
@@ -119,14 +119,14 @@ export function DataTable({
                 onChange={(event) =>
                   table.getColumn(filterColumn)?.setFilterValue(event.target.value)
                 }
-                className="w-full pl-9"
+                className="w-full pl-9 text-sm"
               />
             </div>
           )}
           {showColumnToggle && filterConfig.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto relative">
+                <Button variant="outline" className="ml-auto relative shrink-0">
                   <Filter className="mr-2 h-4 w-4" />
                   Filter
                   {totalActiveFilters > 0 && (
@@ -180,56 +180,58 @@ export function DataTable({
           )}
         </div>
       )}
-      <div className="overflow-hidden rounded-xl border">
-        <Table>
-          <TableHeader className="bg-neutral-300 dark:bg-neutral-900 text-normal">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id} className="text-neutral-900 dark:text-neutral-100">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="text-neutral-900 dark:text-neutral-300 h-14"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+      <div className="rounded-md border overflow-x-auto max-w-full">
+        <div className="min-w-max">
+          <Table>
+            <TableHeader className="bg-neutral-300 dark:bg-neutral-900 text-normal">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id} className="text-neutral-900 dark:text-neutral-100">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="text-neutral-900 dark:text-neutral-300 h-14"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-3">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       {showPagination && (
         <div className="flex items-center justify-end space-x-2 py-4">

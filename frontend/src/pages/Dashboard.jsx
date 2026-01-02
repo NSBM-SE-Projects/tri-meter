@@ -78,7 +78,7 @@ export default function Dashboard() {
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-background">
         <AppSidebar />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 overflow-x-hidden">
           <SiteHeader />
           <main className="flex-1 p-7">
             <div className="space-y-6">
@@ -97,15 +97,13 @@ export default function Dashboard() {
                 <div className="p-6">
                   <p className="text-lg font-normal">Recent Activity</p>
                   <p className="text-sm text-muted-foreground pb-3"> System logs </p>
-                  <div className="overflow-x-auto px-6">
-                    <DataTable
-                      columns={activityColumns}
-                      data={activityData}
-                      filterColumn="description"
-                      filterPlaceholder="Search activity..."
-                      showColumnToggle={false}
-                    />
-                  </div>
+                  <DataTable
+                    columns={activityColumns}
+                    data={activityData}
+                    filterColumn="description"
+                    filterPlaceholder="Search activity..."
+                    showColumnToggle={false}
+                  />
                 </div>
               </div>
               <div className="text-center text-muted-foreground text-sm pt-1 lg:pt-1">

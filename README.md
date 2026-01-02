@@ -26,6 +26,7 @@ Full-stack web application for managing utility services (⚡ Electricity, 💧 
 ![Radix UI v1+](https://img.shields.io/badge/Radix_UI-v1+-161618?style=for-the-badge&labelColor=161618&logo=radixui&logoColor=white)
 ![Recharts v2+](https://img.shields.io/badge/Recharts-v2+-FF4500?style=for-the-badge&labelColor=FF4500&logo=recharts&logoColor=white)
 ![Lucide Icons v0.42+](https://img.shields.io/badge/Lucide-v0.42+-000000?style=for-the-badge&labelColor=000000&logo=lucide&logoColor=white)
+![Sharp](https://img.shields.io/badge/Sharp-v0.33+-000000?style=for-the-badge&labelColor=000000&logo=sharp&logoColor=white)
 
 
 ## 📌 Features 

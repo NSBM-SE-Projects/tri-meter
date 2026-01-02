@@ -1,12 +1,16 @@
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button, Input, Label } from "@/components/ui"
 import { Heart } from "lucide-react"
 import { logo } from "../assets"
 import { LoadingOverlay, ModeToggle } from "@/components"
+import { useAuth } from "@/context/AuthContext"
 
 export default function ContactAdmin() {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     subject: "",
@@ -80,15 +84,22 @@ export default function ContactAdmin() {
 
       setSubmitStatus('success')
       setInquiryId(data.data.inquiryId)
+
       // Reset form
       setFormData({
         email: "",
         subject: "",
         message: ""
       })
+
+      // Redirect after 3 seconds
+      setTimeout(() => {
+        navigate(isAuthenticated ? '/dashboard' : '/')
+      }, 3000)
     } catch (error) {
       console.error('Inquiry submission error:', error)
       setSubmitStatus('error')
+      toast.error(error.message || 'Failed to submit inquiry. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -221,8 +232,11 @@ export default function ContactAdmin() {
             </div>
 
             <div className="text-sm text-center">
-              <Link to="/" className="text-foreground underline underline-offset-4 hover:text-muted-foreground">
-                Back to Login
+              <Link
+                to={isAuthenticated ? "/dashboard" : "/"}
+                className="text-foreground underline underline-offset-4 hover:text-muted-foreground"
+              >
+                {isAuthenticated ? "Back to Dashboard" : "Back to Login"}
               </Link>
             </div>
           </form>

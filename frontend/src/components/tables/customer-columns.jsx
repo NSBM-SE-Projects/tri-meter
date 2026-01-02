@@ -17,11 +17,11 @@ const getStatusColor = (status) => {
     case "Pending":
       return "bg-yellow-600/25 text-yellow-500 hover:bg-yellow-600/40"
     default:
-      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
+      return "bg-gray-600/25 text-gray-500 hover:bg-gray-600/40"
   }
 }
 
-export const customerColumns = [
+export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
   {
     accessorKey: "id",
     header: () => <div className="pl-4">ID</div>,
@@ -80,21 +80,30 @@ export const customerColumns = [
   },
   {
     id: "actions",
-    header: () => <div className="text-center">Actions</div>,
+    header: () => <div className="text-center w-20">Actions</div>,
     cell: ({ row }) => {
+      const customer = row.original
       return (
-        <div className="text-center">
+        <div className="flex justify-center items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
-                <MoreHorizontal className="w-4 h-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
+              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground" aria-label="Open menu">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem className="text-red-500">Delete</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => onViewDetails(customer)}>
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEdit(customer)}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-700"
+                onClick={() => onDelete(customer)}
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -102,3 +111,6 @@ export const customerColumns = [
     },
   },
 ]
+
+// Keep old export for backwards compatibility (static version without actions)
+export const customerColumns = createCustomerColumns(() => {}, () => {}, () => {})
