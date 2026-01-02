@@ -1,31 +1,30 @@
 import { useState, useEffect } from "react"
 import { getAllServiceConnections, createServiceConnection, deleteServiceConnection, updateServiceConnection } from "@/services/serviceConnectionService"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { DataTable } from "@/components/data-table"
-import { createServiceConnectionColumns } from "@/components/service-connection-columns"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
+  AppSidebar,
+  SiteHeader, 
+  SidebarProvider,
+  DataTable,
+  createServiceConnectionColumns,
+  Button,
+  Input,
+  Label,
+  Separator,
+  Checkbox,
+  RadioGroup,
+  RadioGroupItem,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components"
 import { Plus, Search } from "lucide-react"
 
 // Sample customer data for dropdown
