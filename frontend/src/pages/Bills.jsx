@@ -200,112 +200,145 @@ export default function Bills() {
     setIsBillDetailsOpen(true)
   }
 
+  const handlePrintBill = (bill) => {
+    // Mock bill details (replace with actual API call)
+    const billData = {
+      billId: bill.id,
+      customerName: bill.customerName,
+      customerId: "#CUST-001",
+      utility: bill.utilityType,
+      meter: "E-12345",
+      billingPeriod: `${bill.period}`,
+      previousReading: 1150,
+      currentReading: 1250,
+      consumption: 100,
+      unit: "kWh",
+      charges: [
+        { description: "First 100 kWh @ $0.10", amount: 10.00 },
+        { description: "Fixed Charges", amount: 0.00 },
+        { description: "Previous Balance", amount: 15.00 },
+        { description: "Late Fee", amount: 5.00 },
+      ],
+      totalAmount: parseFloat(bill.amount.replace('$', '')),
+      dueDate: bill.dueDate,
+      status: bill.status,
+    }
+
+    setSelectedBillData(billData)
+    setIsBillDetailsOpen(true)
+
+    // Trigger print after a short delay to allow dialog to render
+    setTimeout(() => {
+      window.print()
+    }, 100)
+  }
+
   return (
     <SidebarProvider>
-      <div className="flex w-full min-h-screen bg-background">
+      <div className="flex w-full min-h-screen bg-background overflow-x-hidden">
         <AppSidebar />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 min-w-0">
           <SiteHeader />
-          <main className="flex-1 p-6">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
+          <main className="flex-1 p-3 sm:p-6 overflow-x-hidden">
+            <div className="space-y-4 sm:space-y-6 max-w-full">
+              <div className="space-y-4">
                 <div>
-                  <h1 className="text-3xl font-bold">Bills</h1>
-                  <p className="text-muted-foreground">
-                    manage customer billing
+                  <h1 className="text-2xl sm:text-3xl font-bold">Bills</h1>
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    Manage customer billing
                   </p>
                 </div>
-                <Button onClick={() => setIsGenerateBillOpen(true)}>
+                <Button onClick={() => setIsGenerateBillOpen(true)} className="w-full sm:w-auto">
                   <Plus className="w-4 h-4 mr-2" />
                   Generate Bill
                 </Button>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search:"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-md pl-10"
-                  />
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Filter className="w-4 h-4" />
-                      Filters:
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="p-3 space-y-3">
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Status</label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Paid">Paid</SelectItem>
-                            <SelectItem value="Unpaid">Unpaid</SelectItem>
-                            <SelectItem value="Partially Paid">Partially Paid</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Utility</label>
-                        <Select value={utilityFilter} onValueChange={setUtilityFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Electricity">Electricity</SelectItem>
-                            <SelectItem value="Water">Water</SelectItem>
-                            <SelectItem value="Gas">Gas</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Period</label>
-                        <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Dec 2024">Dec 2024</SelectItem>
-                            <SelectItem value="Nov 2024">Nov 2024</SelectItem>
-                            <SelectItem value="Oct 2024">Oct 2024</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              <Card>
+              <Card className="overflow-hidden">
                 <CardHeader>
                   <CardTitle>Bills List</CardTitle>
                   <CardDescription>
                     A list of all bills in the system
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="border rounded-lg">
-                    <Table>
+                <CardContent className="space-y-4 p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search bills..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="gap-2 w-full sm:w-auto justify-center">
+                          <Filter className="w-4 h-4" />
+                          Filter
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        <div className="p-3 space-y-3">
+                          <div>
+                            <label className="text-sm font-medium mb-1.5 block">Status</label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="All" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="Paid">Paid</SelectItem>
+                                <SelectItem value="Unpaid">Unpaid</SelectItem>
+                                <SelectItem value="Partially Paid">Partially Paid</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-1.5 block">Utility</label>
+                            <Select value={utilityFilter} onValueChange={setUtilityFilter}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="All" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="Electricity">Electricity</SelectItem>
+                                <SelectItem value="Water">Water</SelectItem>
+                                <SelectItem value="Gas">Gas</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-1.5 block">Period</label>
+                            <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="All" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="Dec 2024">Dec 2024</SelectItem>
+                                <SelectItem value="Nov 2024">Nov 2024</SelectItem>
+                                <SelectItem value="Oct 2024">Oct 2024</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-[800px] w-full">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Bill ID</TableHead>
-                          <TableHead>Customer Name</TableHead>
-                          <TableHead>Period</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Due Date.</TableHead>
-                          <TableHead>Status (badge)</TableHead>
-                          <TableHead className="text-center">Actions</TableHead>
+                          <TableHead className="min-w-[80px]">ID</TableHead>
+                          <TableHead className="min-w-[150px]">Name</TableHead>
+                          <TableHead className="min-w-[100px]">Period</TableHead>
+                          <TableHead className="min-w-[100px]">Amount</TableHead>
+                          <TableHead className="min-w-[100px]">Due Date</TableHead>
+                          <TableHead className="min-w-[120px]">Status</TableHead>
+                          <TableHead className="text-right min-w-[60px]">Act</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -315,7 +348,7 @@ export default function Bills() {
                               <TableCell className="font-medium">
                                 {bill.id}
                               </TableCell>
-                              <TableCell>{bill.customerName}</TableCell>
+                              <TableCell className="whitespace-nowrap">{bill.customerName}</TableCell>
                               <TableCell className="text-muted-foreground">
                                 {bill.period}
                               </TableCell>
@@ -330,7 +363,7 @@ export default function Bills() {
                                   {bill.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-center">
+                              <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
@@ -343,7 +376,7 @@ export default function Bills() {
                                       <Eye className="w-4 h-4 mr-2" />
                                       View
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handlePrintBill(bill)}>
                                       <Printer className="w-4 h-4 mr-2" />
                                       Print
                                     </DropdownMenuItem>
@@ -364,15 +397,16 @@ export default function Bills() {
                           </TableRow>
                         )}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-end">
-                  <div className="flex items-center gap-2">
+                <div className="flex justify-center sm:justify-end">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -389,6 +423,7 @@ export default function Bills() {
                           variant={currentPage === pageNum ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(pageNum)}
+                          className="w-8 sm:w-auto"
                         >
                           {pageNum}
                         </Button>
@@ -396,11 +431,12 @@ export default function Bills() {
                     })}
                     {totalPages > 3 && (
                       <>
-                        <span className="px-2">...</span>
+                        <span className="px-1 sm:px-2 text-sm">...</span>
                         <Button
                           variant={currentPage === totalPages ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCurrentPage(totalPages)}
+                          className="w-8 sm:w-auto"
                         >
                           {totalPages}
                         </Button>
