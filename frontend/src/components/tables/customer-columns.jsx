@@ -29,6 +29,7 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
           ID
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
