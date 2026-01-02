@@ -18,6 +18,7 @@ export { serviceConnectionColumns, createServiceConnectionColumns } from "./tabl
 // Form components
 export { LoginForm } from "./forms/login-form"
 export { CustomerForm } from "./forms/customer-form"
+export { ServiceConnectionForm } from "./forms/service-connection-form"
 
 // Dialog components
 export { ViewDialog } from "./dialogs/ViewDialog"

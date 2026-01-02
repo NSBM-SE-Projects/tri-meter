@@ -1,12 +1,12 @@
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
+  Button,
+  Badge,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+ } from "@/components"
 
 const getUtilityTypeBadgeColor = (type) => {
   switch (type) {
@@ -37,25 +37,25 @@ const getStatusColor = (status) => {
 export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete) => [
   {
     accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("id")}</div>
-    ),
-  },
-  {
-    accessorKey: "customerName",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Customer Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          ID
+          <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("customerName")}</div>,
+    cell: ({ row }) => (
+      <div className="font-normal pl-4">{row.getValue("id")}</div>
+    ),
+  },
+  {
+    accessorKey: "customerName",
+    header: "Customer Name",
+    cell: ({ row }) => <div className="font-normal">{row.getValue("customerName")}</div>,
   },
   {
     accessorKey: "utilityType",
@@ -107,15 +107,14 @@ export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete) 
       const connection = row.original
 
       return (
-        <div className="text-center">
+        <div className="flex justify-center items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
                 <MoreHorizontal className="w-4 h-4" />
-                <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem onClick={() => onViewDetails(connection)}>
                 View Details
               </DropdownMenuItem>
