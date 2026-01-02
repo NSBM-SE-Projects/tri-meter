@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SectionCards } from "@/components/section-cards"
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
-import { activityColumns } from "@/components/activity-columns"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import {
+  AppSidebar,
+  SiteHeader,
+  SectionCards,
+  ChartAreaInteractive,
+  DataTable,
+  activityColumns,
+  SidebarProvider,
+} from "@/components"
 import { Heart, Loader2 } from "lucide-react"
 import { getDashboardStats, getRecentActivity } from "@/services/dashboardService"
 import { useAuth } from "@/context/AuthContext"
@@ -76,7 +78,7 @@ export default function Dashboard() {
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-background">
         <AppSidebar />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 overflow-x-hidden">
           <SiteHeader />
           <main className="flex-1 p-7">
             <div className="space-y-6">
@@ -95,15 +97,13 @@ export default function Dashboard() {
                 <div className="p-6">
                   <p className="text-lg font-normal">Recent Activity</p>
                   <p className="text-sm text-muted-foreground pb-3"> System logs </p>
-                  <div className="overflow-x-auto px-6">
-                    <DataTable
-                      columns={activityColumns}
-                      data={activityData}
-                      filterColumn="description"
-                      filterPlaceholder="Search activity..."
-                      showColumnToggle={false}
-                    />
-                  </div>
+                  <DataTable
+                    columns={activityColumns}
+                    data={activityData}
+                    filterColumn="description"
+                    filterPlaceholder="Search activity..."
+                    showColumnToggle={false}
+                  />
                 </div>
               </div>
               <div className="text-center text-muted-foreground text-sm pt-1 lg:pt-1">
