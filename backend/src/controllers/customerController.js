@@ -1,10 +1,25 @@
 import { getPool } from '../config/database.js';
 import sql from 'mssql';
+import azureBlobService from '../services/azureBlobService.js';
+import sharp from 'sharp';
 
-/**
- * GET /api/customers
- * Get all customers with their address and phone
- */
+// Image compression helper
+async function compressImage(buffer) {
+  try {
+    return await sharp(buffer)
+      .resize(1920, null, {
+        withoutEnlargement: true,
+        fit: 'inside'
+      })
+      .jpeg({ quality: 80 })
+      .toBuffer();
+  } catch (error) {
+    console.error('IMAGE COMPRESSION ERROR:', error);
+    return buffer;
+  }
+}
+
+// GET /api/customers
 export const getAllCustomers = async (req, res) => {
   try {
     const pool = await getPool();
@@ -17,6 +32,7 @@ export const getAllCustomers = async (req, res) => {
           c.C_Type as type,
           c.C_Email as email,
           c.C_IDProof as idProof,
+          c.C_IdImageUrl as idImageUrl,
           c.C_Status as status,
           c.C_RegistrationDate as registrationDate,
           a.A_HouseNo as houseNo,
@@ -44,10 +60,7 @@ export const getAllCustomers = async (req, res) => {
   }
 };
 
-/**
- * GET /api/customers/:id
- * Get customer by ID
- */
+// GET /api/customers/:id
 export const getCustomerById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -62,6 +75,7 @@ export const getCustomerById = async (req, res) => {
           c.C_Type as type,
           c.C_Email as email,
           c.C_IDProof as idProof,
+          c.C_IdImageUrl as idImageUrl,
           c.C_Status as status,
           c.C_RegistrationDate as registrationDate,
           a.A_HouseNo as houseNo,
@@ -96,10 +110,7 @@ export const getCustomerById = async (req, res) => {
   }
 };
 
-/**
- * POST /api/customers
- * Create new customer
- */
+// POST /api/customers
 export const createCustomer = async (req, res) => {
   try {
     const {
@@ -119,6 +130,27 @@ export const createCustomer = async (req, res) => {
         success: false,
         message: 'Missing required fields'
       });
+    }
+
+    let idImageUrl = null;
+    if (req.file && azureBlobService.isReady()) {
+      try {
+        // Initialize container
+        await azureBlobService.initializeContainer();
+
+        // Compress image before upload
+        const compressedBuffer = await compressImage(req.file.buffer);
+
+        // Upload compressed image (force .jpg extension)
+        idImageUrl = await azureBlobService.uploadFile(
+          compressedBuffer,
+          identityValidation,
+          req.file.originalname.replace(/\.[^.]+$/, '.jpg'),
+          'image/jpeg'
+        );
+      } catch (uploadError) {
+        console.error('FILE UPLOAD ERROR:', uploadError);
+      }
     }
 
     const pool = await getPool();
@@ -159,17 +191,18 @@ export const createCustomer = async (req, res) => {
         addressId = addressResult.recordset[0].A_ID;
       }
 
-      // 2. Create customer
+      // 2. Create customern
       const customerResult = await transaction.request()
         .input('name', sql.VarChar(100), fullName)
         .input('type', sql.VarChar(20), customerType)
         .input('addressId', sql.Int, addressId)
         .input('email', sql.VarChar(100), email || null)
         .input('idProof', sql.VarChar(50), identityValidation)
+        .input('idImageUrl', sql.VarChar(500), idImageUrl)
         .query(`
-          INSERT INTO Customer (C_Name, C_Type, A_ID, C_Email, C_IDProof, C_RegistrationDate, C_Status)
+          INSERT INTO Customer (C_Name, C_Type, A_ID, C_Email, C_IDProof, C_IdImageUrl, C_RegistrationDate, C_Status)
           OUTPUT INSERTED.C_ID
-          VALUES (@name, @type, @addressId, @email, @idProof, GETDATE(), 'Active')
+          VALUES (@name, @type, @addressId, @email, @idProof, @idImageUrl, GETDATE(), 'Active')
         `);
 
       const customerId = customerResult.recordset[0].C_ID;
@@ -195,6 +228,7 @@ export const createCustomer = async (req, res) => {
             c.C_Type as type,
             c.C_Email as email,
             c.C_IDProof as idProof,
+            c.C_IdImageUrl as idImageUrl,
             c.C_Status as status,
             c.C_RegistrationDate as registrationDate,
             a.A_HouseNo as houseNo,
@@ -209,7 +243,7 @@ export const createCustomer = async (req, res) => {
 
       res.status(201).json({
         success: true,
-        message: 'Customer created successfully',
+        message: 'Customer created successfully!',
         data: newCustomer.recordset[0]
       });
 
@@ -228,10 +262,7 @@ export const createCustomer = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/customers/:id
- * Update customer
- */
+// PUT /api/customers/:id
 export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
@@ -246,6 +277,24 @@ export const updateCustomer = async (req, res) => {
       city,
       status
     } = req.body;
+
+    let idImageUrl = null;
+    if (req.file && azureBlobService.isReady()) {
+      try {
+        await azureBlobService.initializeContainer();
+
+        const compressedBuffer = await compressImage(req.file.buffer);
+
+        idImageUrl = await azureBlobService.uploadFile(
+          compressedBuffer,
+          identityValidation,
+          req.file.originalname.replace(/\.[^.]+$/, '.jpg'), // Change extension to .jpg
+          'image/jpeg'
+        );
+      } catch (uploadError) {
+        console.error('FILE UPLOAD ERROR:', uploadError);
+      }
+    }
 
     const pool = await getPool();
     const transaction = new sql.Transaction(pool);
@@ -301,16 +350,31 @@ export const updateCustomer = async (req, res) => {
         }
       }
 
-      // 3. Update customer
-      await transaction.request()
+      // 3. Update customer (with optional new ID image URL)
+      const updateRequest = transaction.request()
         .input('customerId', sql.Int, id)
         .input('name', sql.VarChar(100), fullName)
         .input('type', sql.VarChar(20), customerType)
         .input('addressId', sql.Int, addressId)
         .input('email', sql.VarChar(100), email || null)
         .input('idProof', sql.VarChar(50), identityValidation)
-        .input('status', sql.VarChar(20), status || 'Active')
-        .query(`
+        .input('status', sql.VarChar(20), status || 'Active');
+
+      if (idImageUrl) {
+        updateRequest.input('idImageUrl', sql.VarChar(500), idImageUrl);
+        await updateRequest.query(`
+          UPDATE Customer
+          SET C_Name = @name,
+              C_Type = @type,
+              A_ID = @addressId,
+              C_Email = @email,
+              C_IDProof = @idProof,
+              C_IdImageUrl = @idImageUrl,
+              C_Status = @status
+          WHERE C_ID = @customerId
+        `);
+      } else {
+        await updateRequest.query(`
           UPDATE Customer
           SET C_Name = @name,
               C_Type = @type,
@@ -320,6 +384,7 @@ export const updateCustomer = async (req, res) => {
               C_Status = @status
           WHERE C_ID = @customerId
         `);
+      }
 
       // 4. Update phone number
       if (phone) {
@@ -348,6 +413,7 @@ export const updateCustomer = async (req, res) => {
             c.C_Type as type,
             c.C_Email as email,
             c.C_IDProof as idProof,
+            c.C_IdImageUrl as idImageUrl,
             c.C_Status as status,
             c.C_RegistrationDate as registrationDate,
             a.A_HouseNo as houseNo,
@@ -362,7 +428,7 @@ export const updateCustomer = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        message: 'Customer updated successfully',
+        message: 'Customer updated successfully!',
         data: updatedCustomer.recordset[0]
       });
 
@@ -381,10 +447,7 @@ export const updateCustomer = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/customers/:id
- * Delete customer
- */
+// DELETE /api/customers/:id
 export const deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
