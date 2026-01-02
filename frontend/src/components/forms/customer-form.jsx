@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Button,
   Input,
@@ -15,7 +15,7 @@ import {
 } from "@/components"
 import { Upload } from "lucide-react"
 
-export function CustomerForm({ open, onOpenChange, onSuccess }) {
+export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null, isEdit = false }) {
   const [uploadedFile, setUploadedFile] = useState(null)
 
   // Form state
@@ -29,6 +29,25 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
     street: "",
     city: ""
   })
+
+  // Update form data when initialData changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData)
+    } else {
+      // Reset to default when adding new customer
+      setFormData({
+        fullName: "",
+        customerType: "Household",
+        identityValidation: "",
+        phone: "",
+        email: "",
+        houseNo: "",
+        street: "",
+        city: ""
+      })
+    }
+  }, [initialData, open])
 
   const [formErrors, setFormErrors] = useState({})
 
@@ -114,20 +133,25 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      // Code to send info to backend
-      console.log("Form submitted:", formData)
-      console.log("Uploaded file:", uploadedFile)
+      // Create a new object for submission with the full phone number
+      const submissionData = {
+        ...formData,
+        phone: `+94${formData.phone}`
+      };
+
+      console.log("Form submitted:", submissionData);
+      console.log("Uploaded file:", uploadedFile);
 
       // Call success callback if provided
       if (onSuccess) {
-        onSuccess(formData, uploadedFile)
+        onSuccess(submissionData, uploadedFile);
       }
 
       // Reset form and close dialog
-      resetForm()
-      onOpenChange(false)
+      resetForm();
+      onOpenChange(false);
     }
-  }
+  };
 
   const handleCancel = () => {
     resetForm()
@@ -136,20 +160,20 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[98vw] sm:max-w-[90vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-background">
+      <DialogContent className="max-w-[80vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-7 md:gap-0 lg:gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-background">
         <DialogHeader className="px-3 sm:px-6 md:px-3">
-          <DialogTitle className="text-2xl">New Customer</DialogTitle>
+          <DialogTitle className="text-2xl">{isEdit ? "Edit Customer" : "New Customer"}</DialogTitle>
           <DialogDescription className="text-sm">
-            Fill in the customer information below
+            {isEdit ? "Update customer information" : "Fill in the customer information below"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="px-3 sm:px-14 md:px-16 lg:px-20 sm:pt-6 md:pt-8 space-y-4 sm:space-y-7">
           {/* Customer Information */}
-          <div className="space-y-5">
+          <div className="space-y-4">
             <h3 className="text-lg font-medium">Customer Information</h3>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pb-1">
               <Label htmlFor="fullName">
                 Full Name<span className="text-red-700">*</span>
               </Label>
@@ -164,14 +188,14 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
               )}
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 pb-1">
               <Label>
                 Customer Type<span className="text-red-700">*</span>
               </Label>
               <RadioGroup
                 value={formData.customerType}
                 onValueChange={(value) => handleInputChange("customerType", value)}
-                className="flex flex-col sm:flex-row sm:gap-7 md:gap-24 lg:gap-28"
+                className="flex flex-col sm:flex-row gap-7 md:gap-24 lg:gap-28"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="Household" id="household" />
@@ -194,7 +218,7 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
               </RadioGroup>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 pb-1">
               <Label htmlFor="identityValidation">
                 Identity Validation (NIC/BRN/GOV)<span className="text-red-700">*</span>
               </Label>
@@ -239,7 +263,7 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Contact Information</h3>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pb-1">
               <Label htmlFor="phone">
                 Phone No.<span className="text-red-700">*</span>
               </Label>
@@ -261,7 +285,7 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pb-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -329,12 +353,12 @@ export function CustomerForm({ open, onOpenChange, onSuccess }) {
           </div>
         </div>
 
-        <DialogFooter className="pt-10 sm:px-6 md:px-5 pb-2 flex-col-reverse sm:flex-row gap-3">
+        <DialogFooter className="pt-7 lg:pt-10 px-10 md:px-5 pb-2 flex-col-reverse sm:flex-row gap-5 lg:gap-3">
           <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button onClick={handleSubmit} className="w-full sm:w-auto">
-            Save Customer
+            {isEdit ? "Update Customer" : "Save Customer"}
           </Button>
         </DialogFooter>
       </DialogContent>

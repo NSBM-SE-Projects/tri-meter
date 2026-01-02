@@ -12,11 +12,15 @@ export { SectionCards } from "./dashboard/section-cards"
 // Table components
 export { DataTable } from "./tables/data-table"
 export { activityColumns } from "./tables/activity-columns"
-export { customerColumns } from "./tables/customer-columns"
+export { customerColumns, createCustomerColumns } from "./tables/customer-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"
 export { CustomerForm } from "./forms/customer-form"
+
+// Dialog components
+export { ViewDialog } from "./dialogs/ViewDialog"
+export { DeleteDialog } from "./dialogs/DeleteDialog"
 
 // Common utilities
 export { ThemeProvider } from "./common/theme-provider"
