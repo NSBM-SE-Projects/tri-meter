@@ -13,10 +13,12 @@ export { SectionCards } from "./dashboard/section-cards"
 export { DataTable } from "./tables/data-table"
 export { activityColumns } from "./tables/activity-columns"
 export { customerColumns, createCustomerColumns } from "./tables/customer-columns"
+export { serviceConnectionColumns, createServiceConnectionColumns } from "./tables/service-connection-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"
 export { CustomerForm } from "./forms/customer-form"
+export { ServiceConnectionForm } from "./forms/service-connection-form"
 
 // Dialog components
 export { ViewDialog } from "./dialogs/ViewDialog"

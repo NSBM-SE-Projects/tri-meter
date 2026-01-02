@@ -237,7 +237,6 @@ export default function Customers() {
             </div>
 
             <Separator />
-
             <div>
               <h3 className="text-lg font-medium mb-3">Customer Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
@@ -311,7 +310,6 @@ export default function Customers() {
             </div>
 
             <Separator />
-
             <div>
               <h3 className="text-lg font-medium mb-3">Address</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">

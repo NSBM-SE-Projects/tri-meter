@@ -191,7 +191,7 @@ export const createCustomer = async (req, res) => {
         addressId = addressResult.recordset[0].A_ID;
       }
 
-      // 2. Create customer (with ID image URL)
+      // 2. Create customer
       const customerResult = await transaction.request()
         .input('name', sql.VarChar(100), fullName)
         .input('type', sql.VarChar(20), customerType)
