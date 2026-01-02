@@ -32,8 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Plus, MoreHorizontal, Filter } from "lucide-react"
+import { Search, Plus, MoreHorizontal, Filter, Eye, Printer, Mail } from "lucide-react"
 import { useState } from "react"
+import { GenerateBillForm } from "@/components/forms/generate-bill-form"
+import { BillDetailsDialog } from "@/components/dialogs/bill-details-dialog"
 
 // Sample bills data
 const billsData = [
@@ -134,6 +136,11 @@ export default function Bills() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [utilityFilter, setUtilityFilter] = useState("all")
   const [periodFilter, setPeriodFilter] = useState("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isGenerateBillOpen, setIsGenerateBillOpen] = useState(false)
+  const [isBillDetailsOpen, setIsBillDetailsOpen] = useState(false)
+  const [selectedBillData, setSelectedBillData] = useState(null)
+  const itemsPerPage = 10
 
   const filteredBills = billsData.filter(bill => {
     const matchesSearch = bill.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,6 +152,12 @@ export default function Bills() {
 
     return matchesSearch && matchesStatus && matchesUtility && matchesPeriod
   })
+
+  // Pagination
+  const totalPages = Math.ceil(filteredBills.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedBills = filteredBills.slice(startIndex, endIndex)
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -159,46 +172,74 @@ export default function Bills() {
     }
   }
 
+  const handleViewBill = (bill) => {
+    // Mock bill details (replace with actual API call)
+    const billData = {
+      billId: bill.id,
+      customerName: bill.customerName,
+      customerId: "#CUST-001",
+      utility: bill.utilityType,
+      meter: "E-12345",
+      billingPeriod: `${bill.period}`,
+      previousReading: 1150,
+      currentReading: 1250,
+      consumption: 100,
+      unit: "kWh",
+      charges: [
+        { description: "First 100 kWh @ $0.10", amount: 10.00 },
+        { description: "Fixed Charges", amount: 0.00 },
+        { description: "Previous Balance", amount: 15.00 },
+        { description: "Late Fee", amount: 5.00 },
+      ],
+      totalAmount: parseFloat(bill.amount.replace('$', '')),
+      dueDate: bill.dueDate,
+      status: bill.status,
+    }
+
+    setSelectedBillData(billData)
+    setIsBillDetailsOpen(true)
+  }
+
   return (
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-background">
         <AppSidebar />
         <div className="flex flex-col flex-1">
           <SiteHeader />
-          <main className="flex-1 p-4 sm:p-6">
-            <div className="space-y-4 sm:space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <main className="flex-1 p-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold">Bills</h1>
-                  <p className="text-sm sm:text-base text-muted-foreground">
+                  <h1 className="text-3xl font-bold">Bills</h1>
+                  <p className="text-muted-foreground">
                     manage customer billing
                   </p>
                 </div>
-                <Button className="w-full sm:w-auto">
+                <Button onClick={() => setIsGenerateBillOpen(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Generate Bill
                 </Button>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="flex items-center gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Search:"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full sm:max-w-md pl-10"
+                    className="max-w-md pl-10"
                   />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto gap-2">
+                    <Button variant="outline" className="gap-2">
                       <Filter className="w-4 h-4" />
                       Filters:
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <div className="p-2 space-y-2">
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="p-3 space-y-3">
                       <div>
                         <label className="text-sm font-medium mb-1.5 block">Status</label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -254,8 +295,8 @@ export default function Bills() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border rounded-lg overflow-x-auto">
-                    <Table className="min-w-[640px]">
+                  <div className="border rounded-lg">
+                    <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Bill ID</TableHead>
@@ -268,8 +309,8 @@ export default function Bills() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredBills.length > 0 ? (
-                          filteredBills.map((bill) => (
+                        {paginatedBills.length > 0 ? (
+                          paginatedBills.map((bill) => (
                             <TableRow key={bill.id}>
                               <TableCell className="font-medium">
                                 {bill.id}
@@ -298,9 +339,18 @@ export default function Bills() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>View</DropdownMenuItem>
-                                    <DropdownMenuItem>Print</DropdownMenuItem>
-                                    <DropdownMenuItem>Send Email</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleViewBill(bill)}>
+                                      <Eye className="w-4 h-4 mr-2" />
+                                      View
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      <Printer className="w-4 h-4 mr-2" />
+                                      Print
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      <Mail className="w-4 h-4 mr-2" />
+                                      Send Email
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </TableCell>
@@ -320,33 +370,98 @@ export default function Bills() {
               </Card>
 
               {/* Pagination */}
-              <div className="flex justify-center sm:justify-end overflow-x-auto">
-                <div className="flex items-center gap-2 min-w-max">
-                  <Button variant="outline" size="sm">
-                    &lt;
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    1
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    2
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    3
-                  </Button>
-                  <span className="px-2">...</span>
-                  <Button variant="outline" size="sm">
-                    123
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    &gt;
-                  </Button>
+              {totalPages > 1 && (
+                <div className="flex justify-end">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      &lt;
+                    </Button>
+                    {[...Array(Math.min(3, totalPages))].map((_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <Button
+                          key={i}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    {totalPages > 3 && (
+                      <>
+                        <span className="px-2">...</span>
+                        <Button
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(totalPages)}
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      &gt;
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </main>
         </div>
       </div>
+
+      {/* Generate Bill Form Dialog */}
+      <GenerateBillForm
+        open={isGenerateBillOpen}
+        onOpenChange={setIsGenerateBillOpen}
+        onSuccess={(data) => {
+          // Generate mock bill data (replace with actual API call)
+          const billData = {
+            billId: "B-001234",
+            customerName: "John Smith",
+            customerId: "#CUST-001",
+            utility: "Electricity",
+            meter: "E-12345",
+            billingPeriod: "Dec 1 - Dec 31, 2024",
+            previousReading: 1150,
+            currentReading: 1250,
+            consumption: 100,
+            unit: "kWh",
+            charges: [
+              { description: "First 100 kWh @ $0.10", amount: 10.00 },
+              { description: "Fixed Charges", amount: 0.00 },
+              { description: "Previous Balance", amount: 15.00 },
+              { description: "Late Fee", amount: 5.00 },
+            ],
+            totalAmount: 30.00,
+            dueDate: "Jan 15, 2025",
+            status: "Unpaid (5 days overdue)",
+          }
+
+          setSelectedBillData(billData)
+          setIsBillDetailsOpen(true)
+          setIsGenerateBillOpen(false)
+        }}
+      />
+
+      {/* Bill Details Dialog */}
+      <BillDetailsDialog
+        open={isBillDetailsOpen}
+        onOpenChange={setIsBillDetailsOpen}
+        billData={selectedBillData}
+      />
     </SidebarProvider>
   )
 }
