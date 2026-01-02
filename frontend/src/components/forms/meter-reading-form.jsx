@@ -20,6 +20,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar as CalendarIcon, Search } from "lucide-react"
 import { format } from "date-fns"
+import { getActiveMeters, getLatestReading } from "@/services/meterReadingService"
 
 export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = null, isEdit = false }) {
   // Form state
@@ -33,24 +34,70 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
   })
 
   const [meterSearch, setMeterSearch] = useState("")
+  const [availableMeters, setAvailableMeters] = useState([])
+  const [isLoadingMeters, setIsLoadingMeters] = useState(false)
+  const [latestReading, setLatestReading] = useState(null)
+  const [calculatedConsumption, setCalculatedConsumption] = useState(null)
 
-  // Mock meter data
-  const [availableMeters] = useState([
-    { id: "E-12345", customer: "John Smith", utility: "Electricity", lastReading: "1150", lastReadingDate: "Nov 26, 2024" },
-    { id: "W-67890", customer: "Jane Doe", utility: "Water", lastReading: "800", lastReadingDate: "Nov 25, 2024" },
-    { id: "G-34567", customer: "ABC Corp", utility: "Gas", lastReading: "400", lastReadingDate: "Nov 27, 2024" },
-    { id: "E-23456", customer: "Sarah Wilson", utility: "Electricity", lastReading: "2000", lastReadingDate: "Nov 28, 2024" },
-    { id: "W-78901", customer: "Mike Brown", utility: "Water", lastReading: "920", lastReadingDate: "Nov 29, 2024" },
-  ])
+  // Fetch active meters when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchActiveMeters()
+    }
+  }, [open])
+
+  const fetchActiveMeters = async () => {
+    try {
+      setIsLoadingMeters(true)
+      const meters = await getActiveMeters()
+      setAvailableMeters(meters)
+    } catch (error) {
+      console.error("Failed to fetch meters:", error)
+    } finally {
+      setIsLoadingMeters(false)
+    }
+  }
 
   // Filter meters based on search
   const filteredMeters = availableMeters.filter(meter =>
-    meter.id.toLowerCase().includes(meterSearch.toLowerCase()) ||
-    meter.customer.toLowerCase().includes(meterSearch.toLowerCase())
+    meter.meterNumber.toLowerCase().includes(meterSearch.toLowerCase()) ||
+    meter.customerName.toLowerCase().includes(meterSearch.toLowerCase())
   )
 
   // Get selected meter details
-  const selectedMeter = availableMeters.find(m => m.id === formData.meterNumber)
+  const selectedMeter = availableMeters.find(m => m.id === parseInt(formData.meterNumber))
+
+  // Fetch latest reading when meter is selected
+  useEffect(() => {
+    const fetchLatestReading = async () => {
+      if (formData.meterNumber && !isEdit) {
+        try {
+          const reading = await getLatestReading(formData.meterNumber)
+          setLatestReading(reading)
+        } catch (error) {
+          console.error("Failed to fetch latest reading:", error)
+          setLatestReading(null)
+        }
+      } else {
+        setLatestReading(null)
+        setCalculatedConsumption(null)
+      }
+    }
+
+    fetchLatestReading()
+  }, [formData.meterNumber, isEdit])
+
+  // Calculate consumption when current value changes
+  useEffect(() => {
+    if (latestReading && formData.value && !isNaN(parseFloat(formData.value))) {
+      const currentValue = parseFloat(formData.value)
+      const previousValue = parseFloat(latestReading.value)
+      const consumption = currentValue - previousValue
+      setCalculatedConsumption(consumption)
+    } else {
+      setCalculatedConsumption(null)
+    }
+  }, [formData.value, latestReading])
 
   // Update form data when initialData changes
   useEffect(() => {
@@ -64,15 +111,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
     }
   }, [initialData, open])
 
-  // Auto-fill previous value when meter is selected
-  useEffect(() => {
-    if (selectedMeter && !isEdit) {
-      setFormData(prev => ({
-        ...prev,
-        previousValue: selectedMeter.lastReading
-      }))
-    }
-  }, [selectedMeter, isEdit])
+  // Note: Previous reading is now calculated automatically by the backend
 
   const [formErrors, setFormErrors] = useState({})
 
@@ -85,8 +124,8 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
 
     if (!formData.value.trim()) {
       errors.value = "Current reading is required"
-    } else if (selectedMeter && parseInt(formData.value) < parseInt(selectedMeter.lastReading) && !formData.tampered) {
-      errors.value = "Must be greater than previous reading unless reset"
+    } else if (isNaN(parseFloat(formData.value))) {
+      errors.value = "Must be a valid number"
     }
 
     if (!formData.date) {
@@ -136,21 +175,19 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
     })
     setFormErrors({})
     setMeterSearch("")
+    setLatestReading(null)
+    setCalculatedConsumption(null)
   }
 
   const handleSubmit = () => {
     if (validateForm()) {
-      const consumption = parseInt(formData.value) - parseInt(formData.previousValue)
-      const unit = selectedMeter?.utility === "Electricity" ? "kWh" : "m³"
-
+      // Transform form data to match backend API format
       const submissionData = {
-        ...formData,
-        date: format(formData.date, "MMM dd, yyyy"),
-        consumption: String(consumption) + unit,
-        utilityType: selectedMeter?.utility,
-        customerName: selectedMeter?.customer,
-        month: format(formData.date, "MMMM"),
-        fieldOfficer: "System User" // Default value
+        meterId: parseInt(formData.meterNumber),
+        readingValue: parseFloat(formData.value),
+        readingDate: format(formData.date, "yyyy-MM-dd"),
+        isTampered: formData.tampered,
+        notes: formData.notes || ""
       }
 
       if (onSuccess) {
@@ -167,14 +204,6 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
     onOpenChange(false)
   }
 
-  // Calculate consumption
-  const calculatedConsumption = () => {
-    if (!formData.value || !formData.previousValue) return "0"
-    const consumption = parseInt(formData.value) - parseInt(formData.previousValue)
-    if (consumption < 0 && !formData.tampered) return "Invalid"
-    return consumption
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl lg:max-w-5xl max-h-[95vh] overflow-y-auto p-0">
@@ -183,91 +212,101 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
         </DialogHeader>
 
         {/* Desktop/Tablet Layout (md and up) */}
-        <div className="hidden md:grid md:grid-cols-2 gap-6 p-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            {/* Meter Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="meter">
-                Meter<span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.meterNumber}
-                onValueChange={(value) => {
-                  handleInputChange("meterNumber", value)
-                  setMeterSearch("")
-                }}
-                disabled={isEdit}
-              >
-                <SelectTrigger className={formErrors.meterNumber ? "border-red-500" : ""}>
-                  <SelectValue placeholder="Select meter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="sticky top-0 z-10 p-2 border-b bg-background">
-                    <div className="relative">
-                      <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search meters..."
-                        value={meterSearch}
-                        onChange={(e) => setMeterSearch(e.target.value)}
-                        className="h-8 pl-8"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  </div>
-                  <div className="max-h-[200px] overflow-y-auto">
-                    {filteredMeters.length > 0 ? (
-                      filteredMeters.map((meter) => (
-                        <SelectItem key={meter.id} value={meter.id}>
-                          {meter.id}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-center text-muted-foreground">
-                        No meters found
+        <div className="hidden md:block p-6 space-y-6">
+          {/* Two Column Grid */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* Meter Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="meter">
+                  Meter<span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={formData.meterNumber}
+                  onValueChange={(value) => {
+                    handleInputChange("meterNumber", value)
+                    setMeterSearch("")
+                  }}
+                  disabled={isEdit}
+                >
+                  <SelectTrigger className={formErrors.meterNumber ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select meter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="sticky top-0 z-10 p-2 border-b bg-background">
+                      <div className="relative">
+                        <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Search meters..."
+                          value={meterSearch}
+                          onChange={(e) => setMeterSearch(e.target.value)}
+                          className="h-8 pl-8"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       </div>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto">
+                      {isLoadingMeters ? (
+                        <div className="p-2 text-sm text-center text-muted-foreground">
+                          Loading meters...
+                        </div>
+                      ) : filteredMeters.length > 0 ? (
+                        filteredMeters.map((meter) => (
+                          <SelectItem key={meter.id} value={meter.id.toString()}>
+                            {meter.meterNumber} - {meter.customerName}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-center text-muted-foreground">
+                          No meters found
+                        </div>
+                      )}
+                    </div>
+                  </SelectContent>
+                </Select>
+                {formErrors.meterNumber && (
+                  <p className="text-sm text-red-500">{formErrors.meterNumber}</p>
+                )}
+              </div>
+
+              {/* Meter Details */}
+              <div className="space-y-2">
+                <Label>Meter Details</Label>
+                {selectedMeter ? (
+                  <div className="border-2 rounded-md p-4 space-y-1.5 bg-background">
+                    <p className="text-base"><span className="font-medium">Customer:</span> {selectedMeter.customerName}</p>
+                    <p className="text-base"><span className="font-medium">Utility:</span> {selectedMeter.utilityType}</p>
+                    {latestReading && (
+                      <>
+                        <p className="text-base"><span className="font-medium">Last Reading:</span> {latestReading.value} {selectedMeter.unit}</p>
+                        <p className="text-base"><span className="font-medium">Date:</span> {format(new Date(latestReading.date), "MMM dd, yyyy")}</p>
+                      </>
                     )}
+                    <p className="text-base"><span className="font-medium">Meter:</span> {selectedMeter.meterNumber}</p>
                   </div>
-                </SelectContent>
-              </Select>
-              {formErrors.meterNumber && (
-                <p className="text-sm text-red-500">{formErrors.meterNumber}</p>
-              )}
+                ) : (
+                  <div className="border-2 rounded-md p-4 bg-muted/30 h-40 flex items-center justify-center">
+                    <p className="text-sm text-muted-foreground">Select a meter to view details</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  placeholder="Add any notes here..."
+                  rows={6}
+                />
+              </div>
             </div>
 
-            {/* Meter Details */}
-            <div className="space-y-2">
-              <Label>Meter Details</Label>
-              {selectedMeter ? (
-                <div className="border-2 rounded-md p-4 space-y-1 bg-muted/30">
-                  <p className="text-sm"><span className="font-medium">Customer:</span> {selectedMeter.customer}</p>
-                  <p className="text-sm"><span className="font-medium">Utility:</span> {selectedMeter.utility}</p>
-                  <p className="text-sm"><span className="font-medium">Last Reading:</span> {selectedMeter.lastReading} {selectedMeter.utility === "Electricity" ? "kWh" : "m³"}</p>
-                  <p className="text-sm"><span className="font-medium">Date:</span> {selectedMeter.lastReadingDate}</p>
-                  <p className="text-sm"><span className="font-medium">Meter:</span></p>
-                </div>
-              ) : (
-                <div className="border-2 rounded-md p-4 bg-muted/30 h-32 flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Select a meter to view details</p>
-                </div>
-              )}
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange("notes", e.target.value)}
-                placeholder="Add any notes here..."
-                rows={5}
-              />
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
+            {/* Right Column */}
+            <div className="space-y-6">
             {/* Current Reading Display */}
             <div className="space-y-2">
               <Label>
@@ -386,7 +425,18 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
           </div>
         </div>
 
-        {/* Mobile Layout (below md) */}
+        {/* Calculated Consumption - Full Width */}
+        {selectedMeter && calculatedConsumption !== null && (
+          <div className="border-2 rounded-lg p-6 bg-background border-gray-300 dark:border-gray-600">
+            <p className="text-xl font-medium text-center mb-3">Calculated Consumption</p>
+            <p className="text-5xl font-bold text-center">
+              {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Layout (below md) */}
         <div className="md:hidden px-4 py-6 space-y-6">
           {/* Meter Selection */}
           <div className="space-y-2">
@@ -418,10 +468,14 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                   </div>
                 </div>
                 <div className="max-h-[200px] overflow-y-auto">
-                  {filteredMeters.length > 0 ? (
+                  {isLoadingMeters ? (
+                    <div className="p-2 text-sm text-center text-muted-foreground">
+                      Loading meters...
+                    </div>
+                  ) : filteredMeters.length > 0 ? (
                     filteredMeters.map((meter) => (
-                      <SelectItem key={meter.id} value={meter.id}>
-                        {meter.id}
+                      <SelectItem key={meter.id} value={meter.id.toString()}>
+                        {meter.meterNumber} - {meter.customerName}
                       </SelectItem>
                     ))
                   ) : (
@@ -440,10 +494,22 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
           {/* Meter Details */}
           {selectedMeter && (
             <div className="border-2 rounded-md p-3 space-y-1 bg-muted/30 text-sm">
-              <p><span className="font-medium">Customer:</span> {selectedMeter.customer}</p>
-              <p><span className="font-medium">Utility:</span> {selectedMeter.utility}</p>
-              <p><span className="font-medium">Last Reading:</span> {selectedMeter.lastReading} {selectedMeter.utility === "Electricity" ? "kWh" : "m³"}</p>
-              <p><span className="font-medium">Date:</span> {selectedMeter.lastReadingDate}</p>
+              <p><span className="font-medium">Meter:</span> {selectedMeter.meterNumber}</p>
+              <p><span className="font-medium">Customer:</span> {selectedMeter.customerName}</p>
+              <p><span className="font-medium">Utility:</span> {selectedMeter.utilityType}</p>
+              <p><span className="font-medium">Unit:</span> {selectedMeter.unit}</p>
+            </div>
+          )}
+
+          {/* Calculated Consumption */}
+          {selectedMeter && calculatedConsumption !== null && (
+            <div className="space-y-2">
+              <div className="border-2 rounded-lg p-4 bg-background border-gray-300 dark:border-gray-600">
+                <p className="text-base font-medium text-center mb-2">Calculated Consumption</p>
+                <p className="text-3xl font-bold text-center">
+                  {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
+                </p>
+              </div>
             </div>
           )}
 
@@ -464,16 +530,6 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               <p className="text-sm text-red-500">{formErrors.value}</p>
             )}
           </div>
-
-          {/* Calculated Consumption */}
-          {formData.value && formData.previousValue && (
-            <div className="border rounded-lg p-4 text-center bg-muted/50">
-              <h4 className="text-sm font-medium mb-1 text-muted-foreground">Calculated Consumption</h4>
-              <p className="text-2xl font-bold">
-                {calculatedConsumption()} {selectedMeter ? (selectedMeter.utility === "Electricity" ? "kWh" : "m³") : ""}
-              </p>
-            </div>
-          )}
 
           {/* Reading Date */}
           <div className="space-y-2">
@@ -526,16 +582,6 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               placeholder="Add any notes..."
               rows={3}
             />
-          </div>
-        </div>
-
-        {/* Calculated Consumption (Desktop/Tablet only) */}
-        <div className="hidden md:block px-6">
-          <div className="border rounded-lg p-6 text-center bg-muted/50">
-            <h3 className="text-lg font-semibold mb-2">Calculated Consumption</h3>
-            <p className="text-4xl font-bold">
-              {calculatedConsumption()} {selectedMeter ? (selectedMeter.utility === "Electricity" ? "kWh" : "m³") : ""}
-            </p>
           </div>
         </div>
 
