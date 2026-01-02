@@ -1,570 +1,369 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { useState, useEffect } from "react"
+import { toast } from "sonner"
+import { getAllCustomers, createCustomer, deleteCustomer, updateCustomer } from "@/services/customerService"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Search, UserPlus, MoreHorizontal, Filter } from "lucide-react"
-import { useState } from "react"
-
-// Sample customer data
-const customersData = [
-  {
-    id: "001",
-    name: "John Smith",
-    type: "Household",
-    phone: "2321-232323",
-    email: "john@example.com",
-    status: "Active",
-  },
-  {
-    id: "002",
-    name: "Jane Doe",
-    type: "Business",
-    phone: "2321-232324",
-    email: "jane@example.com",
-    status: "Active",
-  },
-  {
-    id: "003",
-    name: "ABC Corp",
-    type: "Business",
-    phone: "2321-232325",
-    email: "abc@example.com",
-    status: "Active",
-  },
-  {
-    id: "004",
-    name: "Sarah Wilson",
-    type: "Household",
-    phone: "2321-232326",
-    email: "sarah@example.com",
-    status: "Inactive",
-  },
-  {
-    id: "005",
-    name: "Michael Brown",
-    type: "Household",
-    phone: "2321-232327",
-    email: "michael@example.com",
-    status: "Pending",
-  },
-  {
-    id: "006",
-    name: "XYZ Ltd",
-    type: "Business",
-    phone: "2321-232328",
-    email: "xyz@example.com",
-    status: "Active",
-  },
-]
+  AppSidebar,
+  SiteHeader,
+  DataTable,
+  SidebarProvider,
+  Button,
+  createCustomerColumns,
+  CustomerForm,
+  ViewDialog,
+  DeleteDialog,
+  Separator
+} from "@/components"
+import { UserPlus, Loader2 } from "lucide-react"
 
 export default function Customers() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [typeFilter, setTypeFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [customers, setCustomers] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Form state
-  const [formData, setFormData] = useState({
-    fullName: "",
-    customerType: "Household",
-    identityValidation: "",
-    phone: "",
-    email: "",
-    houseNo: "",
-    street: "",
-    city: ""
-  })
+  // Fetch customers on component mount
+  useEffect(() => {
+    fetchCustomers()
+  }, [])
 
-  const [formErrors, setFormErrors] = useState({})
-
-  const validateForm = () => {
-    const errors = {}
-
-    // Full Name validation
-    if (!formData.fullName.trim()) {
-      errors.fullName = "Full Name is required"
-    }
-
-    // Identity Validation
-    if (!formData.identityValidation.trim()) {
-      errors.identityValidation = "Identity Validation is required"
-    } else if (formData.customerType === "Household") {
-      // NIC validation (old: 9 digits + V, new: 12 digits)
-      if (!/^(\d{9}[vVxX]|\d{12})$/.test(formData.identityValidation)) {
-        errors.identityValidation = "Invalid NIC format (9 digits + V or 12 digits)"
-      }
-    }
-
-    // Phone validation
-    if (!formData.phone.trim()) {
-      errors.phone = "Phone number is required"
-    } else if (!/^\d{9}$/.test(formData.phone)) {
-      errors.phone = "Phone must be 9 digits"
-    }
-
-    // Email validation
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Invalid email format"
-    }
-
-    // House No validation
-    if (!formData.houseNo.trim()) {
-      errors.houseNo = "House No is required"
-    }
-
-    // Street validation
-    if (!formData.street.trim()) {
-      errors.street = "Street is required"
-    }
-
-    // City validation
-    if (!formData.city.trim()) {
-      errors.city = "City is required"
-    }
-
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error for this field when user starts typing
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: undefined }))
+  const fetchCustomers = async () => {
+    try {
+      setIsLoading(true)
+      const data = await getAllCustomers()
+      setCustomers(data)
+    } catch (error) {
+      console.error("Failed to fetch customers:", error)
+      toast.error("Failed to load customers. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      // Here you would typically send data to backend
-      console.log("Form submitted:", formData)
-      // Reset form and close dialog
-      setFormData({
-        fullName: "",
-        customerType: "Household",
-        identityValidation: "",
-        phone: "",
-        email: "",
-        houseNo: "",
-        street: "",
-        city: ""
-      })
-      setFormErrors({})
-      setIsAddDialogOpen(false)
+  const handleCustomerAdded = async (formData, uploadedFile) => {
+    try {
+      setIsLoading(true)
+
+      const newCustomer = await createCustomer(formData, uploadedFile)
+
+      // Add to customers list
+      setCustomers(prev => [newCustomer, ...prev])
+
+      // Show success toast
+      toast.success("Customer added successfully!")
+
+      // Refresh customer list
+      await fetchCustomers()
+    } catch (error) {
+      console.error("Failed to create customer:", error)
+      toast.error(error.message || "Failed to add customer. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleCancel = () => {
-    setFormData({
-      fullName: "",
-      customerType: "Household",
-      identityValidation: "",
-      phone: "",
-      email: "",
-      houseNo: "",
-      street: "",
-      city: ""
-    })
-    setFormErrors({})
-    setIsAddDialogOpen(false)
+  // Action handlers
+  const handleViewDetails = (customer) => {
+    setSelectedCustomer(customer)
+    setIsViewDialogOpen(true)
   }
 
-  const filteredCustomers = customersData.filter(customer => {
-    const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleEdit = (customer) => {
+    setSelectedCustomer(customer)
+    setIsEditDialogOpen(true)
+  }
 
-    const matchesStatus = statusFilter === "all" || customer.status === statusFilter
-    const matchesType = typeFilter === "all" || customer.type === typeFilter
+  const handleDelete = (customer) => {
+    setSelectedCustomer(customer)
+    setIsDeleteDialogOpen(true)
+  }
 
-    return matchesSearch && matchesStatus && matchesType
-  })
+  const confirmDelete = async () => {
+    if (!selectedCustomer) return
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
-      case "Inactive":
-        return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-      case "Pending":
-        return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
-      default:
-        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
+    try {
+      setIsLoading(true)
+      await deleteCustomer(selectedCustomer.id)
+
+      // Remove from customers list
+      setCustomers(prev => prev.filter(c => c.id !== selectedCustomer.id))
+
+      setIsDeleteDialogOpen(false)
+      setSelectedCustomer(null)
+
+      // Show success toast
+      toast.success("Customer deleted successfully!")
+    } catch (error) {
+      console.error("Failed to delete customer:", error)
+      toast.error(error.message || "Failed to delete customer. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
+
+  const handleEditSuccess = async (formData, uploadedFile) => {
+    try {
+      setIsLoading(true)
+
+      const updatedCustomer = await updateCustomer(
+        selectedCustomer.id,
+        {
+          ...formData,
+          status: selectedCustomer.status
+        },
+        uploadedFile
+      )
+
+      // Update in customers list
+      setCustomers(prev => prev.map(c =>
+        c.id === selectedCustomer.id ? updatedCustomer : c
+      ))
+
+      setIsEditDialogOpen(false)
+      setSelectedCustomer(null)
+
+      // Show success toast
+      toast.success("Customer updated successfully!")
+
+      // Refresh customer list
+      await fetchCustomers()
+    } catch (error) {
+      console.error("Failed to update customer:", error)
+      toast.error(error.message || "Failed to update customer. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Create columns with action handlers
+  const customerColumns = createCustomerColumns(
+    handleViewDetails,
+    handleEdit,
+    handleDelete
+  )
 
   return (
     <SidebarProvider>
       <div className="flex w-full min-h-screen bg-background">
         <AppSidebar />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 overflow-x-hidden">
           <SiteHeader />
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold">Customers</h1>
                   <p className="text-muted-foreground">
                     Manage all customer accounts
                   </p>
                 </div>
-                <Button onClick={() => setIsAddDialogOpen(true)}>
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add Customer
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search:"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="max-w-md pl-10"
-                  />
+                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
+                  <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Add Customer
+                  </Button>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <Filter className="w-4 h-4" />
-                      Filter
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <div className="p-2 space-y-2">
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Status</label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Inactive">Inactive</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium mb-1.5 block">Customer Type</label>
-                        <Select value={typeFilter} onValueChange={setTypeFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="Household">Household</SelectItem>
-                            <SelectItem value="Business">Business</SelectItem>
-                            <SelectItem value="Government">Government</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer List</CardTitle>
-                  <CardDescription>
-                    A list of all registered customers in the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-center">Act</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredCustomers.length > 0 ? (
-                          filteredCustomers.map((customer) => (
-                            <TableRow key={customer.id}>
-                              <TableCell className="font-medium">
-                                {customer.id}
-                              </TableCell>
-                              <TableCell>{customer.name}</TableCell>
-                              <TableCell>{customer.type}</TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {customer.phone}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {customer.email}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={getStatusColor(customer.status)}>
-                                  {customer.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="w-8 h-8 p-0">
-                                      <MoreHorizontal className="w-4 h-4" />
-                                      <span className="sr-only">Open menu</span>
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem className="text-red-600">
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={7} className="text-center text-muted-foreground">
-                              No customers found
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : customers.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-muted-foreground">No customers found...</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg bg-card">
+                  <div className="p-6">
+                    <p className="text-lg font-medium">Customer List</p>
+                    <p className="text-sm text-muted-foreground pb-3">
+                      A list of all registered customers in the system
+                    </p>
+                    <DataTable
+                      columns={customerColumns}
+                      data={customers}
+                      filterColumn="name"
+                      filterPlaceholder="Search customers..."
+                      filterConfig={[
+                        {
+                          id: 'type',
+                          label: 'Type',
+                          options: ['Household', 'Business', 'Government']
+                        },
+                        {
+                          id: 'status',
+                          label: 'Status',
+                          options: ['Active', 'Pending', 'Inactive']
+                        }
+                      ]}
+                      showColumnToggle={true}
+                    />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              )}
             </div>
           </main>
         </div>
       </div>
 
       {/* Add Customer Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Add New Customer</DialogTitle>
-            <DialogDescription>
-              Fill in the customer information below
-            </DialogDescription>
-          </DialogHeader>
+      <CustomerForm
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={handleCustomerAdded}
+      />
 
-          <div className="px-28 pt-10 pb-24 space-y-6">
-            {/* Customer Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Customer Information</h3>
-
-              <div className="space-y-2">
-                <Label htmlFor="fullName">
-                  Full Name<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="fullName"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  className={formErrors.fullName ? "border-red-500" : ""}
-                />
-                {formErrors.fullName && (
-                  <p className="text-sm text-red-500">{formErrors.fullName}</p>
-                )}
+      {/* View Details Dialog */}
+      <ViewDialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        title="Customer Details"
+        description="View customer information"
+      >
+        {selectedCustomer && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Customer ID</p>
+                <p className="text-base">{selectedCustomer.id}</p>
               </div>
-
-              <div className="space-y-2">
-                <Label>
-                  Customer Type<span className="text-red-500">*</span>
-                </Label>
-                <RadioGroup
-                  value={formData.customerType}
-                  onValueChange={(value) => handleInputChange("customerType", value)}
-                  className="flex gap-6"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Household" id="household" />
-                    <Label htmlFor="household" className="font-normal cursor-pointer">
-                      Household
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Business" id="business" />
-                    <Label htmlFor="business" className="font-normal cursor-pointer">
-                      Business
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Government" id="government" />
-                    <Label htmlFor="government" className="font-normal cursor-pointer">
-                      Government
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="identityValidation">
-                  Identity Validation (NIC/BRN/GOV)<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="identityValidation"
-                  value={formData.identityValidation}
-                  onChange={(e) => handleInputChange("identityValidation", e.target.value)}
-                  className={formErrors.identityValidation ? "border-red-500" : ""}
-                />
-                {formErrors.identityValidation && (
-                  <p className="text-sm text-red-500">{formErrors.identityValidation}</p>
-                )}
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Status</p>
+                <p className="text-base">{selectedCustomer.status}</p>
               </div>
             </div>
 
             <Separator />
 
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Contact Information</h3>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">
-                  Phone No.<span className="text-red-500">*</span>
-                </Label>
-                <div className="flex">
-                  <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-muted">
-                    <span className="text-sm">+94</span>
-                  </div>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value.replaceAll(/\D/g, ""))}
-                    className={`rounded-l-none ${formErrors.phone ? "border-red-500" : ""}`}
-                    maxLength={9}
-                    placeholder="771234567"
-                  />
+            <div>
+              <h3 className="text-lg font-medium mb-3">Customer Information</h3>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Full Name</p>
+                  <p className="text-base">{selectedCustomer.name}</p>
                 </div>
-                {formErrors.phone && (
-                  <p className="text-sm text-red-500">{formErrors.phone}</p>
-                )}
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Customer Type</p>
+                  <p className="text-base">{selectedCustomer.type}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Identity Proof</p>
+                  <p className="text-base">{selectedCustomer.idProof}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">ID Image</p>
+                  {selectedCustomer.idImageUrl ? (
+                    <a
+                      href={selectedCustomer.idImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-700 hover:underline"
+                    >
+                      View Image
+                    </a>
+                  ) : (
+                    <p className="text-base text-muted-foreground">No image uploaded</p>
+                  )}
+                </div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={formErrors.email ? "border-red-500" : ""}
-                />
-                {formErrors.email && (
-                  <p className="text-sm text-red-500">{formErrors.email}</p>
-                )}
+            {selectedCustomer.idImageUrl && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Identity Document</h3>
+                  <div className="flex justify-center">
+                    <div className="border rounded-lg overflow-hidden bg-muted/10 shadow-sm max-w-md w-full">
+                      <img
+                        src={selectedCustomer.idImageUrl}
+                        alt="Customer ID Document"
+                        className="w-full h-auto object-contain"
+                        style={{ maxHeight: '280px' }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250"><rect width="400" height="250" fill="%23f0f0f0"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Image not available</text></svg>';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-medium mb-3">Contact Information</h3>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Phone</p>
+                  <p className="text-base">{selectedCustomer.phone}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Email</p>
+                  <p className="text-base">{selectedCustomer.email || "N/A"}</p>
+                </div>
               </div>
             </div>
 
             <Separator />
 
-            {/* Address */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Address</h3>
-
-              <div className="space-y-2">
-                <Label htmlFor="houseNo">
-                  House No.<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="houseNo"
-                  value={formData.houseNo}
-                  onChange={(e) => handleInputChange("houseNo", e.target.value)}
-                  className={formErrors.houseNo ? "border-red-500" : ""}
-                />
-                {formErrors.houseNo && (
-                  <p className="text-sm text-red-500">{formErrors.houseNo}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="street">
-                  Street<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="street"
-                  value={formData.street}
-                  onChange={(e) => handleInputChange("street", e.target.value)}
-                  className={formErrors.street ? "border-red-500" : ""}
-                />
-                {formErrors.street && (
-                  <p className="text-sm text-red-500">{formErrors.street}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="city">
-                  City<span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  className={formErrors.city ? "border-red-500" : ""}
-                />
-                {formErrors.city && (
-                  <p className="text-sm text-red-500">{formErrors.city}</p>
-                )}
+            <div>
+              <h3 className="text-lg font-medium mb-3">Address</h3>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">House No.</p>
+                  <p className="text-base">{selectedCustomer.houseNo}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Street</p>
+                  <p className="text-base">{selectedCustomer.street}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">City</p>
+                  <p className="text-base">{selectedCustomer.city}</p>
+                </div>
               </div>
             </div>
           </div>
+        )}
+      </ViewDialog>
 
-          <DialogFooter className="pt-6 space-x-2">
-            <Button variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>
-              Save Customer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Customer Dialog */}
+      {selectedCustomer && (
+        <CustomerForm
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onSuccess={handleEditSuccess}
+          initialData={{
+            fullName: selectedCustomer.name || "",
+            customerType: selectedCustomer.type || "Household",
+            identityValidation: selectedCustomer.idProof || "",
+            phone: selectedCustomer.phone?.replace("+94", "") || "",
+            email: selectedCustomer.email || "",
+            houseNo: selectedCustomer.houseNo || "",
+            street: selectedCustomer.street || "",
+            city: selectedCustomer.city || ""
+          }}
+          isEdit={true}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Customer"
+        description="Are you sure you want to delete this customer?"
+        itemName={selectedCustomer?.name}
+        itemId={selectedCustomer?.id}
+        onConfirm={confirmDelete}
+        isLoading={isLoading}
+      />
     </SidebarProvider>
   )
 }

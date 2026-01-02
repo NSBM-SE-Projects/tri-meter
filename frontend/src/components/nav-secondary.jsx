@@ -1,6 +1,3 @@
-"use client";
-import * as React from "react"
-
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -9,20 +6,17 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-export function NavSecondary({
-  items,
-  ...props
-}) {
+export function NavSecondary({ items, ...props }) {
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-4 lg:gap-3">
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <a href={item.url} className="text-sidebar-foreground font-medium">
+                  <item.icon strokeWidth={2.0} />
+                  <span className="text-sidebar-foreground">{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
