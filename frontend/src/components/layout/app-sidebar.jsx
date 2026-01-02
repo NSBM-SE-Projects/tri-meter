@@ -23,12 +23,12 @@ const data = {
     },
     {
       title: "Meter Readings",
-      url: "#",
+      url: "#/meter-readings",
       icon: GaugeIcon,
     },
     {
       title: "Bills",
-      url: "#",
+      url: "#/bills",
       icon: Receipt,
     },
     {
