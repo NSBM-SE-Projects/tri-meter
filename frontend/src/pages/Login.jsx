@@ -1,7 +1,7 @@
-import { LoginForm } from "@/components/login-form"
+import { LoginForm, ModeToggle } from "@/components"
 import { sidebarImage, logo } from "../assets"
 import { Heart } from "lucide-react"
-import { ModeToggle } from "@/components/mode-toggle"
+
 
 export default function Login() {
   return (
@@ -20,7 +20,7 @@ export default function Login() {
             alt="Tri-Meter Logo"
             className="w-auto h-16 lg:h-22"
           />
-          <p className="text-xl md:text-2xl lg:text-2xl font-bold">Tri-Meter</p>
+          <p className="text-xl md:text-2xl lg:text-2xl font-bold text-foreground">Tri-Meter</p>
         </div>
 
         {/* Centered Login Form */}

@@ -83,6 +83,7 @@ CREATE TABLE [User] (
     U_IDCard            VARCHAR(255)    NULL,
     U_RegistrationDate  DATE            NOT NULL DEFAULT GETDATE(),
     U_Status            VARCHAR(20)     NOT NULL DEFAULT 'Working' CHECK (U_Status IN ('Working', 'On Leave', 'Resigned')),
+    U_ProfilePhoto      VARCHAR(500)    NULL,
 
     CONSTRAINT FK_U_Address FOREIGN KEY (A_ID) REFERENCES Address(A_ID),
     CONSTRAINT UQ_U_Username UNIQUE (U_Username),
