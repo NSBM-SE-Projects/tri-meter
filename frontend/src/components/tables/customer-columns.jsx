@@ -96,7 +96,7 @@ export const createCustomerColumns = (onViewDetails, onEdit) => [
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(customer)}>
                 Edit
-              </DropdownMenuItem>
+              </DropdownMenuItem>D
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
