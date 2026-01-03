@@ -89,8 +89,8 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
 
   const validateForm = () => {
     const errors = {}
-
-    if (!formData.customer) {
+    if (!isEdit) {
+      if (!formData.customer) {
       errors.customer = "Customer is required"
     }
 
@@ -109,6 +109,7 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
     if (!formData.initialReading.trim()) {
       errors.initialReading = "Initial Reading is required"
     }
+    }
 
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -121,23 +122,24 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
       if (field === "customer" && value) {
         const selectedCustomer = customers.find(c => c.name === value)
         if (selectedCustomer) {
-          const tariffMapping = {
-            "Household": "Residential",
-            "Business": "Commercial",
-            "Government": "Industrial"
-          }
-          updated.tariffPlan = tariffMapping[selectedCustomer.type] || ""
+          updated.tariffPlan = selectedCustomer.type
         }
       }
 
       // Auto-fill installation charge based on utility type
-      if (field === "utilityType" && value) {
-        const charges = {
-          "Electricity": "$100",
-          "Water": "$80",
-          "Gas": "$120"
+      if (field === "utilityType") {
+        if (value) {
+          const charges = {
+            "Electricity": "$100",
+            "Water": "$80",
+            "Gas": "$120"
+          }
+          const chargeString = charges[value] || "0";
+          const numericCharge = parseInt(chargeString.replace(/[^0-9]/g, ''), 10);
+          updated.installationCharge = numericCharge;
+        } else {
+          updated.installationCharge = 0
         }
-        updated.installationCharge = charges[value] || ""
       }
 
       return updated
@@ -206,13 +208,16 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
         <div className="px-3 sm:px-14 md:px-16 lg:px-20 sm:pt-6 md:pt-8 space-y-4 sm:space-y-7">
           {/* Connection Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Connection Information</h3>
+            <h3 className="text-lg font-medium">
+              {isEdit ? "Status" : "Connection Information"}
+            </h3>
 
             {/* Customer */}
-            <div className="space-y-2 pb-1">
-              <Label htmlFor="customer">
-                Customer<span className="text-red-700">*</span>
-              </Label>
+            {!isEdit && (
+              <div className="space-y-2 pb-1">
+                <Label htmlFor="customer">
+                  Customer<span className="text-red-700">*</span>
+                </Label>
               <Select
                 value={formData.customer}
                 onValueChange={(value) => {
@@ -221,6 +226,7 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                 }}
                 open={isSelectOpen}
                 onOpenChange={setIsSelectOpen}
+                disabled={isEdit}
               >
                 <SelectTrigger className={formErrors.customer ? "border-red-700" : ""}>
                   <SelectValue placeholder="Select customer" />
@@ -264,48 +270,51 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                   </div>
                 </SelectContent>
               </Select>
-              {formErrors.customer && (
-                <p className="text-sm text-red-700">{formErrors.customer}</p>
-              )}
-            </div>
+                {formErrors.customer && (
+                  <p className="text-sm text-red-700">{formErrors.customer}</p>
+                )}
+              </div>
+            )}
 
             {/* Utility Type */}
-            <div className="space-y-4 pb-1">
-              <Label>
-                Utility Type<span className="text-red-700">*</span>
-              </Label>
-              <RadioGroup
-                value={formData.utilityType}
-                onValueChange={(value) => handleInputChange("utilityType", value)}
-                className="flex flex-col sm:flex-row gap-7 md:gap-32 lg:gap-40"
-                disabled={isEdit}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Electricity" id="electricity" disabled={isEdit} />
-                  <Label htmlFor="electricity" className="font-normal cursor-pointer">
-                    Electricity
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Water" id="water" disabled={isEdit} />
-                  <Label htmlFor="water" className="font-normal cursor-pointer">
-                    Water
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Gas" id="gas" disabled={isEdit} />
-                  <Label htmlFor="gas" className="font-normal cursor-pointer">
-                    Gas
-                  </Label>
-                </div>
-              </RadioGroup>
-              {formErrors.utilityType && (
-                <p className="text-sm text-red-700">{formErrors.utilityType}</p>
-              )}
-            </div>
+            {!isEdit && (
+              <div className="space-y-4 pb-1">
+                <Label>
+                  Utility Type<span className="text-red-700">*</span>
+                </Label>
+                <RadioGroup
+                  value={formData.utilityType}
+                  onValueChange={(value) => handleInputChange("utilityType", value)}
+                  className="flex flex-col sm:flex-row gap-7 md:gap-32 lg:gap-40"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Electricity" id="electricity" />
+                    <Label htmlFor="electricity" className="font-normal cursor-pointer">
+                      Electricity
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Water" id="water" />
+                    <Label htmlFor="water" className="font-normal cursor-pointer">
+                      Water
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Gas" id="gas" />
+                    <Label htmlFor="gas" className="font-normal cursor-pointer">
+                      Gas
+                    </Label>
+                  </div>
+                </RadioGroup>
+                {formErrors.utilityType && (
+                  <p className="text-sm text-red-700">{formErrors.utilityType}</p>
+                )}
+              </div>
+            )}
 
             {/* Meter Number */}
-            <div className="space-y-2 pb-1">
+            {!isEdit && (
+              <div className="space-y-2 pb-1">
               <Label htmlFor="meterNumber">
                 Meter Number<span className="text-red-700">*</span>
               </Label>
@@ -316,13 +325,15 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                 className={formErrors.meterNumber ? "border-red-700" : ""}
                 placeholder="E-12345"
               />
-              {formErrors.meterNumber && (
-                <p className="text-sm text-red-700">{formErrors.meterNumber}</p>
-              )}
-            </div>
+                {formErrors.meterNumber && (
+                  <p className="text-sm text-red-700">{formErrors.meterNumber}</p>
+                )}
+              </div>
+            )}
 
             {/* Tariff Plan */}
-            <div className="space-y-2 pb-1">
+            {!isEdit && (
+              <div className="space-y-2 pb-1">
               <Label htmlFor="tariffPlan">
                 Tariff Plan<span className="text-red-700">*</span>
               </Label>
@@ -330,12 +341,13 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                 id="tariffPlan"
                 value={formData.tariffPlan}
                 readOnly
-                className="bg-muted"
+                className="bg-muted text-muted-foreground"
               />
-              {formErrors.tariffPlan && (
-                <p className="text-sm text-red-700">{formErrors.tariffPlan}</p>
-              )}
-            </div>
+                {formErrors.tariffPlan && (
+                  <p className="text-sm text-red-700">{formErrors.tariffPlan}</p>
+                )}
+              </div>
+            )}
 
             {/* Installation Charge */}
             {!isEdit && (
@@ -345,7 +357,7 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                   id="installationCharge"
                   value={formData.installationCharge}
                   readOnly
-                  className="bg-muted"
+                  className="bg-muted text-muted-foreground"
                 />
               </div>
             )}
@@ -371,14 +383,11 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
 
             {/* Status (Edit mode only) */}
             {isEdit && (
-              <div className="space-y-4 pb-1">
-                <Label>
-                  Status<span className="text-red-700">*</span>
-                </Label>
+              <div className="space-y-4 pb-2">
                 <RadioGroup
                   value={formData.status}
                   onValueChange={(value) => handleInputChange("status", value)}
-                  className="flex flex-col sm:flex-row gap-7 md:gap-24 lg:gap-28"
+                  className="flex flex-col sm:flex-row gap-6 md:gap-16 lg:gap-16"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="Active" id="status-active" />
@@ -390,12 +399,6 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                     <RadioGroupItem value="Disconnected" id="status-disconnected" />
                     <Label htmlFor="status-disconnected" className="font-normal cursor-pointer">
                       Disconnected
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="Pending" id="status-pending" />
-                    <Label htmlFor="status-pending" className="font-normal cursor-pointer">
-                      Pending
                     </Label>
                   </div>
                 </RadioGroup>

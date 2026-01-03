@@ -21,7 +21,7 @@ const getStatusColor = (status) => {
   }
 }
 
-export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
+export const createCustomerColumns = (onViewDetails, onEdit) => [
   {
     accessorKey: "id",
     header: ({ column }) => {
@@ -79,7 +79,7 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
   },
   {
     id: "actions",
-    header: () => <div className="text-center w-20">Actions</div>,
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const customer = row.original
       return (
@@ -97,12 +97,6 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
               <DropdownMenuItem onClick={() => onEdit(customer)}>
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => onDelete(customer)}
-              >
-                Delete
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -112,4 +106,4 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
 ]
 
 // Keep old export for backwards compatibility (static version without actions)
-export const customerColumns = createCustomerColumns(() => {}, () => {}, () => {})
+export const customerColumns = createCustomerColumns(() => {}, () => {})

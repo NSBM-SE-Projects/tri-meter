@@ -24,10 +24,12 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
     customerType: "Household",
     identityValidation: "",
     phone: "",
+    phone2: "",
     email: "",
     houseNo: "",
     street: "",
-    city: ""
+    city: "",
+    status: "Active"
   })
 
   // Update form data when initialData changes (for edit mode)
@@ -41,10 +43,12 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
         customerType: "Household",
         identityValidation: "",
         phone: "",
+        phone2: "",
         email: "",
         houseNo: "",
         street: "",
-        city: ""
+        city: "",
+        status: "Active"
       })
     }
   }, [initialData, open])
@@ -66,9 +70,18 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
 
     // Phone validation
     if (!formData.phone.trim()) {
-      errors.phone = "Phone number is required"
+      errors.phone = "Primary phone number is required"
     } else if (!/^\d{9}$/.test(formData.phone)) {
       errors.phone = "Phone must be 9 digits"
+    }
+
+    // Phone2 validation
+    if (formData.phone2 && formData.phone2.trim()) {
+      if (!/^\d{9}$/.test(formData.phone2)) {
+        errors.phone2 = "Phone must be 9 digits"
+      } else if (formData.phone2 === formData.phone) {
+        errors.phone2 = "Secondary phone must be different from primary"
+      }
     }
 
     // Email validation
@@ -122,10 +135,12 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
       customerType: "Household",
       identityValidation: "",
       phone: "",
+      phone2: "",
       email: "",
       houseNo: "",
       street: "",
-      city: ""
+      city: "",
+      status: "Active"
     })
     setFormErrors({})
     setUploadedFile(null)
@@ -133,10 +148,10 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
 
   const handleSubmit = () => {
     if (validateForm()) {
-      // Create a new object for submission with the full phone number
       const submissionData = {
         ...formData,
-        phone: `+94${formData.phone}`
+        phone: `+94${formData.phone}`,
+        phone2: formData.phone2 ? `+94${formData.phone2}` : null
       };
 
       console.log("Form submitted:", submissionData);
@@ -265,7 +280,7 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
 
             <div className="space-y-2 pb-1">
               <Label htmlFor="phone">
-                Phone No.<span className="text-red-700">*</span>
+                Primary Phone<span className="text-red-700">*</span>
               </Label>
               <div className="flex">
                 <div className="flex items-center px-3 border border-r-4 rounded-l-lg bg-muted">
@@ -282,6 +297,26 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
               </div>
               {formErrors.phone && (
                 <p className="text-sm text-red-700">{formErrors.phone}</p>
+              )}
+            </div>
+
+            <div className="space-y-2 pb-1">
+              <Label htmlFor="phone2">Secondary Phone (Optional)<span className="text-red-700">*</span></Label>
+              <div className="flex">
+                <div className="flex items-center px-3 border border-r-4 rounded-l-lg bg-muted">
+                  <span className="text-sm text-muted-foreground">+94</span>
+                </div>
+                <Input
+                  id="phone2"
+                  value={formData.phone2}
+                  onChange={(e) => handleInputChange("phone2", e.target.value.replaceAll(/\D/g, ""))}
+                  className={`rounded-l-none ${formErrors.phone2 ? "border-red-700" : ""}`}
+                  maxLength={9}
+                  placeholder="112345678"
+                />
+              </div>
+              {formErrors.phone2 && (
+                <p className="text-sm text-red-700">{formErrors.phone2}</p>
               )}
             </div>
 
@@ -351,6 +386,36 @@ export function CustomerForm({ open, onOpenChange, onSuccess, initialData = null
               )}
             </div>
           </div>
+
+          {/* Status */}
+          {isEdit && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <h3 className="text-base sm:text-lg font-medium">Status</h3>
+                <div className="space-y-4">
+                  <RadioGroup
+                    value={formData.status}
+                    onValueChange={(value) => handleInputChange("status", value)}
+                    className="flex flex-col sm:flex-row gap-6 md:gap-12 lg:gap-12"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Active" id="status-active" />
+                      <Label htmlFor="status-active" className="font-normal cursor-pointer">
+                        Active
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Inactive" id="status-inactive" />
+                      <Label htmlFor="status-inactive" className="font-normal cursor-pointer">
+                        Inactive
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <DialogFooter className="pt-7 lg:pt-10 px-10 md:px-5 pb-2 flex-col-reverse sm:flex-row gap-5 lg:gap-3">

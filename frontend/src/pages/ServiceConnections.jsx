@@ -52,7 +52,7 @@ export default function ServiceConnections() {
   const fetchCustomers = async () => {
     try {
       const data = await getAllCustomers()
-      // Deduplicate customers by ID (customers with multiple phones appear multiple times)
+      // Deduplicate customers by ID
       const uniqueCustomers = data.filter((customer, index, self) =>
         index === self.findIndex((c) => c.id === customer.id)
       )
@@ -105,7 +105,6 @@ export default function ServiceConnections() {
 
       await deleteServiceConnection(selectedConnection.id)
 
-      // Refresh connections list
       await fetchConnections()
 
       setIsDeleteDialogOpen(false)
@@ -124,12 +123,8 @@ export default function ServiceConnections() {
     try {
       setIsLoading(true)
 
-      await updateServiceConnection(selectedConnection.id, {
-        ...formData,
-        status: selectedConnection.status
-      })
+      await updateServiceConnection(selectedConnection.id, formData)
 
-      // Refresh connections list
       await fetchConnections()
 
       setIsEditDialogOpen(false)
@@ -203,7 +198,7 @@ export default function ServiceConnections() {
                         {
                           id: 'status',
                           label: 'Status',
-                          options: ['Active', 'Disconnected', 'Pending']
+                          options: ['Active', 'Disconnected']
                         }
                       ]}
                       showColumnToggle={true}
@@ -271,6 +266,26 @@ export default function ServiceConnections() {
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-medium mb-3">Service Address</h3>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">House No.</p>
+                  <p className="text-base">{selectedConnection.serviceHouseNo || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Street</p>
+                  <p className="text-base">{selectedConnection.serviceStreet || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">City</p>
+                  <p className="text-base">{selectedConnection.serviceCity || "N/A"}</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </ViewDialog>
@@ -299,17 +314,11 @@ export default function ServiceConnections() {
         onOpenChange={setIsDeleteDialogOpen}
         title="Delete Service Connection"
         description="Are you sure you want to delete this service connection?"
-        itemName={selectedConnection?.meterNumber}
+        itemName={`${selectedConnection?.customerName}'s ${selectedConnection?.utilityType} Connection`}
         itemId={selectedConnection?.id}
         onConfirm={confirmDelete}
         isLoading={isLoading}
-      >
-        {selectedConnection && (
-          <p className="text-sm text-muted-foreground">
-            This will permanently delete service connection <span className="font-semibold">{selectedConnection.meterNumber}</span> for <span className="font-semibold">{selectedConnection.customerName}</span>.
-          </p>
-        )}
-      </DeleteDialog>
+      />
     </SidebarProvider>
   )
 }

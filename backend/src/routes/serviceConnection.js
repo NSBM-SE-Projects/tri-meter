@@ -9,24 +9,21 @@ import {
 
 const router = express.Router();
 
-/**
- * Service Connection Routes
- * Base: /api/service-connections
- */
+// Base: /api/service-connections
 
-// GET /api/service-connections - Get all service connections
+// GET /api/service-connections
 router.get('/', getAllServiceConnections);
 
-// GET /api/service-connections/:id - Get service connection by ID
+// GET /api/service-connections/:id
 router.get('/:id', getServiceConnectionById);
 
-// POST /api/service-connections - Create new service connection
+// POST /api/service-connections
 router.post('/', createServiceConnection);
 
-// PUT /api/service-connections/:id - Update service connection
+// PUT /api/service-connections/:id 
 router.put('/:id', updateServiceConnection);
 
-// DELETE /api/service-connections/:id - Delete service connection
+// DELETE /api/service-connections/:id
 router.delete('/:id', deleteServiceConnection);
 
 export default router;

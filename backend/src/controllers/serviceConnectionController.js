@@ -1,10 +1,8 @@
 import { getPool } from '../config/database.js';
 import sql from 'mssql';
 
-/**
- * GET /api/service-connections
- * Get all service connections with related data
- */
+// GET /api/service-connections
+
 export const getAllServiceConnections = async (req, res) => {
   try {
     const pool = await getPool();
@@ -17,22 +15,28 @@ export const getAllServiceConnections = async (req, res) => {
           u.Ut_Name as utilityType,
           m.M_Number as meterNumber,
           m.M_InstallationDate as installationDate,
-          CONCAT(t.T_CustomerType, ' - ', u.Ut_Name) as tariffPlan,
+          t.T_CustomerType as tariffPlan,
           sc.S_Status as status,
           sc.S_ConnectionDate as connectionDate,
-          sc.S_InstallationCharge as installationCharge,
+          t.T_InstallationCharge as installationCharge,
+          sc.S_InitialReading as initialReading,
           c.C_ID as customerId,
           m.M_ID as meterId,
-          t.T_ID as tariffId
+          t.T_ID as tariffId,
+          ISNULL(sa.A_HouseNo, ca.A_HouseNo) as serviceHouseNo,
+          ISNULL(sa.A_Street, ca.A_Street) as serviceStreet,
+          ISNULL(sa.A_City, ca.A_City) as serviceCity
         FROM ServiceConnection sc
         INNER JOIN Customer c ON sc.C_ID = c.C_ID
+        INNER JOIN Address ca ON c.A_ID = ca.A_ID
         INNER JOIN Meter m ON sc.M_ID = m.M_ID
         INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
         INNER JOIN Tariff t ON sc.T_ID = t.T_ID
+        LEFT JOIN Address sa ON sc.A_ID = sa.A_ID
         ORDER BY sc.S_ConnectionDate DESC
       `);
 
-    // Format installation date to match frontend format (e.g., "11th Dec 2024")
+    // Format installation date
     const formattedData = result.recordset.map(connection => ({
       ...connection,
       installationDate: formatDate(connection.installationDate)
@@ -53,10 +57,7 @@ export const getAllServiceConnections = async (req, res) => {
   }
 };
 
-/**
- * GET /api/service-connections/:id
- * Get service connection by ID
- */
+// GET /api/service-connections/:id
 export const getServiceConnectionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -71,18 +72,24 @@ export const getServiceConnectionById = async (req, res) => {
           u.Ut_Name as utilityType,
           m.M_Number as meterNumber,
           m.M_InstallationDate as installationDate,
-          CONCAT(t.T_CustomerType, ' - ', u.Ut_Name) as tariffPlan,
+          t.T_CustomerType as tariffPlan,
           sc.S_Status as status,
           sc.S_ConnectionDate as connectionDate,
-          sc.S_InstallationCharge as installationCharge,
+          t.T_InstallationCharge as installationCharge,
+          sc.S_InitialReading as initialReading,
           c.C_ID as customerId,
           m.M_ID as meterId,
-          t.T_ID as tariffId
+          t.T_ID as tariffId,
+          ISNULL(sa.A_HouseNo, ca.A_HouseNo) as serviceHouseNo,
+          ISNULL(sa.A_Street, ca.A_Street) as serviceStreet,
+          ISNULL(sa.A_City, ca.A_City) as serviceCity
         FROM ServiceConnection sc
         INNER JOIN Customer c ON sc.C_ID = c.C_ID
+        INNER JOIN Address ca ON c.A_ID = ca.A_ID
         INNER JOIN Meter m ON sc.M_ID = m.M_ID
         INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
         INNER JOIN Tariff t ON sc.T_ID = t.T_ID
+        LEFT JOIN Address sa ON sc.A_ID = sa.A_ID
         WHERE sc.S_ID = @connectionId
       `);
 
@@ -113,23 +120,22 @@ export const getServiceConnectionById = async (req, res) => {
   }
 };
 
-/**
- * POST /api/service-connections
- * Create new service connection
- */
+// POST /api/service-connections
 export const createServiceConnection = async (req, res) => {
   try {
     const {
       customer,
-      utilityTypes,
+      utilityType,
       meterNumber,
-      tariffPlan,
-      installationCharge,
+      initialReading,
+      houseNo,
+      street,
+      city,
       status
     } = req.body;
 
     // Validation
-    if (!customer || !utilityTypes || utilityTypes.length === 0 || !meterNumber || !tariffPlan) {
+    if (!customer || !utilityType || !meterNumber) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields'
@@ -142,7 +148,7 @@ export const createServiceConnection = async (req, res) => {
     await transaction.begin();
 
     try {
-      // 1. Get customer ID by name
+      // Get customer ID by name
       const customerResult = await transaction.request()
         .input('customerName', sql.VarChar(100), customer)
         .query('SELECT C_ID FROM Customer WHERE C_Name = @customerName');
@@ -157,8 +163,47 @@ export const createServiceConnection = async (req, res) => {
 
       const customerId = customerResult.recordset[0].C_ID;
 
-      // 2. Get utility ID (use first utility type for now)
-      const utilityType = utilityTypes[0];
+      // Customer's default address
+      const customerAddressResult = await transaction.request()
+        .input('customerId', sql.Int, customerId)
+        .query('SELECT A_ID FROM Customer WHERE C_ID = @customerId');
+
+      const customerAddressId = customerAddressResult.recordset[0].A_ID;
+
+      // Check
+      let serviceAddressId = null;
+
+      if (houseNo && street && city) {
+        const addressCheck = await transaction.request()
+          .input('houseNo', sql.VarChar(50), houseNo)
+          .input('street', sql.VarChar(100), street)
+          .input('city', sql.VarChar(50), city)
+          .query(`
+            SELECT A_ID
+            FROM Address
+            WHERE A_HouseNo = @houseNo
+              AND A_Street = @street
+              AND A_City = @city
+          `);
+
+        if (addressCheck.recordset.length > 0) {
+          serviceAddressId = addressCheck.recordset[0].A_ID;
+        } else {
+          const addressResult = await transaction.request()
+            .input('houseNo', sql.VarChar(50), houseNo)
+            .input('street', sql.VarChar(100), street)
+            .input('city', sql.VarChar(50), city)
+            .query(`
+              INSERT INTO Address (A_HouseNo, A_Street, A_City)
+              OUTPUT INSERTED.A_ID
+              VALUES (@houseNo, @street, @city)
+            `);
+
+          serviceAddressId = addressResult.recordset[0].A_ID;
+        }
+      }
+
+      // Get utility ID
       const utilityResult = await transaction.request()
         .input('utilityName', sql.VarChar(20), utilityType)
         .query('SELECT Ut_ID FROM Utility WHERE Ut_Name = @utilityName');
@@ -173,14 +218,22 @@ export const createServiceConnection = async (req, res) => {
 
       const utilityId = utilityResult.recordset[0].Ut_ID;
 
-      // 3. Check if meter exists, if not create it
+      // Check if meter exists, if not create it
       let meterId;
       const meterCheck = await transaction.request()
         .input('meterNumber', sql.VarChar(50), meterNumber)
-        .query('SELECT M_ID FROM Meter WHERE M_Number = @meterNumber');
+        .query('SELECT M_ID, M_Status FROM Meter WHERE M_Number = @meterNumber');
 
       if (meterCheck.recordset.length > 0) {
         meterId = meterCheck.recordset[0].M_ID;
+        const currentMeterStatus = meterCheck.recordset[0].M_Status;
+
+        // Update meter if existing
+        if (currentMeterStatus === 'Disconnected') {
+          await transaction.request()
+            .input('meterId', sql.Int, meterId)
+            .query('UPDATE Meter SET M_Status = \'Active\' WHERE M_ID = @meterId');
+        }
       } else {
         // Create new meter
         const meterResult = await transaction.request()
@@ -195,14 +248,14 @@ export const createServiceConnection = async (req, res) => {
         meterId = meterResult.recordset[0].M_ID;
       }
 
-      // 4. Get customer type to find appropriate tariff
+      // Get customer type to find appropriate tariff
       const customerTypeResult = await transaction.request()
         .input('customerId', sql.Int, customerId)
         .query('SELECT C_Type FROM Customer WHERE C_ID = @customerId');
 
       const customerType = customerTypeResult.recordset[0].C_Type;
 
-      // 5. Find appropriate tariff
+      // Find appropriate tariff
       const tariffResult = await transaction.request()
         .input('utilityId', sql.Int, utilityId)
         .input('customerType', sql.VarChar(20), customerType)
@@ -227,19 +280,19 @@ export const createServiceConnection = async (req, res) => {
       const tariffId = tariffResult.recordset[0].T_ID;
 
       // 6. Create service connection
-      // Note: Database only supports 'Active' and 'Disconnected', map 'Pending' to 'Active'
-      const connectionStatus = status === 'Pending' ? 'Active' : (status || 'Active');
+      const connectionStatus = status || 'Active';
 
       const connectionResult = await transaction.request()
         .input('customerId', sql.Int, customerId)
         .input('meterId', sql.Int, meterId)
         .input('tariffId', sql.Int, tariffId)
-        .input('installationCharge', sql.Decimal(10, 2), installationCharge || 0.00)
+        .input('initialReading', sql.Decimal(10, 2), initialReading || 0.00)
+        .input('serviceAddressId', sql.Int, serviceAddressId)
         .input('status', sql.VarChar(20), connectionStatus)
         .query(`
-          INSERT INTO ServiceConnection (C_ID, M_ID, T_ID, S_ConnectionDate, S_InstallationCharge, S_Status)
+          INSERT INTO ServiceConnection (C_ID, M_ID, T_ID, S_ConnectionDate, S_InitialReading, A_ID, S_Status)
           OUTPUT INSERTED.S_ID
-          VALUES (@customerId, @meterId, @tariffId, GETDATE(), @installationCharge, @status)
+          VALUES (@customerId, @meterId, @tariffId, GETDATE(), @initialReading, @serviceAddressId, @status)
         `);
 
       const connectionId = connectionResult.recordset[0].S_ID;
@@ -256,15 +309,21 @@ export const createServiceConnection = async (req, res) => {
             u.Ut_Name as utilityType,
             m.M_Number as meterNumber,
             m.M_InstallationDate as installationDate,
-            CONCAT(t.T_CustomerType, ' - ', u.Ut_Name) as tariffPlan,
+            t.T_CustomerType as tariffPlan,
             sc.S_Status as status,
             sc.S_ConnectionDate as connectionDate,
-            sc.S_InstallationCharge as installationCharge
+            t.T_InstallationCharge as installationCharge,
+            sc.S_InitialReading as initialReading,
+            ISNULL(sa.A_HouseNo, ca.A_HouseNo) as serviceHouseNo,
+            ISNULL(sa.A_Street, ca.A_Street) as serviceStreet,
+            ISNULL(sa.A_City, ca.A_City) as serviceCity
           FROM ServiceConnection sc
           INNER JOIN Customer c ON sc.C_ID = c.C_ID
+          INNER JOIN Address ca ON c.A_ID = ca.A_ID
           INNER JOIN Meter m ON sc.M_ID = m.M_ID
           INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
           INNER JOIN Tariff t ON sc.T_ID = t.T_ID
+          LEFT JOIN Address sa ON sc.A_ID = sa.A_ID
           WHERE sc.S_ID = @connectionId
         `);
 
@@ -294,21 +353,19 @@ export const createServiceConnection = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/service-connections/:id
- * Update service connection
- */
+// PUT /api/service-connections/:id
 export const updateServiceConnection = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      customer,
-      utilityTypes,
-      meterNumber,
-      tariffPlan,
-      installationCharge,
-      status
-    } = req.body;
+    const { status } = req.body;
+
+    // Validate status if provided
+    if (status && !['Active', 'Disconnected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be "Active" or "Disconnected"'
+      });
+    }
 
     const pool = await getPool();
     const transaction = new sql.Transaction(pool);
@@ -316,7 +373,7 @@ export const updateServiceConnection = async (req, res) => {
     await transaction.begin();
 
     try {
-      // 1. Check if service connection exists
+      // Check if service connection exists
       const connectionCheck = await transaction.request()
         .input('connectionId', sql.Int, id)
         .query('SELECT S_ID FROM ServiceConnection WHERE S_ID = @connectionId');
@@ -329,18 +386,13 @@ export const updateServiceConnection = async (req, res) => {
         });
       }
 
-      // 2. Update status (main field that's typically updated)
-      // Map 'Pending' to 'Active' as database only supports 'Active' and 'Disconnected'
-      const connectionStatus = status === 'Pending' ? 'Active' : status;
-
+      // Update service connection
       await transaction.request()
         .input('connectionId', sql.Int, id)
-        .input('status', sql.VarChar(20), connectionStatus)
-        .input('installationCharge', sql.Decimal(10, 2), installationCharge)
+        .input('status', sql.VarChar(20), status)
         .query(`
           UPDATE ServiceConnection
-          SET S_Status = @status,
-              S_InstallationCharge = ISNULL(@installationCharge, S_InstallationCharge)
+          SET S_Status = ISNULL(@status, S_Status)
           WHERE S_ID = @connectionId
         `);
 
@@ -356,15 +408,21 @@ export const updateServiceConnection = async (req, res) => {
             u.Ut_Name as utilityType,
             m.M_Number as meterNumber,
             m.M_InstallationDate as installationDate,
-            CONCAT(t.T_CustomerType, ' - ', u.Ut_Name) as tariffPlan,
+            t.T_CustomerType as tariffPlan,
             sc.S_Status as status,
             sc.S_ConnectionDate as connectionDate,
-            sc.S_InstallationCharge as installationCharge
+            t.T_InstallationCharge as installationCharge,
+            sc.S_InitialReading as initialReading,
+            ISNULL(sa.A_HouseNo, ca.A_HouseNo) as serviceHouseNo,
+            ISNULL(sa.A_Street, ca.A_Street) as serviceStreet,
+            ISNULL(sa.A_City, ca.A_City) as serviceCity
           FROM ServiceConnection sc
           INNER JOIN Customer c ON sc.C_ID = c.C_ID
+          INNER JOIN Address ca ON c.A_ID = ca.A_ID
           INNER JOIN Meter m ON sc.M_ID = m.M_ID
           INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
           INNER JOIN Tariff t ON sc.T_ID = t.T_ID
+          LEFT JOIN Address sa ON sc.A_ID = sa.A_ID
           WHERE sc.S_ID = @connectionId
         `);
 
@@ -394,10 +452,7 @@ export const updateServiceConnection = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/service-connections/:id
- * Delete service connection
- */
+// DELETE /api/service-connections/:id
 export const deleteServiceConnection = async (req, res) => {
   try {
     const { id } = req.params;
@@ -435,10 +490,7 @@ export const deleteServiceConnection = async (req, res) => {
   }
 };
 
-/**
- * Helper function to format date
- * Converts Date to format like "11th Dec 2024"
- */
+// Helper function to format date
 function formatDate(date) {
   if (!date) return '';
 
