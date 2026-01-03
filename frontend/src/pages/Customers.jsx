@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { getAllCustomers, createCustomer, deleteCustomer, updateCustomer } from "@/services/customerService"
+import { getAllCustomers, createCustomer, updateCustomer } from "@/services/customerService"
 import {
   AppSidebar,
   SiteHeader,
@@ -10,7 +10,6 @@ import {
   createCustomerColumns,
   CustomerForm,
   ViewDialog,
-  DeleteDialog,
   Separator
 } from "@/components"
 import { UserPlus, Loader2 } from "lucide-react"
@@ -19,7 +18,6 @@ export default function Customers() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [customers, setCustomers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -71,36 +69,17 @@ export default function Customers() {
   }
 
   const handleEdit = (customer) => {
-    setSelectedCustomer(customer)
+    // Parse phone numbers from comma-separated string
+    const phoneNumbers = customer.phones
+      ? customer.phones.split(', ').map(p => p.replace('+94', ''))
+      : []
+
+    setSelectedCustomer({
+      ...customer,
+      parsedPhone: phoneNumbers[0] || '',
+      parsedPhone2: phoneNumbers[1] || ''
+    })
     setIsEditDialogOpen(true)
-  }
-
-  const handleDelete = (customer) => {
-    setSelectedCustomer(customer)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const confirmDelete = async () => {
-    if (!selectedCustomer) return
-
-    try {
-      setIsLoading(true)
-      await deleteCustomer(selectedCustomer.id)
-
-      // Remove from customers list
-      setCustomers(prev => prev.filter(c => c.id !== selectedCustomer.id))
-
-      setIsDeleteDialogOpen(false)
-      setSelectedCustomer(null)
-
-      // Show success toast
-      toast.success("Customer deleted successfully!")
-    } catch (error) {
-      console.error("Failed to delete customer:", error)
-      toast.error(error.message || "Failed to delete customer. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const handleEditSuccess = async (formData, uploadedFile) => {
@@ -111,7 +90,7 @@ export default function Customers() {
         selectedCustomer.id,
         {
           ...formData,
-          status: selectedCustomer.status
+          status: formData.status
         },
         uploadedFile
       )
@@ -140,8 +119,7 @@ export default function Customers() {
   // Create columns with action handlers
   const customerColumns = createCustomerColumns(
     handleViewDetails,
-    handleEdit,
-    handleDelete
+    handleEdit
   )
 
   return (
@@ -196,7 +174,7 @@ export default function Customers() {
                         {
                           id: 'status',
                           label: 'Status',
-                          options: ['Active', 'Pending', 'Inactive']
+                          options: ['Active', 'Inactive']
                         }
                       ]}
                       showColumnToggle={true}
@@ -237,7 +215,6 @@ export default function Customers() {
             </div>
 
             <Separator />
-
             <div>
               <h3 className="text-lg font-medium mb-3">Customer Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
@@ -300,8 +277,8 @@ export default function Customers() {
               <h3 className="text-lg font-medium mb-3">Contact Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <p className="text-sm font-normal text-muted-foreground">Phone</p>
-                  <p className="text-base">{selectedCustomer.phone}</p>
+                  <p className="text-sm font-normal text-muted-foreground">Phone Number(s)</p>
+                  <p className="text-base">{selectedCustomer.phones || selectedCustomer.phone || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Email</p>
@@ -311,7 +288,6 @@ export default function Customers() {
             </div>
 
             <Separator />
-
             <div>
               <h3 className="text-lg font-medium mb-3">Address</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
@@ -343,27 +319,17 @@ export default function Customers() {
             fullName: selectedCustomer.name || "",
             customerType: selectedCustomer.type || "Household",
             identityValidation: selectedCustomer.idProof || "",
-            phone: selectedCustomer.phone?.replace("+94", "") || "",
+            phone: selectedCustomer.parsedPhone || "",
+            phone2: selectedCustomer.parsedPhone2 || "",
             email: selectedCustomer.email || "",
             houseNo: selectedCustomer.houseNo || "",
             street: selectedCustomer.street || "",
-            city: selectedCustomer.city || ""
+            city: selectedCustomer.city || "",
+            status: selectedCustomer.status || "Active"
           }}
           isEdit={true}
         />
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        title="Delete Customer"
-        description="Are you sure you want to delete this customer?"
-        itemName={selectedCustomer?.name}
-        itemId={selectedCustomer?.id}
-        onConfirm={confirmDelete}
-        isLoading={isLoading}
-      />
     </SidebarProvider>
   )
 }
