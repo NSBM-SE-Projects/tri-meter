@@ -8,6 +8,7 @@ import ServiceConnections from './pages/ServiceConnections'
 import Bills from './pages/Bills'
 import MeterReadings from './pages/MeterReadings'
 import Tariffs from './pages/Tariffs'
+import SystemUsers from './pages/SystemUsers'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/bills" element={<Bills />} />
         <Route path="/meter-readings" element={<MeterReadings />} />
         <Route path="/tariffs" element={<Tariffs />} />
+        <Route path="/system-users" element={<SystemUsers />} />
       </Routes>
     </HashRouter>
   )

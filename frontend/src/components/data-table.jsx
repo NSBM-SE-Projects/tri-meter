@@ -119,14 +119,18 @@ export function DataTable({
           )}
         </div>
       )}
-      <div className="overflow-hidden rounded-xl border">
-        <Table>
+      <div className="rounded-xl border overflow-hidden">
+        <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <Table className="min-w-full">
           <TableHeader className="bg-neutral-300 dark:bg-neutral-900 text-normal">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} className="text-neutral-900 dark:text-neutral-100">
+                    <TableHead
+                      key={header.id}
+                      className={`text-neutral-900 dark:text-neutral-100 ${header.column.columnDef.meta?.className || ''}`}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -148,7 +152,10 @@ export function DataTable({
                   className="text-neutral-900 dark:text-neutral-300 h-14"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
+                    <TableCell
+                      key={cell.id}
+                      className={`py-3 ${cell.column.columnDef.meta?.className || ''}`}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -169,6 +176,7 @@ export function DataTable({
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
       {showPagination && (
         <div className="flex items-center justify-end space-x-2 py-4">

@@ -42,14 +42,14 @@ const data = {
       icon: BarChart3,
     },
     {
-      title: "System Users",
-      url: "#",
-      icon: ShieldCheck,
-    },
-    {
       title: "Tariff",
       url: "#/tariffs",
       icon: BadgeDollarSign,
+    },
+    {
+      title: "System Users",
+      url: "#/system-users",
+      icon: ShieldCheck,
     },
   ],
   navSecondary: [
