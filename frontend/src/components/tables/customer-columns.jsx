@@ -11,38 +11,37 @@ import {
 const getStatusColor = (status) => {
   switch (status) {
     case "Active":
-      return "bg-green-600/25 text-green-500 hover:bg-green-600/40"
+      return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
     case "Inactive":
-      return "bg-red-600/25 text-red-500 hover:bg-red-600/40"
+      return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
     case "Pending":
-      return "bg-yellow-600/25 text-yellow-500 hover:bg-yellow-600/40"
+      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
     default:
-      return "bg-gray-600/25 text-gray-500 hover:bg-gray-600/40"
+      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
   }
 }
 
 export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
   {
     accessorKey: "id",
-    header: () => <div className="pl-4">ID</div>,
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          ID
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      )
+    },
     cell: ({ row }) => (
       <div className="font-normal pl-4">{row.getValue("id")}</div>
     ),
   },
   {
     accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="-ml-4"
-        >
-          Name
-          <ArrowUpDown className="ml-1 h-4 w-4" />
-        </Button>
-      )
-    },
+    header: () => <div>Name</div>,
     cell: ({ row }) => <div className="font-normal">{row.getValue("name")}</div>,
   },
   {
@@ -99,7 +98,7 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="text-red-700"
+                className="text-red-600"
                 onClick={() => onDelete(customer)}
               >
                 Delete
