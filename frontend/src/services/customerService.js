@@ -1,15 +1,12 @@
 /**
  * Customer Service
- * Handles all customer-related API calls
  */
 
 import { getAuthHeaders } from './authService'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
-/**
- * Get all customers
- */
+// Get all customers
 export async function getAllCustomers() {
   const response = await fetch(`${API_URL}/customers`, {
     method: 'GET',
@@ -25,9 +22,7 @@ export async function getAllCustomers() {
   return data.data
 }
 
-/**
- * Get customer by ID
- */
+// Get customer by ID
 export async function getCustomerById(id) {
   const response = await fetch(`${API_URL}/customers/${id}`, {
     method: 'GET',
@@ -43,14 +38,28 @@ export async function getCustomerById(id) {
   return data.data
 }
 
-/**
- * Create new customer
- */
-export async function createCustomer(customerData) {
+// Create new customer
+export async function createCustomer(customerData, idImageFile = null) {
+  const formData = new FormData()
+
+  // Add all customer data fields
+  Object.keys(customerData).forEach(key => {
+    if (customerData[key] !== null && customerData[key] !== undefined) {
+      formData.append(key, customerData[key])
+    }
+  })
+
+  if (idImageFile) {
+    formData.append('idImage', idImageFile)
+  }
+
   const response = await fetch(`${API_URL}/customers`, {
     method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(customerData),
+    headers: {
+      // Don't set Content-Type - let browser set it with boundary for multipart/form-data
+      'Authorization': getAuthHeaders()['Authorization']
+    },
+    body: formData,
   })
 
   const data = await response.json()
@@ -62,14 +71,26 @@ export async function createCustomer(customerData) {
   return data.data
 }
 
-/**
- * Update customer
- */
-export async function updateCustomer(id, customerData) {
+// Update customer
+export async function updateCustomer(id, customerData, idImageFile = null) {
+  const formData = new FormData()
+
+  Object.keys(customerData).forEach(key => {
+    if (customerData[key] !== null && customerData[key] !== undefined) {
+      formData.append(key, customerData[key])
+    }
+  })
+
+  if (idImageFile) {
+    formData.append('idImage', idImageFile)
+  }
+
   const response = await fetch(`${API_URL}/customers/${id}`, {
     method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(customerData),
+    headers: {
+      'Authorization': getAuthHeaders()['Authorization']
+    },
+    body: formData,
   })
 
   const data = await response.json()
@@ -81,9 +102,7 @@ export async function updateCustomer(id, customerData) {
   return data.data
 }
 
-/**
- * Delete customer
- */
+// Delete customer
 export async function deleteCustomer(id) {
   const response = await fetch(`${API_URL}/customers/${id}`, {
     method: 'DELETE',

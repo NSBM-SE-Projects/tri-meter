@@ -1,12 +1,12 @@
 import { TrendingDownIcon, TrendingUpIcon, Loader2 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import {
+  Badge,
   Card,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components"
 
 export function SectionCards({ stats }) {
   if (!stats) {

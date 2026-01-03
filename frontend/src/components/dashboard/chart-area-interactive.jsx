@@ -9,19 +9,17 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import {
   ToggleGroup,
   ToggleGroupItem,
-} from "@/components/ui/toggle-group"
+} from "@/components"
 import { getRevenueTrends } from "@/services/dashboardService"
 
 const chartConfig = {
@@ -43,6 +41,7 @@ export function ChartAreaInteractive() {
   const [timeRange, setTimeRange] = React.useState("30d")
   const [chartData, setChartData] = React.useState([])
   const [loading, setLoading] = React.useState(true)
+  const [chartKey, setChartKey] = React.useState(Date.now())
 
   React.useEffect(() => {
     async function fetchTrends() {
@@ -50,6 +49,7 @@ export function ChartAreaInteractive() {
         setLoading(true)
         const data = await getRevenueTrends(timeRange)
         setChartData(data)
+        setChartKey(Date.now())
       } catch (error) {
         console.error('Revenue trends error:', error)
       } finally {
@@ -97,17 +97,17 @@ export function ChartAreaInteractive() {
         </div>
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        {loading ? (
+        {loading || chartData.length === 0 ? (
           <div className="flex items-center justify-center h-[275px]">
             <Loader2 className="h-8 w-8 mb-10 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <ChartContainer
-            key={`${timeRange}-${chartData.length}`}
+            key={`chart-${chartKey}`}
             config={chartConfig}
             className="aspect-auto h-[275px] w-full"
           >
-            <AreaChart data={chartData}>
+            <AreaChart data={chartData} margin={{ left: 12, right: 12, top: 12, bottom: 12 }}>
               <defs>
                 <linearGradient id="fillElectricity" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-electricity)" stopOpacity={1.0} />

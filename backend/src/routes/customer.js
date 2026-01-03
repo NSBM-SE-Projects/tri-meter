@@ -6,13 +6,11 @@ import {
   updateCustomer,
   deleteCustomer
 } from '../controllers/customerController.js';
+import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
-/**
- * Customer Routes
- * Base: /api/customers
- */
+//Base URL: /api/customers
 
 // GET /api/customers - Get all customers
 router.get('/', getAllCustomers);
@@ -21,10 +19,10 @@ router.get('/', getAllCustomers);
 router.get('/:id', getCustomerById);
 
 // POST /api/customers - Create new customer
-router.post('/', createCustomer);
+router.post('/', upload.single('idImage'), createCustomer);
 
 // PUT /api/customers/:id - Update customer
-router.put('/:id', updateCustomer);
+router.put('/:id', upload.single('idImage'), updateCustomer);
 
 // DELETE /api/customers/:id - Delete customer
 router.delete('/:id', deleteCustomer);
