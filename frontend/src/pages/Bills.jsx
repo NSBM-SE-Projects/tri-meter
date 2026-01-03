@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import {
@@ -163,17 +163,19 @@ export default function Bills() {
           <SiteHeader />
           <main className="flex-1 p-3 sm:p-6 overflow-x-hidden">
             <div className="space-y-4 sm:space-y-6 max-w-full">
-              <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold">Bills</h1>
                   <p className="text-sm sm:text-base text-muted-foreground">
                     Manage customer billing
                   </p>
                 </div>
-                <Button onClick={() => setIsGenerateBillOpen(true)} className="w-full sm:w-auto">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Generate Bill
-                </Button>
+                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
+                  <Button onClick={() => setIsGenerateBillOpen(true)} className="w-full sm:w-auto">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Generate Bill
+                  </Button>
+                </div>
               </div>
 
               <Card className="overflow-hidden">

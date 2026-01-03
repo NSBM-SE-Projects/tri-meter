@@ -13,16 +13,20 @@ export { SectionCards } from "./dashboard/section-cards"
 export { DataTable } from "./tables/data-table"
 export { activityColumns } from "./tables/activity-columns"
 export { customerColumns, createCustomerColumns } from "./tables/customer-columns"
+export { serviceConnectionColumns, createServiceConnectionColumns } from "./tables/service-connection-columns"
 export { meterReadingColumns, createMeterReadingColumns } from "./tables/meter-reading-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"
 export { CustomerForm } from "./forms/customer-form"
+export { ServiceConnectionForm } from "./forms/service-connection-form"
 export { MeterReadingForm } from "./forms/meter-reading-form"
+export { GenerateBillForm } from "./forms/generate-bill-form"
 
 // Dialog components
 export { ViewDialog } from "./dialogs/ViewDialog"
 export { DeleteDialog } from "./dialogs/DeleteDialog"
+export { BillDetailsDialog } from "./dialogs/bill-details-dialog"
 
 // Common utilities
 export { ThemeProvider } from "./common/theme-provider"
