@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
+import { MonthYearPicker } from "@/components/ui/month-year-picker"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -248,15 +248,13 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
                     className={`w-full justify-start text-left font-normal ${formErrors.periodFrom ? "border-red-500" : ""}`}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.periodFrom ? format(formData.periodFrom, "PPP") : <span>Pick a date</span>}
+                    {formData.periodFrom ? format(formData.periodFrom, "MMMM yyyy") : <span>Pick a month</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
+                  <MonthYearPicker
                     selected={formData.periodFrom}
                     onSelect={(date) => handleInputChange("periodFrom", date)}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -276,15 +274,13 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
                     className={`w-full justify-start text-left font-normal ${formErrors.periodTo ? "border-red-500" : ""}`}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.periodTo ? format(formData.periodTo, "PPP") : <span>Pick a date</span>}
+                    {formData.periodTo ? format(formData.periodTo, "MMMM yyyy") : <span>Pick a month</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
+                  <MonthYearPicker
                     selected={formData.periodTo}
                     onSelect={(date) => handleInputChange("periodTo", date)}
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
