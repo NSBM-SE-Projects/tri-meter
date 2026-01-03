@@ -15,6 +15,7 @@ import billRoutes from './routes/bill.js';
 import dashboardRoutes from './routes/dashboard.js';
 import customerRoutes from './routes/customer.js';
 import meterReadingRoutes from './routes/meterReading.js';
+import tariffRoutes from './routes/tariff.js';
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.use('/api/bills', billRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/meter-readings', meterReadingRoutes);
+app.use('/api/tariffs', tariffRoutes);
 
 // ===== ERROR HANDLERS =====
 

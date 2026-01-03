@@ -37,11 +37,6 @@ const data = {
       icon: CreditCard,
     },
     {
-      title: "Tariffs",
-      url: "#",
-      icon: BadgeDollarSign,
-    },
-    {
       title: "Reports",
       url: "#",
       icon: BarChart3,
@@ -50,6 +45,11 @@ const data = {
       title: "System Users",
       url: "#",
       icon: ShieldCheck,
+    },
+    {
+      title: "Tariff",
+      url: "#/tariffs",
+      icon: BadgeDollarSign,
     },
   ],
   navSecondary: [
