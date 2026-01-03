@@ -13,7 +13,10 @@ import authRoutes from './routes/auth.js';
 import inquiryRoutes from './routes/inquiry.js';
 import dashboardRoutes from './routes/dashboard.js';
 import customerRoutes from './routes/customer.js';
+import serviceConnectionRoutes from './routes/serviceConnection.js';
 import meterReadingRoutes from './routes/meterReading.js';
+
+
 
 dotenv.config();
 
@@ -38,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/inquiries', inquiryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/service-connections', serviceConnectionRoutes);
 app.use('/api/meter-readings', meterReadingRoutes);
 
 // ===== ERROR HANDLERS =====
