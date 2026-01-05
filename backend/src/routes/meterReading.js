@@ -8,30 +8,31 @@ import {
   getActiveMeters,
   getLatestMeterReading
 } from '../controllers/meterReadingController.js';
+import { verifyToken, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
 //Base URL: /api/meter-readings
 
-// GET /api/meter-readings/meters/active - Get all active meters (must be before /:id route)
-router.get('/meters/active', getActiveMeters);
+// GET /api/meter-readings/meters/active
+router.get('/meters/active', verifyToken, requireRole('Admin', 'Manager', 'Field Officer'), getActiveMeters);
 
-// GET /api/meter-readings/latest/:meterId - Get latest reading for a meter (must be before /:id route)
-router.get('/latest/:meterId', getLatestMeterReading);
+// GET /api/meter-readings/latest/:meterId
+router.get('/latest/:meterId', verifyToken, requireRole('Admin', 'Manager', 'Field Officer'), getLatestMeterReading);
 
-// GET /api/meter-readings - Get all meter readings
-router.get('/', getAllMeterReadings);
+// GET /api/meter-readings
+router.get('/', verifyToken, requireRole('Admin', 'Manager', 'Field Officer'), getAllMeterReadings);
 
-// GET /api/meter-readings/:id - Get meter reading by ID
-router.get('/:id', getMeterReadingById);
+// GET /api/meter-readings/:id
+router.get('/:id', verifyToken, requireRole('Admin', 'Manager', 'Field Officer'), getMeterReadingById);
 
-// POST /api/meter-readings - Create new meter reading
-router.post('/', createMeterReading);
+// POST /api/meter-readings
+router.post('/', verifyToken, requireRole('Admin, Field Officer'), createMeterReading);
 
-// PUT /api/meter-readings/:id - Update meter reading
-router.put('/:id', updateMeterReading);
+// PUT /api/meter-readings/:id
+router.put('/:id', verifyToken, requireRole('Admin, Field Officer'), updateMeterReading);
 
-// DELETE /api/meter-readings/:id - Delete meter reading
-router.delete('/:id', deleteMeterReading);
+// DELETE /api/meter-readings/:id
+router.delete('/:id', verifyToken, requireRole('Admin', 'Manager'), deleteMeterReading);
 
 export default router;

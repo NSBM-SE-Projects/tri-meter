@@ -52,13 +52,16 @@ export default function MeterReadings() {
       // Add to readings list
       setReadings(prev => [newReading, ...prev])
 
-      // Show success toast
       toast.success("Meter reading added successfully!")
 
-      // Refresh readings list
       await fetchReadings()
     } catch (error) {
       console.error("Failed to create meter reading:", error)
+      // Check for 403
+      if (error.statusCode === 403) {
+        window.location.href = '/#/access-denied'
+        return
+      }
       toast.error(error.message || "Failed to add meter reading. Please try again.")
     } finally {
       setIsLoading(false)
@@ -94,10 +97,14 @@ export default function MeterReadings() {
       setIsDeleteDialogOpen(false)
       setSelectedReading(null)
 
-      // Show success toast
       toast.success("Meter reading deleted successfully!")
     } catch (error) {
       console.error("Failed to delete meter reading:", error)
+      // Check 403
+      if (error.statusCode === 403) {
+        window.location.href = '/#/access-denied'
+        return
+      }
       toast.error(error.message || "Failed to delete meter reading. Please try again.")
     } finally {
       setIsLoading(false)
@@ -121,20 +128,22 @@ export default function MeterReadings() {
       setIsEditDialogOpen(false)
       setSelectedReading(null)
 
-      // Show success toast
       toast.success("Meter reading updated successfully!")
 
-      // Refresh readings list
       await fetchReadings()
     } catch (error) {
       console.error("Failed to update meter reading:", error)
+      // Check 403
+      if (error.statusCode === 403) {
+        window.location.href = '/#/access-denied'
+        return
+      }
       toast.error(error.message || "Failed to update meter reading. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Create columns with action handlers
   const readingColumns = createMeterReadingColumns(
     handleViewDetails,
     handleEdit,
@@ -192,7 +201,7 @@ export default function MeterReadings() {
                         },
                         {
                           id: 'month',
-                          label: 'Month',
+                          label: 'Period',
                           options: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                         }
                       ]}
@@ -262,7 +271,7 @@ export default function MeterReadings() {
                   <p className="text-sm font-normal text-muted-foreground">Tampered</p>
                   {selectedReading.tampered ? (
                     <Badge variant="destructive" className="mt-1">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      <AlertTriangle className="w-4 h-4 mr-1" strokeWidth={2.5} />
                       Yes
                     </Badge>
                   ) : (
@@ -271,6 +280,16 @@ export default function MeterReadings() {
                 </div>
               </div>
             </div>
+
+            {selectedReading.notes && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Notes</h3>
+                  <p className="text-base text-muted-foreground">{selectedReading.notes}</p>
+                </div>
+              </>
+            )}
 
             <Separator />
 
@@ -294,11 +313,12 @@ export default function MeterReadings() {
           onOpenChange={setIsEditDialogOpen}
           onSuccess={handleEditSuccess}
           initialData={{
-            meterNumber: selectedReading.meterNumber || "",
+            meterNumber: selectedReading.meterId?.toString() || "",
             date: selectedReading.date || "",
             value: selectedReading.value || "",
             previousValue: selectedReading.previousValue || "",
             tampered: selectedReading.tampered || false,
+            notes: selectedReading.notes || "",
             fieldOfficer: selectedReading.fieldOfficer || ""
           }}
           isEdit={true}

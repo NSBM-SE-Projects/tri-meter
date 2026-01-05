@@ -59,6 +59,8 @@ export { RadioGroup, RadioGroupItem } from "./ui/radio-group"
 export { Toggle } from "./ui/toggle"
 export { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
 export { Textarea } from "./ui/textarea"
+export { Calendar } from "./ui/calendar"
+export { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 
 // UI Components - Data Display
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "./ui/table"
