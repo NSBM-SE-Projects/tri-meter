@@ -29,41 +29,27 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="-ml-4"
         >
           Meter
           <ArrowUpDown className="ml-1 h-4 w-4" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("meterNumber")}</div>,
+    cell: ({ row }) => <div className="font-normal pl-4">{row.getValue("meterNumber")}</div>,
   },
   {
-    accessorKey: "date",
-    header: "Date",
+    accessorKey: "month",
+    header: "Period",
     cell: ({ row }) => (
-      <div className="text-muted-foreground">{row.getValue("date")}</div>
+      <div className="font-normal">{row.getValue("month")}</div>
     ),
-  },
-  {
-    accessorKey: "value",
-    header: "Value",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground">{row.getValue("value")}</div>
-    ),
-  },
-  {
-    accessorKey: "previousValue",
-    header: "Previous Value",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground">{row.getValue("previousValue")}</div>
-    ),
+    filterFn: "multiSelect",
   },
   {
     accessorKey: "consumption",
-    header: "Consump.",
+    header: "Consumption",
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("consumption")}</div>
+      <div className="font-normal">{row.getValue("consumption")}</div>
     ),
   },
   {
@@ -72,8 +58,8 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
     cell: ({ row }) => {
       const tampered = row.getValue("tampered")
       return tampered ? (
-        <Badge variant="destructive" className="flex items-center gap-1">
-          <AlertTriangle className="w-3 h-3" />
+        <Badge variant="destructive" className="flex items-center gap-2 font-semibold">
+          <AlertTriangle className="w-5 h-5" />
           Yes
         </Badge>
       ) : (
@@ -85,7 +71,7 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
     accessorKey: "fieldOfficer",
     header: "Field Officer",
     cell: ({ row }) => (
-      <div className="text-muted-foreground">{row.getValue("fieldOfficer")}</div>
+      <div className="font-normal">{row.getValue("fieldOfficer")}</div>
     ),
   },
   {
@@ -102,35 +88,27 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
     filterFn: "multiSelect",
   },
   {
-    accessorKey: "month",
-    header: "Month",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground">{row.getValue("month")}</div>
-    ),
-    filterFn: "multiSelect",
-  },
-  {
     id: "actions",
-    header: () => <div className="text-center w-20">Actions</div>,
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const reading = row.original
       return (
         <div className="flex justify-center items-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground" aria-label="Open menu">
+              <Button variant="ghost" size="sm" className="w-8 h-8 p-0" aria-label="Open menu">
                 <MoreHorizontal className="h-4 w-4" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem onClick={() => onViewDetails(reading)}>
-                View
+                View Details
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(reading)}>
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="text-red-700"
+                className="text-red-600"
                 onClick={() => onDelete(reading)}
               >
                 Delete
@@ -143,5 +121,5 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
   },
 ]
 
-// Keep old export for backwards compatibility (static version without actions)
+// Backwards compatibility
 export const meterReadingColumns = createMeterReadingColumns(() => {}, () => {}, () => {})
