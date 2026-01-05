@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components"
 import { Search } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers = [], initialData = null, isEdit = false }) {
   const [customerSearch, setCustomerSearch] = useState("")
@@ -28,7 +29,8 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
 
   // Form state
   const [formData, setFormData] = useState({
-    customer: "",
+    customerId: "",
+    customerName: "",
     utilityType: "",
     meterNumber: "",
     tariffPlan: "",
@@ -47,7 +49,8 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
     } else {
       // Reset to default when adding new connection
       setFormData({
-        customer: "",
+        customerId: "",
+        customerName: "",
         utilityType: "",
         meterNumber: "",
         tariffPlan: "",
@@ -90,8 +93,8 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
   const validateForm = () => {
     const errors = {}
     if (!isEdit) {
-      if (!formData.customer) {
-      errors.customer = "Customer is required"
+      if (!formData.customerId) {
+      errors.customerId = "Customer is required"
     }
 
     if (!formData.utilityType) {
@@ -119,9 +122,10 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
     setFormData(prev => {
       const updated = { ...prev, [field]: value }
 
-      if (field === "customer" && value) {
-        const selectedCustomer = customers.find(c => c.name === value)
+      if (field === "customerId" && value) {
+        const selectedCustomer = customers.find(c => c.id === parseInt(value))
         if (selectedCustomer) {
+          updated.customerName = selectedCustomer.name
           updated.tariffPlan = selectedCustomer.type
         }
       }
@@ -218,60 +222,59 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                 <Label htmlFor="customer">
                   Customer<span className="text-red-700">*</span>
                 </Label>
-              <Select
-                value={formData.customer}
-                onValueChange={(value) => {
-                  handleInputChange("customer", value)
-                  setIsSelectOpen(false)
-                }}
-                open={isSelectOpen}
-                onOpenChange={setIsSelectOpen}
-                disabled={isEdit}
-              >
-                <SelectTrigger className={formErrors.customer ? "border-red-700" : ""}>
-                  <SelectValue placeholder="Select customer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="sticky top-0 z-10 p-2 border-b bg-background">
-                    <div className="relative">
-                      <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
-                      <Input
-                        ref={searchInputRef}
-                        placeholder="Search customers..."
-                        value={customerSearch}
-                        onChange={(e) => setCustomerSearch(e.target.value)}
-                        className="h-8 pl-8 text-sm"
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => {
-                          e.stopPropagation()
-                          if (e.key !== 'Escape' && e.key !== 'Tab') {
-                            e.nativeEvent.stopImmediatePropagation()
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div
-                    className="max-h-[200px] overflow-y-auto"
-                    onMouseEnter={() => setIsMouseOverList(true)}
-                  >
-                    {filteredCustomers.length > 0 ? (
-                      filteredCustomers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.name}>
-                          {customer.name}
-                          <span className="ml-2 text-xs text-muted-foreground">({customer.type})</span>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-sm text-center text-muted-foreground">
-                        No customers found
+                <Select
+                  value={formData.customerId ? formData.customerId.toString() : ""}
+                  onValueChange={(value) => {
+                    handleInputChange("customerId", value)
+                    setIsSelectOpen(false)
+                  }}
+                  open={isSelectOpen}
+                  onOpenChange={setIsSelectOpen}
+                >
+                  <SelectTrigger className={cn("w-full", formErrors.customerId ? "border-red-700" : "")}>
+                    <SelectValue placeholder="Select customer" />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                    <div className="sticky top-0 z-10 p-2 border-b bg-background">
+                      <div className="relative">
+                        <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
+                        <Input
+                          ref={searchInputRef}
+                          placeholder="Search customers..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="h-8 pl-8 text-sm"
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation()
+                            if (e.key !== 'Escape' && e.key !== 'Tab') {
+                              e.nativeEvent.stopImmediatePropagation()
+                            }
+                          }}
+                        />
                       </div>
-                    )}
-                  </div>
-                </SelectContent>
-              </Select>
-                {formErrors.customer && (
-                  <p className="text-sm text-red-700">{formErrors.customer}</p>
+                    </div>
+                    <div
+                      className="max-h-[200px] overflow-y-auto"
+                      onMouseEnter={() => setIsMouseOverList(true)}
+                    >
+                      {filteredCustomers.length > 0 ? (
+                        filteredCustomers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id.toString()}>
+                            {customer.name}
+                            <span className="ml-2 text-xs text-muted-foreground">({customer.type})</span>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-sm text-center text-muted-foreground">
+                          No customers found
+                        </div>
+                      )}
+                    </div>
+                  </SelectContent>
+                </Select>
+                {formErrors.customerId && (
+                  <p className="text-sm text-red-700">{formErrors.customerId}</p>
                 )}
               </div>
             )}
@@ -315,16 +318,16 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
             {/* Meter Number */}
             {!isEdit && (
               <div className="space-y-2 pb-1">
-              <Label htmlFor="meterNumber">
-                Meter Number<span className="text-red-700">*</span>
-              </Label>
-              <Input
-                id="meterNumber"
-                value={formData.meterNumber}
-                onChange={(e) => handleInputChange("meterNumber", e.target.value)}
-                className={formErrors.meterNumber ? "border-red-700" : ""}
-                placeholder="E-12345"
-              />
+                <Label htmlFor="meterNumber">
+                  Meter Number<span className="text-red-700">*</span>
+                </Label>
+                <Input
+                  id="meterNumber"
+                  value={formData.meterNumber}
+                  onChange={(e) => handleInputChange("meterNumber", e.target.value)}
+                  className={formErrors.meterNumber ? "border-red-700" : ""}
+                  placeholder="E-12345"
+                />
                 {formErrors.meterNumber && (
                   <p className="text-sm text-red-700">{formErrors.meterNumber}</p>
                 )}
@@ -334,15 +337,15 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
             {/* Tariff Plan */}
             {!isEdit && (
               <div className="space-y-2 pb-1">
-              <Label htmlFor="tariffPlan">
-                Tariff Plan<span className="text-red-700">*</span>
-              </Label>
-              <Input
-                id="tariffPlan"
-                value={formData.tariffPlan}
-                readOnly
-                className="bg-muted text-muted-foreground"
-              />
+                <Label htmlFor="tariffPlan">
+                  Tariff Plan<span className="text-red-700">*</span>
+                </Label>
+                <Input
+                  id="tariffPlan"
+                  value={formData.tariffPlan}
+                  readOnly
+                  className="bg-muted text-muted-foreground"
+                />
                 {formErrors.tariffPlan && (
                   <p className="text-sm text-red-700">{formErrors.tariffPlan}</p>
                 )}
@@ -362,7 +365,7 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
               </div>
             )}
 
-            {/* Initial Reading */}
+            {/* Initial Reading - Only show in register mode */}
             {!isEdit && (
               <div className="space-y-2 pb-1">
                 <Label htmlFor="initialReading">
@@ -381,9 +384,9 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
               </div>
             )}
 
-            {/* Status (Edit mode only) */}
+            {/* Status */}
             {isEdit && (
-              <div className="space-y-4 pb-2">
+              <div className="space-y-2 pb-2">
                 <RadioGroup
                   value={formData.status}
                   onValueChange={(value) => handleInputChange("status", value)}
@@ -406,7 +409,7 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
             )}
           </div>
 
-          <Separator />
+          {!isEdit && <Separator />}
 
           {/* Service Address */}
           {!isEdit && (

@@ -322,10 +322,11 @@ export const updateCustomer = async (req, res) => {
     await transaction.begin();
 
     try {
-      // 1. Check if customer exists
       const customerCheck = await transaction.request()
         .input('customerId', sql.Int, id)
-        .query('SELECT C_ID, A_ID FROM Customer WHERE C_ID = @customerId');
+        .query('SELECT C_ID, A_ID, C_IdImageUrl FROM Customer WHERE C_ID = @customerId');
+
+      const oldImageUrl = customerCheck.recordset.length > 0 ? customerCheck.recordset[0].C_IdImageUrl : null;
 
       if (customerCheck.recordset.length === 0) {
         await transaction.rollback();
@@ -356,17 +357,20 @@ export const updateCustomer = async (req, res) => {
         if (addressCheck.recordset.length > 0) {
           addressId = addressCheck.recordset[0].A_ID;
         } else {
-          const addressResult = await transaction.request()
+          await transaction.request()
+            .input('addressId', sql.Int, currentAddressId)
             .input('houseNo', sql.VarChar(50), houseNo)
             .input('street', sql.VarChar(100), street)
             .input('city', sql.VarChar(50), city)
             .query(`
-              INSERT INTO Address (A_HouseNo, A_Street, A_City)
-              OUTPUT INSERTED.A_ID
-              VALUES (@houseNo, @street, @city)
+              UPDATE Address
+              SET A_HouseNo = @houseNo,
+                  A_Street = @street,
+                  A_City = @city
+              WHERE A_ID = @addressId
             `);
 
-          addressId = addressResult.recordset[0].A_ID;
+          addressId = currentAddressId;
         }
       }
 
