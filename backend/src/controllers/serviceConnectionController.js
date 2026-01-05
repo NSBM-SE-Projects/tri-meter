@@ -19,7 +19,6 @@ export const getAllServiceConnections = async (req, res) => {
           sc.S_Status as status,
           sc.S_ConnectionDate as connectionDate,
           t.T_InstallationCharge as installationCharge,
-          sc.S_InitialReading as initialReading,
           c.C_ID as customerId,
           m.M_ID as meterId,
           t.T_ID as tariffId,
@@ -76,7 +75,6 @@ export const getServiceConnectionById = async (req, res) => {
           sc.S_Status as status,
           sc.S_ConnectionDate as connectionDate,
           t.T_InstallationCharge as installationCharge,
-          sc.S_InitialReading as initialReading,
           c.C_ID as customerId,
           m.M_ID as meterId,
           t.T_ID as tariffId,
@@ -124,7 +122,7 @@ export const getServiceConnectionById = async (req, res) => {
 export const createServiceConnection = async (req, res) => {
   try {
     const {
-      customer,
+      customerId,
       utilityType,
       meterNumber,
       initialReading,
@@ -135,10 +133,10 @@ export const createServiceConnection = async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!customer || !utilityType || !meterNumber) {
+    if (!customerId || !utilityType || !meterNumber) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields'
+        message: 'Missing required fields: customerId, utilityType, meterNumber'
       });
     }
 
@@ -148,10 +146,9 @@ export const createServiceConnection = async (req, res) => {
     await transaction.begin();
 
     try {
-      // Get customer ID by name
       const customerResult = await transaction.request()
-        .input('customerName', sql.VarChar(100), customer)
-        .query('SELECT C_ID FROM Customer WHERE C_Name = @customerName');
+        .input('customerId', sql.Int, customerId)
+        .query('SELECT C_ID, C_Type FROM Customer WHERE C_ID = @customerId');
 
       if (customerResult.recordset.length === 0) {
         await transaction.rollback();
@@ -161,7 +158,7 @@ export const createServiceConnection = async (req, res) => {
         });
       }
 
-      const customerId = customerResult.recordset[0].C_ID;
+      const customerType = customerResult.recordset[0].C_Type;
 
       // Customer's default address
       const customerAddressResult = await transaction.request()
@@ -170,29 +167,32 @@ export const createServiceConnection = async (req, res) => {
 
       const customerAddressId = customerAddressResult.recordset[0].A_ID;
 
-      // Check
       let serviceAddressId = null;
 
       if (houseNo && street && city) {
+        const houseNoTrimmed = houseNo.trim();
+        const streetTrimmed = street.trim();
+        const cityTrimmed = city.trim();
+
         const addressCheck = await transaction.request()
-          .input('houseNo', sql.VarChar(50), houseNo)
-          .input('street', sql.VarChar(100), street)
-          .input('city', sql.VarChar(50), city)
+          .input('houseNo', sql.VarChar(50), houseNoTrimmed)
+          .input('street', sql.VarChar(100), streetTrimmed)
+          .input('city', sql.VarChar(50), cityTrimmed)
           .query(`
             SELECT A_ID
             FROM Address
-            WHERE A_HouseNo = @houseNo
-              AND A_Street = @street
-              AND A_City = @city
+            WHERE UPPER(LTRIM(RTRIM(A_HouseNo))) = UPPER(LTRIM(RTRIM(@houseNo)))
+              AND UPPER(LTRIM(RTRIM(A_Street))) = UPPER(LTRIM(RTRIM(@street)))
+              AND UPPER(LTRIM(RTRIM(A_City))) = UPPER(LTRIM(RTRIM(@city)))
           `);
 
         if (addressCheck.recordset.length > 0) {
           serviceAddressId = addressCheck.recordset[0].A_ID;
         } else {
           const addressResult = await transaction.request()
-            .input('houseNo', sql.VarChar(50), houseNo)
-            .input('street', sql.VarChar(100), street)
-            .input('city', sql.VarChar(50), city)
+            .input('houseNo', sql.VarChar(50), houseNoTrimmed)
+            .input('street', sql.VarChar(100), streetTrimmed)
+            .input('city', sql.VarChar(50), cityTrimmed)
             .query(`
               INSERT INTO Address (A_HouseNo, A_Street, A_City)
               OUTPUT INSERTED.A_ID
@@ -228,7 +228,25 @@ export const createServiceConnection = async (req, res) => {
         meterId = meterCheck.recordset[0].M_ID;
         const currentMeterStatus = meterCheck.recordset[0].M_Status;
 
-        // Update meter if existing
+        if (currentMeterStatus === 'Active') {
+          const meterInUse = await transaction.request()
+            .input('meterId', sql.Int, meterId)
+            .query(`
+              SELECT COUNT(*) as count
+              FROM ServiceConnection
+              WHERE M_ID = @meterId AND S_Status = 'Active'
+            `);
+
+          if (meterInUse.recordset[0].count > 0) {
+            await transaction.rollback();
+            return res.status(400).json({
+              success: false,
+              message: 'Meter is already in use by another active service connection'
+            });
+          }
+        }
+
+        // Reactivate meter if disconnected
         if (currentMeterStatus === 'Disconnected') {
           await transaction.request()
             .input('meterId', sql.Int, meterId)
@@ -248,14 +266,6 @@ export const createServiceConnection = async (req, res) => {
         meterId = meterResult.recordset[0].M_ID;
       }
 
-      // Get customer type to find appropriate tariff
-      const customerTypeResult = await transaction.request()
-        .input('customerId', sql.Int, customerId)
-        .query('SELECT C_Type FROM Customer WHERE C_ID = @customerId');
-
-      const customerType = customerTypeResult.recordset[0].C_Type;
-
-      // Find appropriate tariff
       const tariffResult = await transaction.request()
         .input('utilityId', sql.Int, utilityId)
         .input('customerType', sql.VarChar(20), customerType)
@@ -279,23 +289,35 @@ export const createServiceConnection = async (req, res) => {
 
       const tariffId = tariffResult.recordset[0].T_ID;
 
-      // 6. Create service connection
       const connectionStatus = status || 'Active';
+      const finalServiceAddressId = serviceAddressId || customerAddressId;
 
       const connectionResult = await transaction.request()
         .input('customerId', sql.Int, customerId)
         .input('meterId', sql.Int, meterId)
         .input('tariffId', sql.Int, tariffId)
-        .input('initialReading', sql.Decimal(10, 2), initialReading || 0.00)
-        .input('serviceAddressId', sql.Int, serviceAddressId)
+        .input('serviceAddressId', sql.Int, finalServiceAddressId)
         .input('status', sql.VarChar(20), connectionStatus)
         .query(`
-          INSERT INTO ServiceConnection (C_ID, M_ID, T_ID, S_ConnectionDate, S_InitialReading, A_ID, S_Status)
+          INSERT INTO ServiceConnection (C_ID, M_ID, T_ID, S_ConnectionDate, A_ID, S_Status)
           OUTPUT INSERTED.S_ID
-          VALUES (@customerId, @meterId, @tariffId, GETDATE(), @initialReading, @serviceAddressId, @status)
+          VALUES (@customerId, @meterId, @tariffId, GETDATE(), @serviceAddressId, @status)
         `);
 
       const connectionId = connectionResult.recordset[0].S_ID;
+
+      if (initialReading !== undefined && initialReading !== null) {
+        const userId = req.user?.userId; // JWT token contains userId
+
+        await transaction.request()
+          .input('meterId', sql.Int, meterId)
+          .input('readingValue', sql.Decimal(10, 2), initialReading)
+          .input('userId', sql.Int, userId)
+          .query(`
+            INSERT INTO MeterReading (M_ID, R_Date, R_Value, R_Consumption, U_ID)
+            VALUES (@meterId, GETDATE(), @readingValue, 0, @userId)
+          `);
+      }
 
       await transaction.commit();
 
@@ -313,7 +335,6 @@ export const createServiceConnection = async (req, res) => {
             sc.S_Status as status,
             sc.S_ConnectionDate as connectionDate,
             t.T_InstallationCharge as installationCharge,
-            sc.S_InitialReading as initialReading,
             ISNULL(sa.A_HouseNo, ca.A_HouseNo) as serviceHouseNo,
             ISNULL(sa.A_Street, ca.A_Street) as serviceStreet,
             ISNULL(sa.A_City, ca.A_City) as serviceCity
@@ -357,15 +378,7 @@ export const createServiceConnection = async (req, res) => {
 export const updateServiceConnection = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
-
-    // Validate status if provided
-    if (status && !['Active', 'Disconnected'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be "Active" or "Disconnected"'
-      });
-    }
+    const { meterNumber, status } = req.body;
 
     const pool = await getPool();
     const transaction = new sql.Transaction(pool);
@@ -373,10 +386,19 @@ export const updateServiceConnection = async (req, res) => {
     await transaction.begin();
 
     try {
-      // Check if service connection exists
+      // Get current connection details
       const connectionCheck = await transaction.request()
         .input('connectionId', sql.Int, id)
-        .query('SELECT S_ID FROM ServiceConnection WHERE S_ID = @connectionId');
+        .query(`
+          SELECT
+            sc.S_ID,
+            sc.M_ID,
+            m.M_Number,
+            m.Ut_ID
+          FROM ServiceConnection sc
+          INNER JOIN Meter m ON sc.M_ID = m.M_ID
+          WHERE sc.S_ID = @connectionId
+        `);
 
       if (connectionCheck.recordset.length === 0) {
         await transaction.rollback();
@@ -386,15 +408,100 @@ export const updateServiceConnection = async (req, res) => {
         });
       }
 
+      const currentConnection = connectionCheck.recordset[0];
+      let newMeterId = currentConnection.M_ID;
+      let updateFields = [];
+
+      // Handle meter change
+      if (meterNumber && meterNumber !== currentConnection.M_Number) {
+        const newMeterCheck = await transaction.request()
+          .input('meterNumber', sql.VarChar(50), meterNumber)
+          .query('SELECT M_ID, M_Status FROM Meter WHERE M_Number = @meterNumber');
+
+        if (newMeterCheck.recordset.length > 0) {
+          const existingMeter = newMeterCheck.recordset[0];
+          newMeterId = existingMeter.M_ID;
+
+          if (existingMeter.M_Status === 'Active') {
+            const meterInUseRequest = await transaction.request()
+              .input('meterId', sql.Int, newMeterId)
+              .input('connectionId', sql.Int, id);
+
+            const meterInUse = await meterInUseRequest.query(`
+              SELECT COUNT(*) as count
+              FROM ServiceConnection
+              WHERE M_ID = @meterId AND S_Status = 'Active' AND S_ID != @connectionId
+            `);
+
+            if (meterInUse.recordset[0].count > 0) {
+              await transaction.rollback();
+              return res.status(400).json({
+                success: false,
+                message: 'Meter is already in use by another active connection'
+              });
+            }
+          }
+
+          // Reactivate if disconnected
+          if (existingMeter.M_Status === 'Disconnected') {
+            await transaction.request()
+              .input('meterId', sql.Int, newMeterId)
+              .query("UPDATE Meter SET M_Status = 'Active' WHERE M_ID = @meterId");
+          }
+        } else {
+          // Create new meter with correct utility type
+          const createMeter = await transaction.request()
+            .input('utilityId', sql.Int, currentConnection.Ut_ID)
+            .input('meterNumber', sql.VarChar(50), meterNumber)
+            .query(`
+              INSERT INTO Meter (Ut_ID, M_Number, M_InstallationDate, M_Status)
+              OUTPUT INSERTED.M_ID
+              VALUES (@utilityId, @meterNumber, GETDATE(), 'Active')
+            `);
+
+          newMeterId = createMeter.recordset[0].M_ID;
+        }
+
+        // Disconnect old meter
+        await transaction.request()
+          .input('oldMeterId', sql.Int, currentConnection.M_ID)
+          .query("UPDATE Meter SET M_Status = 'Disconnected' WHERE M_ID = @oldMeterId");
+
+        updateFields.push('M_ID = @newMeterId');
+      }
+
+      // Handle status change
+      if (status) {
+        if (!['Active', 'Disconnected'].includes(status)) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid status. Must be "Active" or "Disconnected"'
+          });
+        }
+        updateFields.push('S_Status = @status');
+      }
+
       // Update service connection
-      await transaction.request()
-        .input('connectionId', sql.Int, id)
-        .input('status', sql.VarChar(20), status)
-        .query(`
+      if (updateFields.length > 0) {
+        const updateQuery = `
           UPDATE ServiceConnection
-          SET S_Status = ISNULL(@status, S_Status)
+          SET ${updateFields.join(', ')}
           WHERE S_ID = @connectionId
-        `);
+        `;
+
+        const updateRequest = transaction.request()
+          .input('connectionId', sql.Int, id);
+
+        if (newMeterId !== currentConnection.M_ID) {
+          updateRequest.input('newMeterId', sql.Int, newMeterId);
+        }
+        if (status) {
+          updateRequest.input('status', sql.VarChar(20), status);
+        }
+
+        await updateRequest.query(updateQuery);
+      }
 
       await transaction.commit();
 
@@ -412,7 +519,6 @@ export const updateServiceConnection = async (req, res) => {
             sc.S_Status as status,
             sc.S_ConnectionDate as connectionDate,
             t.T_InstallationCharge as installationCharge,
-            sc.S_InitialReading as initialReading,
             ISNULL(sa.A_HouseNo, ca.A_HouseNo) as serviceHouseNo,
             ISNULL(sa.A_Street, ca.A_Street) as serviceStreet,
             ISNULL(sa.A_City, ca.A_City) as serviceCity
@@ -458,15 +564,42 @@ export const deleteServiceConnection = async (req, res) => {
     const { id } = req.params;
     const pool = await getPool();
 
-    // Check if service connection exists
     const connectionCheck = await pool.request()
       .input('connectionId', sql.Int, id)
-      .query('SELECT S_ID FROM ServiceConnection WHERE S_ID = @connectionId');
+      .query('SELECT S_ID, M_ID FROM ServiceConnection WHERE S_ID = @connectionId');
 
     if (connectionCheck.recordset.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Service connection not found'
+      });
+    }
+
+    const meterId = connectionCheck.recordset[0].M_ID;
+
+    // Check for meter readings
+    const readingCheck = await pool.request()
+      .input('meterId', sql.Int, meterId)
+      .query('SELECT COUNT(*) as count FROM MeterReading WHERE M_ID = @meterId');
+
+    const readingCount = readingCheck.recordset[0].count;
+
+    // Check for bills
+    const billCheck = await pool.request()
+      .input('meterId', sql.Int, meterId)
+      .query('SELECT COUNT(*) as count FROM Bill WHERE M_ID = @meterId');
+
+    const billCount = billCheck.recordset[0].count;
+
+    // Prevent deletion if dependencies exist
+    if (readingCount > 0 || billCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete service connection: ${readingCount} meter reading(s) and ${billCount} bill(s) exist. Disconnect the connection instead.`,
+        details: {
+          meterReadings: readingCount,
+          bills: billCount
+        }
       });
     }
 

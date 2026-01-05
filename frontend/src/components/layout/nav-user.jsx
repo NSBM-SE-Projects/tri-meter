@@ -24,7 +24,7 @@ export function NavUser({ user }) {
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/login'
+    window.location.href = '#'
   }
 
   return (
