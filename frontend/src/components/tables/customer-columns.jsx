@@ -31,12 +31,12 @@ export const createCustomerColumns = (onViewDetails, onEdit) => [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           ID
-          <ArrowUpDown className="ml-1 h-4 w-4" />
+          <ArrowUpDown className="w-4 h-4 ml-1" />
         </Button>
       )
     },
     cell: ({ row }) => (
-      <div className="font-normal pl-4">{row.getValue("id")}</div>
+      <div className="pl-4 font-normal">{row.getValue("id")}</div>
     ),
   },
   {
@@ -83,11 +83,11 @@ export const createCustomerColumns = (onViewDetails, onEdit) => [
     cell: ({ row }) => {
       const customer = row.original
       return (
-        <div className="flex justify-center items-center">
+        <div className="flex items-center justify-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground" aria-label="Open menu">
-                <MoreHorizontal className="h-4 w-4" />
+              <button className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent hover:text-accent-foreground" aria-label="Open menu">
+                <MoreHorizontal className="w-4 h-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">

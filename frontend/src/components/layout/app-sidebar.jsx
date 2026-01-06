@@ -27,7 +27,7 @@ const allNavItems = [
   },
   {
     title: "Bills",
-    url: "#",
+    url: "#/bills",
     icon: Receipt,
   },
   {
