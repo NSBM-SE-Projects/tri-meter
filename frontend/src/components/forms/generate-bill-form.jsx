@@ -70,10 +70,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
   // Calculate preview when form data changes
   useEffect(() => {
     if (formData.meterServiceConnection && formData.periodFrom && formData.periodTo) {
-      // Mock calculation - replace with actual API call
-      const consumption = 100
-      const estimatedAmount = 45.0
-      setPreview({ consumption, estimatedAmount })
+      calculatePreview()
     } else {
       setPreview({ consumption: 0, estimatedAmount: 0 })
     }
@@ -146,7 +143,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
           <DialogTitle>Generate Bill</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 px-6 py-4">
+        <div className="px-6 py-4 space-y-6">
           {/* Bill Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Bill Information</h3>
@@ -226,7 +223,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
                     variant="outline"
                     className={`w-full justify-start text-left font-normal ${formErrors.periodFrom ? "border-red-500" : ""}`}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="w-4 h-4 mr-2" />
                     {formData.periodFrom ? format(formData.periodFrom, "MMMM yyyy") : <span>Pick a month</span>}
                   </Button>
                 </PopoverTrigger>
@@ -252,7 +249,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
                     variant="outline"
                     className={`w-full justify-start text-left font-normal ${formErrors.periodTo ? "border-red-500" : ""}`}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="w-4 h-4 mr-2" />
                     {formData.periodTo ? format(formData.periodTo, "MMMM yyyy") : <span>Pick a month</span>}
                   </Button>
                 </PopoverTrigger>
@@ -268,24 +265,9 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
               )}
             </div>
           </div>
-
-          <Separator />
-
-          {/* Preview Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Preview</h3>
-            <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
-              <p className="text-base">
-                <span className="font-medium">Consumption:</span> {preview.consumption} kWh
-              </p>
-              <p className="text-base">
-                <span className="font-medium">Estimated Amount:</span> ${preview.estimatedAmount.toFixed(2)}
-              </p>
-            </div>
-          </div>
         </div>
 
-        <DialogFooter className="space-x-2 px-6 py-4 border-t">
+        <DialogFooter className="px-4 py-1 pt-5 space-x-2 border-t">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>

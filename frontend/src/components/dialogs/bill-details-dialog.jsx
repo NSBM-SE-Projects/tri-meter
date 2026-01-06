@@ -53,15 +53,15 @@ export function BillDetailsDialog({ open, onOpenChange, billData, onSendEmail })
             <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div>
                 <p className="text-sm font-normal text-muted-foreground">Previous Reading</p>
-                <p className="text-base">{billData.previousReading} {billData.unit}</p>
+                <p className="text-base">{billData.previousReading || 0} {billData.unit || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-normal text-muted-foreground">Current Reading</p>
-                <p className="text-base">{billData.currentReading} {billData.unit}</p>
+                <p className="text-base">{billData.currentReading || 0} {billData.unit || ''}</p>
               </div>
               <div>
                 <p className="text-sm font-normal text-muted-foreground">Consumption</p>
-                <p className="text-base">{billData.consumption} {billData.unit}</p>
+                <p className="text-base">{billData.consumption || 0} {billData.unit || ''}</p>
               </div>
             </div>
           </div>
@@ -72,16 +72,20 @@ export function BillDetailsDialog({ open, onOpenChange, billData, onSendEmail })
           <div>
             <p className="mb-4 text-lg font-medium">Charges Breakdown</p>
             <div className="space-y-2">
-              {billData.charges.map((charge, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-base">{charge.description}</span>
-                  <span className="text-base font-normal">${charge.amount.toFixed(2)}</span>
-                </div>
-              ))}
+              {billData.charges && Array.isArray(billData.charges) && billData.charges.length > 0 ? (
+                billData.charges.map((charge, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <span className="text-base">{charge.description}</span>
+                    <span className="text-base font-normal">${charge.amount.toFixed(2)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-base text-muted-foreground">No charges found</p>
+              )}
               <div className="pt-5 mt-3 border-t">
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold">Total Amount Due</span>
-                  <span className="text-base font-bold">${billData.totalAmount.toFixed(2)}</span>
+                  <span className="text-base font-bold">${(billData.totalAmount || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>

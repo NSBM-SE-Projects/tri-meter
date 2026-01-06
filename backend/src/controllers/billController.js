@@ -82,19 +82,14 @@ export const getAllBills = async (req, res) => {
   }
 };
 
-/**
- * GET /api/bills/:id
- * Get bill by ID with full details including line items
- */
+// GET /api/bills/:id
 export const getBillById = async (req, res) => {
   try {
     const { id } = req.params;
-    // Remove B- prefix if present
     const billId = id.replace('B-', '');
 
     const pool = await getPool();
 
-    // Get bill details
     const billResult = await pool.request()
       .input('billId', sql.Int, billId)
       .query(`
@@ -137,7 +132,7 @@ export const getBillById = async (req, res) => {
 
     // Get meter readings for this billing period
     const readingsResult = await pool.request()
-      .input('meterId', sql.Int, bill.id) // Using bill.id as we need to map back to meter
+      .input('meterId', sql.Int, bill.id)
       .input('periodStart', sql.Date, bill.billingPeriodStart)
       .input('periodEnd', sql.Date, bill.billingPeriodEnd)
       .query(`
@@ -157,11 +152,9 @@ export const getBillById = async (req, res) => {
       previousReading = readingsResult.recordset[0].ReadingValue;
       currentReading = readingsResult.recordset[1].ReadingValue;
     } else if (readingsResult.recordset.length === 1) {
-      // If only one reading, estimate the other from consumption
       currentReading = readingsResult.recordset[0].ReadingValue;
       previousReading = currentReading - bill.consumption;
     } else {
-      // No readings found, create estimates from consumption
       previousReading = 0;
       currentReading = bill.consumption;
     }
@@ -243,10 +236,7 @@ export const getBillById = async (req, res) => {
   }
 };
 
-/**
- * POST /api/bills
- * Generate a new bill from service connection
- */
+// POST /api/bills
 export const generateBill = async (req, res) => {
   try {
     const {
@@ -270,7 +260,7 @@ export const generateBill = async (req, res) => {
     await transaction.begin();
 
     try {
-      // 1. Get service connection, meter, and tariff details
+      // Get service connection, meter, and tariff details
       const scResult = await transaction.request()
         .input('serviceConnectionId', sql.Int, serviceConnectionId)
         .query(`
@@ -280,12 +270,13 @@ export const generateBill = async (req, res) => {
             sc.M_ID,
             m.Ut_ID,
             sc.T_ID,
-            sc.S_InstallationCharge,
+            t.T_InstallationCharge,
             u.Ut_Name,
             u.Ut_Unit
           FROM ServiceConnection sc
           INNER JOIN Meter m ON sc.M_ID = m.M_ID
           INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
+          INNER JOIN Tariff t ON sc.T_ID = t.T_ID
           WHERE sc.S_ID = @serviceConnectionId
         `);
 
@@ -299,33 +290,34 @@ export const generateBill = async (req, res) => {
 
       const sc = scResult.recordset[0];
 
-      // 2. Get the two most recent meter readings within the period
+      // Get first and last meter readings within the period
       const readingsResult = await transaction.request()
         .input('meterId', sql.Int, sc.M_ID)
         .input('periodFrom', sql.Date, periodFrom)
         .input('periodTo', sql.Date, periodTo)
         .query(`
-          SELECT TOP 2
-            R_ID,
-            R_Value as ReadingValue,
-            R_Date as ReadingDate
+          SELECT
+            MIN(R_Value) as FirstReading,
+            MAX(R_Value) as LastReading,
+            COUNT(*) as ReadingCount
           FROM MeterReading
           WHERE M_ID = @meterId
             AND R_Date BETWEEN @periodFrom AND @periodTo
-          ORDER BY R_Date ASC
         `);
 
       let consumption = 0;
-      let previousReading = null;
-      let currentReading = null;
+      let previousReading = 0;
+      let currentReading = 0;
 
-      if (readingsResult.recordset.length >= 2) {
-        previousReading = readingsResult.recordset[0].ReadingValue;
-        currentReading = readingsResult.recordset[1].ReadingValue;
+      if (readingsResult.recordset.length > 0 && readingsResult.recordset[0].ReadingCount > 0) {
+        previousReading = readingsResult.recordset[0].FirstReading;
+        currentReading = readingsResult.recordset[0].LastReading;
         consumption = currentReading - previousReading;
       } else {
         // If no meter readings, use a default consumption of 0
         consumption = 0;
+        previousReading = 0;
+        currentReading = 0;
       }
 
       // 3. Calculate charges based on tariff
@@ -495,8 +487,8 @@ export const generateBill = async (req, res) => {
           .input('lineNumber', sql.Int, lineNumber++)
           .input('description', sql.VarChar(255), 'Installation Charge')
           .input('quantity', sql.Decimal(10, 2), 1)
-          .input('rate', sql.Decimal(10, 2), sc.S_InstallationCharge || 0)
-          .input('amount', sql.Decimal(10, 2), sc.S_InstallationCharge || 0)
+          .input('rate', sql.Decimal(10, 2), sc.T_InstallationCharge || 0)
+          .input('amount', sql.Decimal(10, 2), sc.T_InstallationCharge || 0)
           .query(`
             INSERT INTO BillLineItem (B_ID, Bl_LineNumber, Bl_Description, Bl_Quantity, Bl_Rate, Bl_Amount)
             VALUES (@billId, @lineNumber, @description, @quantity, @rate, @amount)
@@ -505,7 +497,7 @@ export const generateBill = async (req, res) => {
         // Update total amount to include installation charge
         await transaction.request()
           .input('billId', sql.Int, billId)
-          .input('installationCharge', sql.Decimal(10, 2), sc.S_InstallationCharge || 0)
+          .input('installationCharge', sql.Decimal(10, 2), sc.T_InstallationCharge || 0)
           .query(`
             UPDATE Bill
             SET B_TotalAmount = B_TotalAmount + @installationCharge
@@ -515,8 +507,8 @@ export const generateBill = async (req, res) => {
 
       await transaction.commit();
 
-      // Fetch the created bill
-      const newBill = await pool.request()
+      // Fetch the created bill with full details (reuse getBillById logic)
+      const generatedBillResult = await pool.request()
         .input('billId', sql.Int, billId)
         .query(`
           SELECT
@@ -528,36 +520,125 @@ export const generateBill = async (req, res) => {
             b.B_PeriodStart as billingPeriodStart,
             b.B_PeriodEnd as billingPeriodEnd,
             b.B_Consumption as consumption,
+            b.B_ConsumptionCharge as consumptionCharge,
+            b.B_FixedCharges as fixedCharges,
+            b.B_LateFee as lateFee,
+            b.B_PreviousBalance as previousBalance,
             c.C_ID as customerId,
             c.C_Name as customerName,
+            c.C_Email as customerEmail,
+            CONCAT_WS(', ', a.A_HouseNo, a.A_Street, a.A_City) as customerAddress,
+            m.M_Number as meterNumber,
             u.Ut_Name as utilityType,
-            u.Ut_Unit as unit,
-            m.M_Number as meterNumber
+            u.Ut_Unit as unit
           FROM Bill b
           INNER JOIN Customer c ON b.C_ID = c.C_ID
           INNER JOIN Meter m ON b.M_ID = m.M_ID
           INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
+          LEFT JOIN Address a ON c.A_ID = a.A_ID
           WHERE b.B_ID = @billId
         `);
 
-      const bill = newBill.recordset[0];
+      if (generatedBillResult.recordset.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Bill not found after generation'
+        });
+      }
+
+      const generatedBill = generatedBillResult.recordset[0];
+
+      // Get meter readings for this billing period
+      const generatedReadingsResult = await pool.request()
+        .input('meterId', sql.Int, generatedBill.id)
+        .input('periodStart', sql.Date, generatedBill.billingPeriodStart)
+        .input('periodEnd', sql.Date, generatedBill.billingPeriodEnd)
+        .query(`
+          SELECT TOP 2
+            R_Value as ReadingValue,
+            R_Date as ReadingDate
+          FROM MeterReading
+          WHERE M_ID = (SELECT M_ID FROM Bill WHERE B_ID = @meterId)
+            AND R_Date BETWEEN @periodStart AND @periodEnd
+          ORDER BY R_Date ASC
+        `);
+
+      let generatedPreviousReading = 0;
+      let generatedCurrentReading = 0;
+
+      if (generatedReadingsResult.recordset.length >= 2) {
+        generatedPreviousReading = generatedReadingsResult.recordset[0].ReadingValue;
+        generatedCurrentReading = generatedReadingsResult.recordset[1].ReadingValue;
+      } else if (generatedReadingsResult.recordset.length === 1) {
+        generatedCurrentReading = generatedReadingsResult.recordset[0].ReadingValue;
+        generatedPreviousReading = generatedCurrentReading - generatedBill.consumption;
+      } else {
+        generatedPreviousReading = 0;
+        generatedCurrentReading = generatedBill.consumption;
+      }
+
+      // Get bill line items
+      const generatedLineItemsResult = await pool.request()
+        .input('billId', sql.Int, billId)
+        .query(`
+          SELECT
+            Bl_LineNumber as lineNumber,
+            Bl_Description as description,
+            Bl_Quantity as quantity,
+            Bl_Rate as rate,
+            Bl_Amount as amount
+          FROM BillLineItem
+          WHERE B_ID = @billId
+          ORDER BY Bl_LineNumber
+        `);
+
+      // Build charges array from line items
+      const generatedCharges = [];
+      generatedLineItemsResult.recordset.forEach(item => {
+        generatedCharges.push({
+          description: item.description,
+          amount: item.amount
+        });
+      });
+
+      if (generatedBill.lateFee > 0) {
+        generatedCharges.push({
+          description: 'Late Fee',
+          amount: generatedBill.lateFee
+        });
+      }
+
+      if (generatedBill.previousBalance > 0) {
+        generatedCharges.push({
+          description: 'Previous Balance',
+          amount: generatedBill.previousBalance
+        });
+      }
+
+      const billData = {
+        billId: `B-${String(generatedBill.id).padStart(3, '0')}`,
+        customerName: generatedBill.customerName,
+        customerId: `#CUST-${String(generatedBill.customerId).padStart(3, '0')}`,
+        customerEmail: generatedBill.customerEmail,
+        customerAddress: generatedBill.customerAddress || 'N/A',
+        utility: generatedBill.utilityType,
+        meter: generatedBill.meterNumber,
+        billingPeriod: `${formatDate(generatedBill.billingPeriodStart)} - ${formatDate(generatedBill.billingPeriodEnd)}`,
+        previousReading: generatedPreviousReading,
+        currentReading: generatedCurrentReading,
+        consumption: generatedBill.consumption,
+        unit: generatedBill.unit,
+        charges: generatedCharges,
+        totalAmount: generatedBill.totalAmount,
+        dueDate: formatDate(generatedBill.dueDate),
+        issueDate: formatDate(generatedBill.issueDate),
+        status: generatedBill.status
+      };
 
       res.status(201).json({
         success: true,
         message: 'Bill generated successfully',
-        data: {
-          billId: `B-${String(bill.id).padStart(3, '0')}`,
-          customerName: bill.customerName,
-          customerId: `#CUST-${String(bill.customerId).padStart(3, '0')}`,
-          utility: bill.utilityType,
-          meter: bill.meterNumber,
-          billingPeriod: `${formatDate(bill.billingPeriodStart)} - ${formatDate(bill.billingPeriodEnd)}`,
-          consumption: bill.consumption,
-          unit: bill.unit,
-          totalAmount: bill.totalAmount,
-          dueDate: formatDate(bill.dueDate),
-          status: bill.status
-        }
+        data: billData
       });
 
     } catch (error) {
@@ -575,10 +656,7 @@ export const generateBill = async (req, res) => {
   }
 };
 
-/**
- * POST /api/bills/:id/send-email
- * Send bill via email
- */
+// POST /api/bills/:id/send-email
 export const sendBillEmail = async (req, res) => {
   try {
     const { id } = req.params;
@@ -620,8 +698,7 @@ export const sendBillEmail = async (req, res) => {
       });
     }
 
-    // TODO: Integrate with actual email service (SendGrid, AWS SES, etc.)
-    // For now, we'll simulate sending the email
+    // Integrate with actual email service (SendGrid, AWS SES, etc.)
     console.log('=== SENDING BILL EMAIL ===');
     console.log(`To: ${bill.customerEmail}`);
     console.log(`Subject: Bill ${String(bill.id).padStart(3, '0')} - ${bill.utilityType}`);
@@ -632,13 +709,6 @@ export const sendBillEmail = async (req, res) => {
     console.log('========================');
 
     // In production, you would send actual email here:
-    /*
-    await sendEmail({
-      to: bill.customerEmail,
-      subject: `Your ${bill.utilityType} Bill - B-${String(bill.id).padStart(3, '0')}`,
-      html: generateBillEmailTemplate(bill)
-    });
-    */
 
     res.status(200).json({
       success: true,
@@ -655,10 +725,7 @@ export const sendBillEmail = async (req, res) => {
   }
 };
 
-/**
- * GET /api/bills/customers
- * Get all active customers for bill generation
- */
+// GET /api/bills/customers
 export const getCustomersForBilling = async (req, res) => {
   try {
     const pool = await getPool();
@@ -695,10 +762,7 @@ export const getCustomersForBilling = async (req, res) => {
   }
 };
 
-/**
- * GET /api/bills/service-connections/:customerId
- * Get service connections for a specific customer
- */
+// GET /api/bills/service-connections/:customerId
 export const getServiceConnectionsByCustomer = async (req, res) => {
   try {
     const { customerId } = req.params;
