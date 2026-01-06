@@ -8,8 +8,8 @@ import Customers from './pages/Customers'
 import ServiceConnections from './pages/ServiceConnections'
 import MeterReadings from './pages/MeterReadings'
 import AccessDenied from './pages/AccessDenied'
-import Bills from './pages/Bills'
 import { LoadingOverlay } from "@/components"
+import Bills from './pages/Bills'
 
 function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, isAuthenticated, loading } = useAuth()
@@ -83,7 +83,7 @@ function App() {
           path="/bills"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Manager', 'Cashier']}>
-              <MeterReadings />
+              <Bills />
             </ProtectedRoute>
           }
         /> 

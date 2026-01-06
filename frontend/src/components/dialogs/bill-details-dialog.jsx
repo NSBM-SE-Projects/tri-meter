@@ -1,11 +1,4 @@
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { format } from "date-fns"
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Separator } from "@/components"
 import { Printer, Mail } from "lucide-react"
 
 export function BillDetailsDialog({ open, onOpenChange, billData, onSendEmail }) {
@@ -15,7 +8,7 @@ export function BillDetailsDialog({ open, onOpenChange, billData, onSendEmail })
     window.print()
   }
 
-  const handleSendEmail = () => {
+  const handleSendEmailClick = () => {
     if (onSendEmail) {
       onSendEmail()
     }
@@ -23,81 +16,99 @@ export function BillDetailsDialog({ open, onOpenChange, billData, onSendEmail })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto gap-0 print:max-w-full print:max-h-full print:overflow-visible print:shadow-none">
-        <DialogHeader className="border-b pb-4 print:border-b-2">
-          <DialogTitle className="text-2xl print:text-3xl print:text-center">Bill Details - {billData.billId}</DialogTitle>
+      <DialogContent className="max-w-sm gap-0 overflow-y-auto md:max-w-2xl lg:max-w-2xl max-h-[90vh] print:max-w-full print:max-h-full print:overflow-visible print:shadow-none">
+        <DialogHeader className="pb-4 border-b print:border-b-2">
+          <DialogTitle className="print:text-center print:text-2xl">Bill Details - {billData.billId}</DialogTitle>
         </DialogHeader>
 
-        <div className="py-6 space-y-6">
+        <div className="px-5 py-4 space-y-6">
           {/* Bill Information */}
-          <div className="border-2 rounded-lg p-4 space-y-1 bg-background">
-            <p className="text-base">
-              <span className="font-medium">Customer:</span> {billData.customerName} ({billData.customerId})
-            </p>
-            <p className="text-base">
-              <span className="font-medium">Utility:</span> {billData.utility}
-            </p>
-            <p className="text-base">
-              <span className="font-medium">Meter:</span> {billData.meter}
-            </p>
-            <p className="text-base">
-              <span className="font-medium">Billing Period:</span> {billData.billingPeriod}
-            </p>
-          </div>
-
-          {/* Consumption Details */}
-          <div className="border-2 rounded-lg p-4 bg-background">
-            <h3 className="text-lg font-semibold mb-3">Consumption Details</h3>
-            <div className="space-y-1">
-              <p className="text-base">
-                <span className="font-medium">Previous Reading:</span> {billData.previousReading} {billData.unit}
-              </p>
-              <p className="text-base">
-                <span className="font-medium">Current Reading:</span> {billData.currentReading} {billData.unit}
-              </p>
-              <p className="text-base">
-                <span className="font-medium">Consumption:</span> {billData.consumption} {billData.unit}
-              </p>
+          <div>
+            <p className="mb-3 text-lg font-medium">Bill Information</p>
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Customer</p>
+                <p className="text-base">{billData.customerName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Utility</p>
+                <p className="text-base">{billData.utility}</p>
+              </div>
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Meter</p>
+                <p className="text-base">{billData.meter}</p>
+              </div>
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Billing Period</p>
+                <p className="text-base">{billData.billingPeriod}</p>
+              </div>
             </div>
           </div>
 
+          <Separator />
+
+          {/* Consumption Details */}
+          <div>
+            <p className="mb-3 text-lg font-medium">Consumption Details</p>
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Previous Reading</p>
+                <p className="text-base">{billData.previousReading} {billData.unit}</p>
+              </div>
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Current Reading</p>
+                <p className="text-base">{billData.currentReading} {billData.unit}</p>
+              </div>
+              <div>
+                <p className="text-sm font-normal text-muted-foreground">Consumption</p>
+                <p className="text-base">{billData.consumption} {billData.unit}</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Charges Breakdown */}
-          <div className="border-2 rounded-lg p-4 bg-background">
-            <h3 className="text-lg font-semibold mb-4">Charges Breakdown</h3>
+          <div>
+            <p className="mb-4 text-lg font-medium">Charges Breakdown</p>
             <div className="space-y-2">
               {billData.charges.map((charge, index) => (
-                <div key={index} className="flex justify-between items-center">
+                <div key={index} className="flex items-center justify-between">
                   <span className="text-base">{charge.description}</span>
-                  <span className="text-base font-medium">${charge.amount.toFixed(2)}</span>
+                  <span className="text-base font-normal">${charge.amount.toFixed(2)}</span>
                 </div>
               ))}
-              <div className="border-t pt-3 mt-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total Amount Due</span>
-                  <span className="text-lg font-bold">${billData.totalAmount.toFixed(2)}</span>
+              <div className="pt-5 mt-3 border-t">
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold">Total Amount Due</span>
+                  <span className="text-base font-bold">${billData.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
 
+          <Separator />
+
           {/* Due Date and Status */}
-          <div className="space-y-1">
-            <p className="text-base">
-              <span className="font-medium">Due Date:</span> {billData.dueDate}
-            </p>
-            <p className="text-base">
-              <span className="font-medium">Status:</span> {billData.status}
-            </p>
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            <div>
+              <p className="text-sm font-normal text-muted-foreground">Due Date</p>
+              <p className="text-base">{billData.dueDate}</p>
+            </div>
+            <div>
+              <p className="text-sm font-normal text-muted-foreground">Status</p>
+              <p className="text-base">{billData.status}</p>
+            </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4 border-t print:hidden">
+        <div className="flex gap-16 px-6 py-4 border-t pt-7 print:hidden">
           <Button onClick={handlePrint} className="flex-1" variant="outline">
             <Printer className="w-4 h-4 mr-2" />
             Print Bill
           </Button>
-          <Button onClick={handleSendEmail} className="flex-1">
+          <Button onClick={handleSendEmailClick} className="flex-1">
             <Mail className="w-4 h-4 mr-2" />
             Send Email
           </Button>

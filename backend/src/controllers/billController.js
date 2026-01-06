@@ -1,10 +1,7 @@
 import { getPool } from '../config/database.js';
 import sql from 'mssql';
 
-/**
- * GET /api/bills
- * Get all bills with optional filters
- */
+// GET /api/bills
 export const getAllBills = async (req, res) => {
   try {
     const { status, utilityType, search } = req.query;
@@ -187,21 +184,13 @@ export const getBillById = async (req, res) => {
     // Build charges array
     const charges = [];
 
-    // Add consumption charge
-    if (bill.consumptionCharge > 0) {
+    // Add line items first (these contain detailed breakdown)
+    lineItemsResult.recordset.forEach(item => {
       charges.push({
-        description: `${bill.consumption} ${bill.unit} consumption`,
-        amount: bill.consumptionCharge
+        description: item.description,
+        amount: item.amount
       });
-    }
-
-    // Add fixed charges
-    if (bill.fixedCharges > 0) {
-      charges.push({
-        description: 'Fixed Charges',
-        amount: bill.fixedCharges
-      });
-    }
+    });
 
     // Add late fee
     if (bill.lateFee > 0) {
@@ -218,14 +207,6 @@ export const getBillById = async (req, res) => {
         amount: bill.previousBalance
       });
     }
-
-    // Add line items if any
-    lineItemsResult.recordset.forEach(item => {
-      charges.push({
-        description: item.description,
-        amount: item.amount
-      });
-    });
 
     const billData = {
       billId: `B-${String(bill.id).padStart(3, '0')}`,
@@ -299,6 +280,7 @@ export const generateBill = async (req, res) => {
             sc.M_ID,
             m.Ut_ID,
             sc.T_ID,
+            sc.S_InstallationCharge,
             u.Ut_Name,
             u.Ut_Unit
           FROM ServiceConnection sc
@@ -346,11 +328,11 @@ export const generateBill = async (req, res) => {
         consumption = 0;
       }
 
-      // 3. Calculate charges based on tariff (simplified - using slab 2 rate as baseline)
+      // 3. Calculate charges based on tariff
       let consumptionCharge = 0;
-      let fixedCharges = 100; // Fixed charge
+      let fixedCharges = 0;
 
-      // Get tariff rates for electricity (simplified - can be enhanced for all utilities)
+      // Get tariff rates based on utility type
       if (sc.Ut_Name === 'Electricity') {
         const tariffResult = await transaction.request()
           .input('tariffId', sql.Int, sc.T_ID)
@@ -374,9 +356,46 @@ export const generateBill = async (req, res) => {
               ((consumption - tariff.E_Slab2Max) * tariff.E_Slab3Rate);
           }
         }
-      } else {
-        // For Water and Gas, use a simple rate (can be enhanced later)
-        consumptionCharge = consumption * 0.1; // Default rate
+      } else if (sc.Ut_Name === 'Water') {
+        const tariffResult = await transaction.request()
+          .input('tariffId', sql.Int, sc.T_ID)
+          .query(`
+            SELECT W_FlatRate, W_FixedCharge
+            FROM WaterTariff
+            WHERE W_T_ID = @tariffId
+          `);
+
+        if (tariffResult.recordset.length > 0) {
+          const tariff = tariffResult.recordset[0];
+          consumptionCharge = consumption * tariff.W_FlatRate;
+          fixedCharges = tariff.W_FixedCharge;
+        }
+      } else if (sc.Ut_Name === 'Gas') {
+        const tariffResult = await transaction.request()
+          .input('tariffId', sql.Int, sc.T_ID)
+          .query(`
+            SELECT G_Slab1Max, G_Slab1Rate, G_Slab2Rate, G_SubsidyAmount
+            FROM GasTariff
+            WHERE G_T_ID = @tariffId
+          `);
+
+        if (tariffResult.recordset.length > 0) {
+          const tariff = tariffResult.recordset[0];
+          // Slab-based calculation
+          if (consumption <= tariff.G_Slab1Max) {
+            consumptionCharge = consumption * tariff.G_Slab1Rate;
+          } else {
+            consumptionCharge = (tariff.G_Slab1Max * tariff.G_Slab1Rate) +
+              ((consumption - tariff.G_Slab1Max) * tariff.G_Slab2Rate);
+          }
+          // Apply subsidy for household customers
+          const customerTypeResult = await transaction.request()
+            .input('customerId', sql.Int, customerId)
+            .query(`SELECT C_Type FROM Customer WHERE C_ID = @customerId`);
+          if (customerTypeResult.recordset[0]?.C_Type === 'Household') {
+            consumptionCharge = Math.max(0, consumptionCharge - tariff.G_SubsidyAmount);
+          }
+        }
       }
 
       // 4. Get previous balance (last unpaid bill for this service connection)
@@ -430,6 +449,69 @@ export const generateBill = async (req, res) => {
         `);
 
       const billId = billResult.recordset[0].B_ID;
+
+      // 6. Create BillLineItems for detailed breakdown
+      let lineNumber = 1;
+
+      // Add consumption charge line item
+      if (consumptionCharge > 0) {
+        await transaction.request()
+          .input('billId', sql.Int, billId)
+          .input('lineNumber', sql.Int, lineNumber++)
+          .input('description', sql.VarChar(255), `${sc.Ut_Name} Consumption`)
+          .input('quantity', sql.Decimal(10, 2), consumption)
+          .input('rate', sql.Decimal(10, 2), consumption > 0 ? consumptionCharge / consumption : 0)
+          .input('amount', sql.Decimal(10, 2), consumptionCharge)
+          .query(`
+            INSERT INTO BillLineItem (B_ID, Bl_LineNumber, Bl_Description, Bl_Quantity, Bl_Rate, Bl_Amount)
+            VALUES (@billId, @lineNumber, @description, @quantity, @rate, @amount)
+          `);
+      }
+
+      // Add fixed charge line item (for water)
+      if (fixedCharges > 0) {
+        await transaction.request()
+          .input('billId', sql.Int, billId)
+          .input('lineNumber', sql.Int, lineNumber++)
+          .input('description', sql.VarChar(255), 'Fixed Charge')
+          .input('quantity', sql.Decimal(10, 2), 1)
+          .input('rate', sql.Decimal(10, 2), fixedCharges)
+          .input('amount', sql.Decimal(10, 2), fixedCharges)
+          .query(`
+            INSERT INTO BillLineItem (B_ID, Bl_LineNumber, Bl_Description, Bl_Quantity, Bl_Rate, Bl_Amount)
+            VALUES (@billId, @lineNumber, @description, @quantity, @rate, @amount)
+          `);
+      }
+
+      // Check if this is the first bill for this service connection (add installation charge)
+      const billCountResult = await transaction.request()
+        .input('meterId', sql.Int, sc.M_ID)
+        .query(`SELECT COUNT(*) as billCount FROM Bill WHERE M_ID = @meterId`);
+
+      if (billCountResult.recordset[0].billCount === 1) {
+        // This is the first bill, add installation charge
+        await transaction.request()
+          .input('billId', sql.Int, billId)
+          .input('lineNumber', sql.Int, lineNumber++)
+          .input('description', sql.VarChar(255), 'Installation Charge')
+          .input('quantity', sql.Decimal(10, 2), 1)
+          .input('rate', sql.Decimal(10, 2), sc.S_InstallationCharge || 0)
+          .input('amount', sql.Decimal(10, 2), sc.S_InstallationCharge || 0)
+          .query(`
+            INSERT INTO BillLineItem (B_ID, Bl_LineNumber, Bl_Description, Bl_Quantity, Bl_Rate, Bl_Amount)
+            VALUES (@billId, @lineNumber, @description, @quantity, @rate, @amount)
+          `);
+
+        // Update total amount to include installation charge
+        await transaction.request()
+          .input('billId', sql.Int, billId)
+          .input('installationCharge', sql.Decimal(10, 2), sc.S_InstallationCharge || 0)
+          .query(`
+            UPDATE Bill
+            SET B_TotalAmount = B_TotalAmount + @installationCharge
+            WHERE B_ID = @billId
+          `);
+      }
 
       await transaction.commit();
 

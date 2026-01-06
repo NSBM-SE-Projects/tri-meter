@@ -15,6 +15,7 @@ export { activityColumns } from "./tables/activity-columns"
 export { customerColumns, createCustomerColumns } from "./tables/customer-columns"
 export { serviceConnectionColumns, createServiceConnectionColumns } from "./tables/service-connection-columns"
 export { meterReadingColumns, createMeterReadingColumns } from "./tables/meter-reading-columns"
+export { billColumns, createBillColumns } from "./tables/bill-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"

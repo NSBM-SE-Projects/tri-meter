@@ -10,27 +10,24 @@ import {
 
 const router = express.Router();
 
-/**
- * Bill Routes
- * Base: /api/bills
- */
+// Base: /api/bills
 
-// GET /api/bills - Get all bills with filters
+// GET /api/bills
 router.get('/', getAllBills);
 
-// GET /api/bills/customers - Get customers for bill generation
+// GET /api/bills/customers
 router.get('/customers', getCustomersForBilling);
 
-// GET /api/bills/service-connections/:customerId - Get service connections for a customer
+// GET /api/bills/service-connections/:customerId
 router.get('/service-connections/:customerId', getServiceConnectionsByCustomer);
 
-// POST /api/bills/:id/send-email - Send bill via email
+// POST /api/bills/:id/send-email
 router.post('/:id/send-email', sendBillEmail);
 
-// GET /api/bills/:id - Get bill by ID (must be after more specific routes)
+// GET /api/bills/:id
 router.get('/:id', getBillById);
 
-// POST /api/bills - Generate new bill
+// POST /api/bills
 router.post('/', generateBill);
 
 export default router;

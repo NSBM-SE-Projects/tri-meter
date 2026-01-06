@@ -1,26 +1,10 @@
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Button, Label, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Separator } from "@/components"
 import { MonthYearPicker } from "@/components/ui/month-year-picker"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Separator } from "@/components/ui/separator"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
-import { apiRequest } from "@/lib/api"
+import { getCustomersForBilling, getServiceConnectionsByCustomer } from "@/services/billService"
 
 export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -53,7 +37,6 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
   useEffect(() => {
     if (formData.customer) {
       fetchServiceConnections(formData.customer)
-      // Reset meter/service connection when customer changes
       setFormData(prev => ({ ...prev, meterServiceConnection: "" }))
     } else {
       setMeterConnections([])
@@ -63,10 +46,8 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
   const fetchCustomers = async () => {
     try {
       setLoadingCustomers(true)
-      const response = await apiRequest('/bills/customers')
-      if (response.success) {
-        setCustomers(response.data)
-      }
+      const data = await getCustomersForBilling()
+      setCustomers(data)
     } catch (err) {
       console.error('Failed to fetch customers:', err)
     } finally {
@@ -77,10 +58,8 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
   const fetchServiceConnections = async (customerId) => {
     try {
       setLoadingConnections(true)
-      const response = await apiRequest(`/bills/service-connections/${customerId}`)
-      if (response.success) {
-        setMeterConnections(response.data)
-      }
+      const data = await getServiceConnectionsByCustomer(customerId)
+      setMeterConnections(data)
     } catch (err) {
       console.error('Failed to fetch service connections:', err)
     } finally {
@@ -162,12 +141,12 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-gray-800">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto gap-0">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Generate Bill</DialogTitle>
+          <DialogTitle>Generate Bill</DialogTitle>
         </DialogHeader>
 
-        <div className="px-16 pt-6 pb-16 space-y-6">
+        <div className="space-y-6 px-6 py-4">
           {/* Bill Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Bill Information</h3>
@@ -295,7 +274,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
           {/* Preview Section */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Preview</h3>
-            <div className="border-2 rounded-lg p-6 bg-muted/30 space-y-2">
+            <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
               <p className="text-base">
                 <span className="font-medium">Consumption:</span> {preview.consumption} kWh
               </p>
@@ -306,7 +285,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
           </div>
         </div>
 
-        <DialogFooter className="pt-6 space-x-2">
+        <DialogFooter className="space-x-2 px-6 py-4 border-t">
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
