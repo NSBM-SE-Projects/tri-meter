@@ -1,15 +1,12 @@
 /**
  * Service Connection Service
- * Handles all service connection-related API calls
  */
 
 import { getAuthHeaders } from './authService'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
-/**
- * Get all service connections
- */
+// Get all service connections
 export async function getAllServiceConnections() {
   const response = await fetch(`${API_URL}/service-connections`, {
     method: 'GET',
@@ -25,9 +22,7 @@ export async function getAllServiceConnections() {
   return data.data
 }
 
-/**
- * Get service connection by ID
- */
+// Get service connection by ID
 export async function getServiceConnectionById(id) {
   const response = await fetch(`${API_URL}/service-connections/${id}`, {
     method: 'GET',
@@ -43,9 +38,7 @@ export async function getServiceConnectionById(id) {
   return data.data
 }
 
-/**
- * Create new service connection
- */
+// Create new service connection
 export async function createServiceConnection(connectionData) {
   const response = await fetch(`${API_URL}/service-connections`, {
     method: 'POST',
@@ -62,9 +55,7 @@ export async function createServiceConnection(connectionData) {
   return data.data
 }
 
-/**
- * Update service connection
- */
+// Update service connection
 export async function updateServiceConnection(id, connectionData) {
   const response = await fetch(`${API_URL}/service-connections/${id}`, {
     method: 'PUT',
@@ -81,9 +72,7 @@ export async function updateServiceConnection(id, connectionData) {
   return data.data
 }
 
-/**
- * Delete service connection
- */
+// Delete service connection
 export async function deleteServiceConnection(id) {
   const response = await fetch(`${API_URL}/service-connections/${id}`, {
     method: 'DELETE',

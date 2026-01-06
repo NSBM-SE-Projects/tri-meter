@@ -8,11 +8,11 @@ function formatDate(date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// Helper function to format month
+// Helper function to format month-year
 function formatMonth(date) {
   if (!date) return null;
   const d = new Date(date);
-  return d.toLocaleDateString('en-US', { month: 'long' });
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
 
 // GET /api/meter-readings
@@ -24,44 +24,42 @@ export const getAllMeterReadings = async (req, res) => {
       .query(`
         SELECT
           mr.R_ID as id,
+          m.M_ID as meterId,
           m.M_Number as meterNumber,
           mr.R_Date as date,
           mr.R_Value as value,
           mr.R_Consumption as consumption,
           mr.R_IsTampered as tampered,
+          mr.R_Notes as notes,
           u.U_FullName as fieldOfficer,
           ut.Ut_Name as utilityType,
           ut.Ut_Unit as unit,
           c.C_Name as customerName,
-          c.C_ID as customerId
+          c.C_ID as customerId,
+          LAG(mr.R_Value) OVER (PARTITION BY m.M_ID ORDER BY mr.R_Date) as previousValue
         FROM MeterReading mr
         INNER JOIN Meter m ON mr.M_ID = m.M_ID
         INNER JOIN [User] u ON mr.U_ID = u.U_ID
         INNER JOIN Utility ut ON m.Ut_ID = ut.Ut_ID
         INNER JOIN ServiceConnection sc ON m.M_ID = sc.M_ID
         INNER JOIN Customer c ON sc.C_ID = c.C_ID
-        ORDER BY mr.R_Date DESC
+        ORDER BY mr.R_ID DESC
       `);
 
-    // Calculate previous value for each reading
-    const readings = result.recordset.map((reading, index, array) => {
-      // Find previous reading for the same meter
-      const previousReading = array.find((r, i) =>
-        i > index && r.meterNumber === reading.meterNumber
-      );
-
-      const previousValue = previousReading ? previousReading.value : 0;
-      const consumption = reading.value - previousValue;
-      const consumptionDisplay = `${consumption}${reading.unit}`;
+    // Map readings using database values
+    const readings = result.recordset.map(reading => {
+      const consumptionDisplay = `${reading.consumption}${reading.unit}`;
 
       return {
         id: reading.id,
+        meterId: reading.meterId,
         meterNumber: reading.meterNumber,
         date: formatDate(reading.date),
         value: reading.value.toString(),
-        previousValue: previousValue.toString(),
+        previousValue: (reading.previousValue || 0).toString(),
         consumption: consumptionDisplay,
         tampered: reading.tampered,
+        notes: reading.notes,
         fieldOfficer: reading.fieldOfficer,
         utilityType: reading.utilityType,
         month: formatMonth(reading.date),
@@ -103,6 +101,7 @@ export const getMeterReadingById = async (req, res) => {
           mr.R_Consumption as consumption,
           mr.R_IsTampered as tampered,
           mr.R_TamperingFine as tamperingFine,
+          mr.R_Notes as notes,
           mr.U_ID as fieldOfficerId,
           u.U_FullName as fieldOfficer,
           ut.Ut_Name as utilityType,
@@ -154,6 +153,7 @@ export const getMeterReadingById = async (req, res) => {
         consumption: reading.value - previousValue,
         tampered: reading.tampered,
         tamperingFine: reading.tamperingFine,
+        notes: reading.notes,
         fieldOfficerId: reading.fieldOfficerId,
         fieldOfficer: reading.fieldOfficer,
         utilityType: reading.utilityType,
@@ -194,24 +194,8 @@ export const createMeterReading = async (req, res) => {
 
     const pool = await getPool();
 
-    // Get the logged-in user ID from the request (assuming auth middleware sets req.user)
-    // For now, we'll get the first field officer from the database
-    const userResult = await pool.request()
-      .query(`
-        SELECT TOP 1 U_ID
-        FROM [User]
-        WHERE U_Role = 'Field Officer' AND U_Status = 'Working'
-        ORDER BY U_ID
-      `);
-
-    if (userResult.recordset.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'No active field officer found'
-      });
-    }
-
-    const fieldOfficerId = userResult.recordset[0].U_ID;
+    // Get the logged-in user ID from the JWT token
+    const fieldOfficerId = req.user.userId;
 
     // Get previous reading for consumption calculation
     const previousResult = await pool.request()
@@ -239,10 +223,11 @@ export const createMeterReading = async (req, res) => {
       .input('consumption', sql.Decimal(10, 2), consumption)
       .input('isTampered', sql.Bit, isTampered ? 1 : 0)
       .input('tamperingFine', sql.Decimal(10, 2), isTampered ? 500.00 : 0.00)
+      .input('notes', sql.NVarChar(sql.MAX), notes || null)
       .query(`
-        INSERT INTO MeterReading (M_ID, U_ID, R_Date, R_Value, R_Consumption, R_IsTampered, R_TamperingFine)
+        INSERT INTO MeterReading (M_ID, U_ID, R_Date, R_Value, R_Consumption, R_IsTampered, R_TamperingFine, R_Notes)
         OUTPUT INSERTED.R_ID
-        VALUES (@meterId, @userId, @date, @value, @consumption, @isTampered, @tamperingFine)
+        VALUES (@meterId, @userId, @date, @value, @consumption, @isTampered, @tamperingFine, @notes)
       `);
 
     const readingId = result.recordset[0].R_ID;
@@ -317,7 +302,8 @@ export const updateMeterReading = async (req, res) => {
     const {
       readingValue,
       readingDate,
-      isTampered
+      isTampered,
+      notes
     } = req.body;
 
     const pool = await getPool();
@@ -364,13 +350,15 @@ export const updateMeterReading = async (req, res) => {
       .input('consumption', sql.Decimal(10, 2), consumption)
       .input('isTampered', sql.Bit, isTampered ? 1 : 0)
       .input('tamperingFine', sql.Decimal(10, 2), isTampered ? 500.00 : 0.00)
+      .input('notes', sql.NVarChar(sql.MAX), notes || null)
       .query(`
         UPDATE MeterReading
         SET R_Value = @value,
             R_Date = @date,
             R_Consumption = @consumption,
             R_IsTampered = @isTampered,
-            R_TamperingFine = @tamperingFine
+            R_TamperingFine = @tamperingFine,
+            R_Notes = @notes
         WHERE R_ID = @readingId
       `);
 

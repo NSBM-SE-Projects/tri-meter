@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Button,
   Input,
@@ -13,16 +13,28 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Checkbox,
   Textarea,
+  Calendar,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  DialogDescription,
 } from "@/components"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar as CalendarIcon, Search } from "lucide-react"
+import { Calendar as CalendarIcon, Search, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { getActiveMeters, getLatestReading } from "@/services/meterReadingService"
+import { cn } from "@/lib/utils"
 
 export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = null, isEdit = false }) {
+  const [meterSearch, setMeterSearch] = useState("")
+  const [availableMeters, setAvailableMeters] = useState([])
+  const [isLoadingMeters, setIsLoadingMeters] = useState(false)
+  const [latestReading, setLatestReading] = useState(null)
+  const [calculatedConsumption, setCalculatedConsumption] = useState(null)
+  const [isSelectOpen, setIsSelectOpen] = useState(false)
+  const searchInputRef = useRef(null)
+  const [isMouseOverList, setIsMouseOverList] = useState(false)
+  
   // Form state
   const [formData, setFormData] = useState({
     meterNumber: "",
@@ -33,18 +45,36 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
     notes: ""
   })
 
-  const [meterSearch, setMeterSearch] = useState("")
-  const [availableMeters, setAvailableMeters] = useState([])
-  const [isLoadingMeters, setIsLoadingMeters] = useState(false)
-  const [latestReading, setLatestReading] = useState(null)
-  const [calculatedConsumption, setCalculatedConsumption] = useState(null)
-
   // Fetch active meters when dialog opens
   useEffect(() => {
     if (open) {
       fetchActiveMeters()
     }
   }, [open])
+
+  useEffect(() => {
+    if (isSelectOpen) {
+      setMeterSearch("")
+      setIsMouseOverList(false)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          searchInputRef.current?.focus()
+        })
+      })
+    }
+  }, [isSelectOpen])
+
+  // Maintain focus while typing (stop when mouse hovers over list)
+  useEffect(() => {
+    if (isSelectOpen) {
+      const interval = setInterval(() => {
+        if (!isMouseOverList && searchInputRef.current && document.activeElement !== searchInputRef.current) {
+          searchInputRef.current.focus()
+        }
+      }, 50)
+      return () => clearInterval(interval)
+    }
+  }, [isSelectOpen, isMouseOverList])
 
   const fetchActiveMeters = async () => {
     try {
@@ -70,7 +100,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
   // Fetch latest reading when meter is selected
   useEffect(() => {
     const fetchLatestReading = async () => {
-      if (formData.meterNumber && !isEdit) {
+      if (formData.meterNumber) {
         try {
           const reading = await getLatestReading(formData.meterNumber)
           setLatestReading(reading)
@@ -99,19 +129,34 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
     }
   }, [formData.value, latestReading])
 
+  // Check if meter is tampered
+  const isTampered = () => {
+    if (latestReading && formData.value && !isNaN(parseFloat(formData.value))) {
+      const currentValue = parseFloat(formData.value)
+      const previousValue = parseFloat(latestReading.value)
+      return previousValue > currentValue
+    }
+    return false
+  }
+
   // Update form data when initialData changes
   useEffect(() => {
-    if (initialData) {
+    if (initialData && isEdit) {
       setFormData({
         ...initialData,
+        meterNumber: initialData.meterNumber?.toString() || "",
+        date: initialData.date ? new Date(initialData.date) : null
+      })
+    } else if (initialData) {
+      setFormData({
+        ...initialData,
+        meterNumber: initialData.meterNumber?.toString() || "",
         date: initialData.date ? new Date(initialData.date) : null
       })
     } else {
       resetForm()
     }
-  }, [initialData, open])
-
-  // Note: Previous reading is now calculated automatically by the backend
+  }, [initialData, open, isEdit, availableMeters])
 
   const [formErrors, setFormErrors] = useState({})
 
@@ -158,7 +203,6 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
   }
 
   const handleEnter = () => {
-    // Auto-focus to date picker or submit
     if (formData.value && formData.date) {
       handleSubmit()
     }
@@ -181,7 +225,6 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
 
   const handleSubmit = () => {
     if (validateForm()) {
-      // Transform form data to match backend API format
       const submissionData = {
         meterId: parseInt(formData.meterNumber),
         readingValue: parseFloat(formData.value),
@@ -206,21 +249,26 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[90vw] md:max-w-4xl lg:max-w-5xl max-h-[95vh] overflow-y-auto p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle className="text-2xl">Record Meter Reading</DialogTitle>
+      <DialogContent className="max-w-[80vw] md:max-w-2xl lg:max-w-3xl max-h-[95vh] overflow-y-auto gap-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-black [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-track]:bg-background">
+        <DialogHeader className="px-6 md:px-3 lg:px-3">
+          <DialogTitle className="text-2xl">
+            {isEdit ? "Edit Meter Reading" : "Record Meter Reading"} 
+          </DialogTitle>
+          <DialogDescription className="text-sm">
+            {isEdit ? "Update meter record information" : "Fill in the latest reading details below "}
+          </DialogDescription>
         </DialogHeader>
 
         {/* Desktop/Tablet Layout (md and up) */}
-        <div className="hidden md:block p-6 space-y-6">
+        <div className="hidden p-5 pt-8 space-y-6 md:block">
           {/* Two Column Grid */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-8">
             {/* Left Column */}
-            <div className="space-y-6">
+            <div className="space-y-14">
               {/* Meter Selection */}
               <div className="space-y-2">
                 <Label htmlFor="meter">
-                  Meter<span className="text-red-500">*</span>
+                  Meter<span className="text-red-700">*</span>
                 </Label>
                 <Select
                   value={formData.meterNumber}
@@ -228,33 +276,48 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                     handleInputChange("meterNumber", value)
                     setMeterSearch("")
                   }}
-                  disabled={isEdit}
+                  open={isSelectOpen}
+                  onOpenChange={setIsSelectOpen}
+                  disabled={isEdit || isLoadingMeters}
                 >
-                  <SelectTrigger className={formErrors.meterNumber ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select meter" />
+                  <SelectTrigger className={cn("w-full", formErrors.meterNumber ? "border-red-700" : "")}>
+                    {isLoadingMeters ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Loading meters...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder="Select meter" />
+                    )}
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
                     <div className="sticky top-0 z-10 p-2 border-b bg-background">
                       <div className="relative">
                         <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
                         <Input
+                          ref={searchInputRef}
                           placeholder="Search meters..."
                           value={meterSearch}
                           onChange={(e) => setMeterSearch(e.target.value)}
-                          className="h-8 pl-8"
+                          className="h-8 pl-8 text-sm"
                           onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation()
+                            if (e.key !== 'Escape' && e.key !== 'Tab') {
+                              e.nativeEvent.stopImmediatePropagation()
+                            }
+                          }}
                         />
                       </div>
                     </div>
-                    <div className="max-h-[200px] overflow-y-auto">
-                      {isLoadingMeters ? (
-                        <div className="p-2 text-sm text-center text-muted-foreground">
-                          Loading meters...
-                        </div>
-                      ) : filteredMeters.length > 0 ? (
+                    <div
+                      className="max-h-[200px] overflow-y-auto"
+                      onMouseEnter={() => setIsMouseOverList(true)}
+                    >
+                      {filteredMeters.length > 0 ? (
                         filteredMeters.map((meter) => (
                           <SelectItem key={meter.id} value={meter.id.toString()}>
-                            {meter.meterNumber} - {meter.customerName}
+                            {meter.meterNumber}: {meter.customerName}
                           </SelectItem>
                         ))
                       ) : (
@@ -266,7 +329,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                   </SelectContent>
                 </Select>
                 {formErrors.meterNumber && (
-                  <p className="text-sm text-red-500">{formErrors.meterNumber}</p>
+                  <p className="text-sm text-red-700">{formErrors.meterNumber}</p>
                 )}
               </div>
 
@@ -274,19 +337,18 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               <div className="space-y-2">
                 <Label>Meter Details</Label>
                 {selectedMeter ? (
-                  <div className="border-2 rounded-md p-4 space-y-1.5 bg-background">
-                    <p className="text-base"><span className="font-medium">Customer:</span> {selectedMeter.customerName}</p>
-                    <p className="text-base"><span className="font-medium">Utility:</span> {selectedMeter.utilityType}</p>
+                  <div className="border-2 rounded-md p-4 space-y-1.5 bg-muted/25 text-sm text-muted-foreground">
+                    <p><span>Utility:</span> {selectedMeter.utilityType}</p>
+                    <p><span>Unit:</span> {selectedMeter.unit}</p>
                     {latestReading && (
                       <>
-                        <p className="text-base"><span className="font-medium">Last Reading:</span> {latestReading.value} {selectedMeter.unit}</p>
-                        <p className="text-base"><span className="font-medium">Date:</span> {format(new Date(latestReading.date), "MMM dd, yyyy")}</p>
+                        <p><span>Last Reading:</span> {latestReading.value} {selectedMeter.unit}</p>
+                        <p><span>Date:</span> {format(new Date(latestReading.date), "dd MMM, yyyy")}</p>
                       </>
                     )}
-                    <p className="text-base"><span className="font-medium">Meter:</span> {selectedMeter.meterNumber}</p>
                   </div>
                 ) : (
-                  <div className="border-2 rounded-md p-4 bg-muted/30 h-40 flex items-center justify-center">
+                  <div className="flex items-center justify-center h-40 p-4 border-2 rounded-md bg-muted/30">
                     <p className="text-sm text-muted-foreground">Select a meter to view details</p>
                   </div>
                 )}
@@ -306,24 +368,24 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
             </div>
 
             {/* Right Column */}
-            <div className="space-y-6">
+            <div className="space-y-5">
             {/* Current Reading Display */}
             <div className="space-y-2">
               <Label>
-                Current Reading<span className="text-red-500">*</span>
+                Current Reading<span className="text-red-700">*</span>
               </Label>
-              <div className="border-2 rounded-lg p-8 text-center bg-background">
-                <div className="text-6xl font-bold">
+              <div className="p-3 border-2 rounded-md bg-background">
+                <p className="text-4xl font-bold break-words">
                   {formData.value || "0"}
-                </div>
+                </p>
               </div>
               {formErrors.value && (
-                <p className="text-sm text-red-500">{formErrors.value}</p>
+                <p className="text-sm text-red-700">{formErrors.value}</p>
               )}
             </div>
 
             {/* Number Pad */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-4">
               {[1, 2, 3].map(num => (
                 <Button
                   key={num}
@@ -339,7 +401,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               <Button
                 variant="default"
                 size="lg"
-                className="h-16 bg-green-600 hover:bg-green-700 font-semibold"
+                className="h-16 font-semibold bg-green-500 hover:bg-green-700"
                 onClick={handleEnter}
                 type="button"
               >
@@ -359,9 +421,9 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                 </Button>
               ))}
               <Button
-                variant="destructive"
+                variant="default"
                 size="lg"
-                className="h-16 font-semibold"
+                className="h-16 font-semibold bg-red-500 hover:bg-red-700"
                 onClick={handleClear}
                 type="button"
               >
@@ -382,34 +444,22 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               ))}
             </div>
 
-            {/* Authorized Reset Checkbox */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="tampered"
-                checked={formData.tampered}
-                onCheckedChange={(checked) => handleInputChange("tampered", checked)}
-              />
-              <label htmlFor="tampered" className="text-sm font-medium cursor-pointer">
-                Authorized Meter Reset
-              </label>
-            </div>
-
             {/* Reading Date */}
             <div className="space-y-2">
               <Label>
-                Reading Date<span className="text-red-500">*</span>
+                Reading Month<span className="text-red-700">*</span>
               </Label>
               <Popover>
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild >
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal h-12"
+                    className="justify-start w-full h-12 gap-2 font-normal text-left"
                   >
-                    <CalendarIcon className="mr-2 h-5 w-5" />
+                    <CalendarIcon className="w-5 h-5 mr-1" />
                     {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                  <PopoverContent className="w-64 p-1 mt-1" align="center">
                   <Calendar
                     mode="single"
                     selected={formData.date}
@@ -419,29 +469,38 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                 </PopoverContent>
               </Popover>
               {formErrors.date && (
-                <p className="text-sm text-red-500">{formErrors.date}</p>
+                <p className="text-sm text-red-700">{formErrors.date}</p>
               )}
             </div>
           </div>
         </div>
 
-        {/* Calculated Consumption - Full Width */}
+        {/* Calculated Consumption  */}
         {selectedMeter && calculatedConsumption !== null && (
-          <div className="border-2 rounded-lg p-6 bg-background border-gray-300 dark:border-gray-600">
-            <p className="text-xl font-medium text-center mb-3">Calculated Consumption</p>
-            <p className="text-5xl font-bold text-center">
-              {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
-            </p>
+            <div className={cn("border-2 rounded-md p-3 bg-background", isTampered() ? "border-red-700" : "border-gray-300 dark:border-neutral-700")}>
+            
+            {isTampered() ? (
+              <p className="text-4xl font-bold text-center text-red-700">
+                TAMPERED
+              </p>
+              ) : (
+              <>
+              <p className="mb-3 text-lg font-medium text-center">Calculated Consumption</p>
+              <p className="text-4xl font-bold text-center">
+                {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
+              </p>
+              </>
+            )}
           </div>
         )}
       </div>
 
       {/* Mobile Layout (below md) */}
-        <div className="md:hidden px-4 py-6 space-y-6">
+        <div className="px-4 py-6 space-y-5 md:hidden">
           {/* Meter Selection */}
           <div className="space-y-2">
             <Label htmlFor="meter-mobile">
-              Meter<span className="text-red-500">*</span>
+              Meter<span className="text-red-700">*</span>
             </Label>
             <Select
               value={formData.meterNumber}
@@ -451,31 +510,37 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               }}
               disabled={isEdit}
             >
-              <SelectTrigger className={formErrors.meterNumber ? "border-red-500" : ""}>
+              <SelectTrigger className={cn("w-full", formErrors.meterNumber ? "border-red-700" : "")}>
                 <SelectValue placeholder="Select meter" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="w-[var(--radix-select-trigger-width)]">
                 <div className="sticky top-0 z-10 p-2 border-b bg-background">
                   <div className="relative">
                     <Search className="absolute w-4 h-4 -translate-y-1/2 left-2 top-1/2 text-muted-foreground" />
                     <Input
+                      ref={searchInputRef}
                       placeholder="Search meters..."
                       value={meterSearch}
                       onChange={(e) => setMeterSearch(e.target.value)}
-                      className="h-8 pl-8"
+                      className="h-8 pl-8 text-sm"
                       onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        e.stopPropagation()
+                        if (e.key !== 'Escape' && e.key !== 'Tab') {
+                          e.nativeEvent.stopImmediatePropagation()
+                        }
+                      }}
                     />
                   </div>
                 </div>
-                <div className="max-h-[200px] overflow-y-auto">
-                  {isLoadingMeters ? (
-                    <div className="p-2 text-sm text-center text-muted-foreground">
-                      Loading meters...
-                    </div>
-                  ) : filteredMeters.length > 0 ? (
+                <div
+                  className="max-h-[200px] overflow-y-auto"
+                  onMouseEnter={() => setIsMouseOverList(true)}
+                >
+                  { filteredMeters.length > 0 ? (
                     filteredMeters.map((meter) => (
                       <SelectItem key={meter.id} value={meter.id.toString()}>
-                        {meter.meterNumber} - {meter.customerName}
+                        {meter.meterNumber}: {meter.customerName}
                       </SelectItem>
                     ))
                   ) : (
@@ -487,28 +552,41 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               </SelectContent>
             </Select>
             {formErrors.meterNumber && (
-              <p className="text-sm text-red-500">{formErrors.meterNumber}</p>
+              <p className="text-sm text-red-700">{formErrors.meterNumber}</p>
             )}
           </div>
 
           {/* Meter Details */}
           {selectedMeter && (
-            <div className="border-2 rounded-md p-3 space-y-1 bg-muted/30 text-sm">
-              <p><span className="font-medium">Meter:</span> {selectedMeter.meterNumber}</p>
-              <p><span className="font-medium">Customer:</span> {selectedMeter.customerName}</p>
-              <p><span className="font-medium">Utility:</span> {selectedMeter.utilityType}</p>
-              <p><span className="font-medium">Unit:</span> {selectedMeter.unit}</p>
+            <div className="border-2 rounded-md p-3 space-y-1.5 bg-muted/25 text-sm text-muted-foreground">
+              <p><span>Utility:</span> {selectedMeter.utilityType}</p>
+              <p><span>Unit:</span> {selectedMeter.unit}</p>
+              {latestReading && (
+                <>
+                  <p><span>Last Reading:</span> {latestReading.value} {selectedMeter.unit}</p>
+                  <p><span>Date:</span> {format(new Date(latestReading.date), "dd MMM, yyyy")}</p>
+                </>
+              )}
             </div>
           )}
 
           {/* Calculated Consumption */}
           {selectedMeter && calculatedConsumption !== null && (
-            <div className="space-y-2">
-              <div className="border-2 rounded-lg p-4 bg-background border-gray-300 dark:border-gray-600">
-                <p className="text-base font-medium text-center mb-2">Calculated Consumption</p>
-                <p className="text-3xl font-bold text-center">
-                  {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
-                </p>
+            <div>
+              <div className={cn("border-2 rounded-md p-4 bg-background", isTampered() ? "border-red-700" : "border-gray-300 dark:border-neutral-700")}>
+
+                {isTampered() ? (
+                  <p className="text-3xl font-bold text-center text-red-700">
+                    TAMPERED
+                  </p>
+                ) : (
+                  <>
+                    <p className="mb-2 text-sm font-medium text-center">Calculated Consumption</p>
+                    <p className="text-2xl font-bold text-center">
+                      {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -516,37 +594,37 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
           {/* Current Reading */}
           <div className="space-y-2">
             <Label htmlFor="value-mobile">
-              Current Reading<span className="text-red-500">*</span>
+              Current Reading<span className="text-red-700">*</span>
             </Label>
             <Input
               id="value-mobile"
               type="number"
               value={formData.value}
               onChange={(e) => handleInputChange("value", e.target.value)}
-              className={formErrors.value ? "border-red-500" : ""}
+              className={formErrors.value ? "border-red-700" : ""}
               placeholder="Enter current reading"
             />
             {formErrors.value && (
-              <p className="text-sm text-red-500">{formErrors.value}</p>
+              <p className="text-sm text-red-700">{formErrors.value}</p>
             )}
           </div>
 
           {/* Reading Date */}
           <div className="space-y-2">
             <Label>
-              Reading Date<span className="text-red-500">*</span>
+              Reading Date<span className="text-red-700">*</span>
             </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="justify-start w-full h-12 gap-2 font-normal text-left"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="w-4 h-4 mr-1" />
                   {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-64 p-1 mt-1 mb-1" align="center">
                 <Calendar
                   mode="single"
                   selected={formData.date}
@@ -556,20 +634,8 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               </PopoverContent>
             </Popover>
             {formErrors.date && (
-              <p className="text-sm text-red-500">{formErrors.date}</p>
+              <p className="text-sm text-red-700">{formErrors.date}</p>
             )}
-          </div>
-
-          {/* Authorized Reset */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tampered-mobile"
-              checked={formData.tampered}
-              onCheckedChange={(checked) => handleInputChange("tampered", checked)}
-            />
-            <label htmlFor="tampered-mobile" className="text-sm font-medium cursor-pointer">
-              Authorized Meter Reset
-            </label>
           </div>
 
           {/* Notes */}
@@ -585,12 +651,12 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
           </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6 pt-4 flex-col-reverse sm:flex-row gap-2">
+        <DialogFooter className="flex-col-reverse gap-5 px-10 pb-2 pt-7 lg:pt-10 md:px-5 sm:flex-row lg:gap-4">
           <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button onClick={handleSubmit} className="w-full sm:w-auto">
-            Save Reading
+            {isEdit ? "Update Reading" : "Save Reading"}
           </Button>
         </DialogFooter>
       </DialogContent>
