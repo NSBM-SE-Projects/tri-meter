@@ -158,14 +158,14 @@ export default function MeterReadings() {
           <SiteHeader />
           <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <h1 className="text-3xl font-bold">Meter Readings</h1>
                   <p className="text-muted-foreground">
                     Record and view meter consumption data
                   </p>
                 </div>
-                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
+                <div className="flex w-full gap-2 pt-4 lg:pt-0 sm:w-auto">
                   <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Reading
@@ -175,7 +175,7 @@ export default function MeterReadings() {
 
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
               ) : readings.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
@@ -185,7 +185,7 @@ export default function MeterReadings() {
                 <div className="border rounded-lg bg-card">
                   <div className="p-6">
                     <p className="text-lg font-medium">Meter Reading List</p>
-                    <p className="text-sm text-muted-foreground pb-3">
+                    <p className="pb-3 text-sm text-muted-foreground">
                       A list of all recorded meter readings in the system
                     </p>
                     <DataTable
@@ -245,7 +245,7 @@ export default function MeterReadings() {
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-3">Reading Information</h3>
+              <h3 className="mb-3 text-lg font-medium">Reading Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Date</p>
@@ -285,7 +285,7 @@ export default function MeterReadings() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Notes</h3>
+                  <h3 className="mb-3 text-lg font-medium">Notes</h3>
                   <p className="text-base text-muted-foreground">{selectedReading.notes}</p>
                 </div>
               </>
@@ -294,7 +294,7 @@ export default function MeterReadings() {
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-3">Field Officer</h3>
+              <h3 className="mb-3 text-lg font-medium">Field Officer</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Officer Name</p>

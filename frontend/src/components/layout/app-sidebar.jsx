@@ -27,12 +27,12 @@ const allNavItems = [
   },
   {
     title: "Bills",
-    url: "#",
+    url: "#/bills",
     icon: Receipt,
   },
   {
     title: "Payments",
-    url: "#",
+    url: "#/payments",
     icon: CreditCard,
   },
   {

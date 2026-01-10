@@ -130,14 +130,14 @@ export default function Customers() {
           <SiteHeader />
           <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <h1 className="text-3xl font-bold">Customers</h1>
                   <p className="text-muted-foreground">
                     Manage all customer accounts
                   </p>
                 </div>
-                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
+                <div className="flex w-full gap-2 pt-4 lg:pt-0 sm:w-auto">
                   <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Customer
@@ -147,7 +147,7 @@ export default function Customers() {
 
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
               ) : customers.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
@@ -157,7 +157,7 @@ export default function Customers() {
                 <div className="border rounded-lg bg-card">
                   <div className="p-6">
                     <p className="text-lg font-medium">Customer List</p>
-                    <p className="text-sm text-muted-foreground pb-3">
+                    <p className="pb-3 text-sm text-muted-foreground">
                       A list of all registered customers in the system
                     </p>
                     <DataTable
@@ -216,7 +216,7 @@ export default function Customers() {
 
             <Separator />
             <div>
-              <h3 className="text-lg font-medium mb-3">Customer Information</h3>
+              <h3 className="mb-3 text-lg font-medium">Customer Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Full Name</p>
@@ -252,13 +252,13 @@ export default function Customers() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Identity Document</h3>
+                  <h3 className="mb-4 text-lg font-medium">Identity Document</h3>
                   <div className="flex justify-center">
-                    <div className="border rounded-lg overflow-hidden bg-muted/10 shadow-sm max-w-md w-full">
+                    <div className="w-full max-w-md overflow-hidden border rounded-lg shadow-sm bg-muted/10">
                       <img
                         src={selectedCustomer.idImageUrl}
                         alt="Customer ID Document"
-                        className="w-full h-auto object-contain"
+                        className="object-contain w-full h-auto"
                         style={{ maxHeight: '280px' }}
                         onError={(e) => {
                           e.target.onerror = null;
@@ -274,7 +274,7 @@ export default function Customers() {
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-3">Contact Information</h3>
+              <h3 className="mb-3 text-lg font-medium">Contact Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Phone Number(s)</p>
@@ -289,7 +289,7 @@ export default function Customers() {
 
             <Separator />
             <div>
-              <h3 className="text-lg font-medium mb-3">Address</h3>
+              <h3 className="mb-3 text-lg font-medium">Address</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">House No.</p>
