@@ -47,7 +47,7 @@ const allNavItems = [
   },
   {
     title: "System Users",
-    url: "#",
+    url: "#/system-users",
     icon: ShieldCheck,
   },
 ]

@@ -12,6 +12,7 @@ import { LoadingOverlay } from "@/components"
 import Bills from './pages/Bills'
 import Payments from './pages/Payments'
 import Tariffs from './pages/Tariffs'
+import SystemUsers from './pages/SystemUsers'
 
 function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, isAuthenticated, loading } = useAuth()
@@ -106,6 +107,15 @@ function App() {
               <Tariffs />
             </ProtectedRoute>
           }
+        />
+
+        <Route
+          path="/system-users"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <SystemUsers />
+            </ProtectedRoute>
+        } 
         />
       </Routes>
     </HashRouter>
