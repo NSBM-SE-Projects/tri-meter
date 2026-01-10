@@ -68,6 +68,7 @@ export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete) 
         </Badge>
       )
     },
+    filterFn: "multiSelect",
   },
   {
     accessorKey: "meterNumber",
@@ -99,6 +100,7 @@ export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete) 
         </Badge>
       )
     },
+    filterFn: "multiSelect",
   },
   {
     id: "actions",

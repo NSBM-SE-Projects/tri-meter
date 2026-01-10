@@ -52,13 +52,16 @@ export default function MeterReadings() {
       // Add to readings list
       setReadings(prev => [newReading, ...prev])
 
-      // Show success toast
       toast.success("Meter reading added successfully!")
 
-      // Refresh readings list
       await fetchReadings()
     } catch (error) {
       console.error("Failed to create meter reading:", error)
+      // Check for 403
+      if (error.statusCode === 403) {
+        window.location.href = '/#/access-denied'
+        return
+      }
       toast.error(error.message || "Failed to add meter reading. Please try again.")
     } finally {
       setIsLoading(false)
@@ -94,10 +97,14 @@ export default function MeterReadings() {
       setIsDeleteDialogOpen(false)
       setSelectedReading(null)
 
-      // Show success toast
       toast.success("Meter reading deleted successfully!")
     } catch (error) {
       console.error("Failed to delete meter reading:", error)
+      // Check 403
+      if (error.statusCode === 403) {
+        window.location.href = '/#/access-denied'
+        return
+      }
       toast.error(error.message || "Failed to delete meter reading. Please try again.")
     } finally {
       setIsLoading(false)
@@ -121,20 +128,22 @@ export default function MeterReadings() {
       setIsEditDialogOpen(false)
       setSelectedReading(null)
 
-      // Show success toast
       toast.success("Meter reading updated successfully!")
 
-      // Refresh readings list
       await fetchReadings()
     } catch (error) {
       console.error("Failed to update meter reading:", error)
+      // Check 403
+      if (error.statusCode === 403) {
+        window.location.href = '/#/access-denied'
+        return
+      }
       toast.error(error.message || "Failed to update meter reading. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Create columns with action handlers
   const readingColumns = createMeterReadingColumns(
     handleViewDetails,
     handleEdit,
@@ -149,14 +158,14 @@ export default function MeterReadings() {
           <SiteHeader />
           <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <h1 className="text-3xl font-bold">Meter Readings</h1>
                   <p className="text-muted-foreground">
                     Record and view meter consumption data
                   </p>
                 </div>
-                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
+                <div className="flex w-full gap-2 pt-4 lg:pt-0 sm:w-auto">
                   <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 mr-2" />
                     Add Reading
@@ -166,7 +175,7 @@ export default function MeterReadings() {
 
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
               ) : readings.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
@@ -176,7 +185,7 @@ export default function MeterReadings() {
                 <div className="border rounded-lg bg-card">
                   <div className="p-6">
                     <p className="text-lg font-medium">Meter Reading List</p>
-                    <p className="text-sm text-muted-foreground pb-3">
+                    <p className="pb-3 text-sm text-muted-foreground">
                       A list of all recorded meter readings in the system
                     </p>
                     <DataTable
@@ -192,7 +201,7 @@ export default function MeterReadings() {
                         },
                         {
                           id: 'month',
-                          label: 'Month',
+                          label: 'Period',
                           options: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                         }
                       ]}
@@ -236,7 +245,7 @@ export default function MeterReadings() {
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-3">Reading Information</h3>
+              <h3 className="mb-3 text-lg font-medium">Reading Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Date</p>
@@ -262,7 +271,7 @@ export default function MeterReadings() {
                   <p className="text-sm font-normal text-muted-foreground">Tampered</p>
                   {selectedReading.tampered ? (
                     <Badge variant="destructive" className="mt-1">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      <AlertTriangle className="w-4 h-4 mr-1" strokeWidth={2.5} />
                       Yes
                     </Badge>
                   ) : (
@@ -272,10 +281,20 @@ export default function MeterReadings() {
               </div>
             </div>
 
+            {selectedReading.notes && (
+              <>
+                <Separator />
+                <div>
+                  <h3 className="mb-3 text-lg font-medium">Notes</h3>
+                  <p className="text-base text-muted-foreground">{selectedReading.notes}</p>
+                </div>
+              </>
+            )}
+
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-3">Field Officer</h3>
+              <h3 className="mb-3 text-lg font-medium">Field Officer</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Officer Name</p>
@@ -294,11 +313,12 @@ export default function MeterReadings() {
           onOpenChange={setIsEditDialogOpen}
           onSuccess={handleEditSuccess}
           initialData={{
-            meterNumber: selectedReading.meterNumber || "",
+            meterNumber: selectedReading.meterId?.toString() || "",
             date: selectedReading.date || "",
             value: selectedReading.value || "",
             previousValue: selectedReading.previousValue || "",
             tampered: selectedReading.tampered || false,
+            notes: selectedReading.notes || "",
             fieldOfficer: selectedReading.fieldOfficer || ""
           }}
           isEdit={true}

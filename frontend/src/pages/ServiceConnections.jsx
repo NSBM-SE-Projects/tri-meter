@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { getAllServiceConnections, createServiceConnection, deleteServiceConnection, updateServiceConnection } from "@/services/serviceConnectionService"
+import { getAllCustomers } from "@/services/customerService"
 import {
   AppSidebar,
   SiteHeader,
@@ -14,100 +16,6 @@ import {
 } from "@/components"
 import { Plus, Loader2 } from "lucide-react"
 
-// Sample test data for frontend testing
-const sampleConnectionsData = [
-  {
-    id: "1",
-    customerName: "John Smith",
-    utilityType: "Electricity",
-    meterNumber: "E-12345",
-    installationDate: "11th Dec 2024",
-    tariffPlan: "Residential",
-    status: "Active",
-  },
-  {
-    id: "2",
-    customerName: "Dwain Dias",
-    utilityType: "Water",
-    meterNumber: "W-23456",
-    installationDate: "15th Nov 2024",
-    tariffPlan: "Commercial",
-    status: "Active",
-  },
-  {
-    id: "3",
-    customerName: "Ashen",
-    utilityType: "Gas",
-    meterNumber: "G-34567",
-    installationDate: "20th Oct 2024",
-    tariffPlan: "Residential",
-    status: "Disconnected",
-  },
-  {
-    id: "4",
-    customerName: "Sarah Johnson",
-    utilityType: "Electricity",
-    meterNumber: "E-45678",
-    installationDate: "5th Dec 2024",
-    tariffPlan: "Industrial",
-    status: "Active",
-  },
-  {
-    id: "5",
-    customerName: "Mike Brown",
-    utilityType: "Water",
-    meterNumber: "W-56789",
-    installationDate: "1st Nov 2024",
-    tariffPlan: "Residential",
-    status: "Disconnected",
-  },
-  {
-    id: "6",
-    customerName: "Emily Chen",
-    utilityType: "Electricity",
-    meterNumber: "E-67890",
-    installationDate: "10th Dec 2024",
-    tariffPlan: "Residential",
-    status: "Active",
-  },
-  {
-    id: "7",
-    customerName: "David Wilson",
-    utilityType: "Gas",
-    meterNumber: "G-78901",
-    installationDate: "25th Oct 2024",
-    tariffPlan: "Commercial",
-    status: "Active",
-  },
-  {
-    id: "8",
-    customerName: "Lisa Anderson",
-    utilityType: "Water",
-    meterNumber: "W-89012",
-    installationDate: "3rd Nov 2024",
-    tariffPlan: "Industrial",
-    status: "Pending",
-  },
-  {
-    id: "9",
-    customerName: "Robert Taylor",
-    utilityType: "Electricity",
-    meterNumber: "E-90123",
-    installationDate: "18th Nov 2024",
-    tariffPlan: "Residential",
-    status: "Disconnected",
-  },
-  {
-    id: "10",
-    customerName: "Jennifer Martinez",
-    utilityType: "Gas",
-    meterNumber: "G-01234",
-    installationDate: "8th Dec 2024",
-    tariffPlan: "Commercial",
-    status: "Active",
-  },
-]
-
 export default function ServiceConnections() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
@@ -115,27 +23,43 @@ export default function ServiceConnections() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedConnection, setSelectedConnection] = useState(null)
   const [connections, setConnections] = useState([])
+  const [customers, setCustomers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch service connections on component mount
+  // Fetch service connections and customers on component mount
   useEffect(() => {
     fetchConnections()
+    fetchCustomers()
   }, [])
 
   const fetchConnections = async () => {
     try {
       setIsLoading(true)
-      // TODO: Uncomment when backend is ready
-      // const data = await getAllServiceConnections()
-      // setConnections(data)
-
-      // Using sample data for frontend testing
-      setConnections(sampleConnectionsData)
+      const data = await getAllServiceConnections()
+      // Deduplicate service connections by ID
+      const uniqueConnections = data.filter((connection, index, self) =>
+        index === self.findIndex((c) => c.id === connection.id)
+      )
+      setConnections(uniqueConnections)
     } catch (error) {
       console.error("Failed to fetch service connections:", error)
-      toast.error("Failed to load service connections. Please try again.")
+      toast.error("Failed to load service connections. Please check your connection.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchCustomers = async () => {
+    try {
+      const data = await getAllCustomers()
+      // Deduplicate customers by ID
+      const uniqueCustomers = data.filter((customer, index, self) =>
+        index === self.findIndex((c) => c.id === customer.id)
+      )
+      setCustomers(uniqueCustomers)
+    } catch (error) {
+      console.error("Failed to fetch customers:", error)
+      toast.error("Failed to load customers.")
     }
   }
 
@@ -143,31 +67,12 @@ export default function ServiceConnections() {
     try {
       setIsLoading(true)
 
-      // TODO: Uncomment when backend is ready
-      // const newConnection = await createServiceConnection(formData)
+      await createServiceConnection(formData)
 
-      // Using local data for frontend testing
-      const newConnection = {
-        id: String(connections.length + 1),
-        customerName: formData.customer,
-        utilityType: formData.utilityType,
-        meterNumber: formData.meterNumber,
-        installationDate: new Date().toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        }),
-        tariffPlan: formData.tariffPlan,
-        status: formData.status,
-      }
-
-      // Add to connections list
-      setConnections(prev => [newConnection, ...prev])
+      // Refresh connections list
+      await fetchConnections()
 
       toast.success("Service connection registered successfully!")
-
-      // Refresh connection list
-      await fetchConnections()
     } catch (error) {
       console.error("Failed to create service connection:", error)
       toast.error(error.message || "Failed to register service connection. Please try again.")
@@ -198,17 +103,13 @@ export default function ServiceConnections() {
     try {
       setIsLoading(true)
 
-      // TODO: Uncomment when backend is ready
-      // await deleteServiceConnection(selectedConnection.id)
+      await deleteServiceConnection(selectedConnection.id)
 
-      // Using local data for frontend testing
-      // Remove from connections list
-      setConnections(prev => prev.filter(c => c.id !== selectedConnection.id))
+      await fetchConnections()
 
       setIsDeleteDialogOpen(false)
       setSelectedConnection(null)
 
-      // Show success toast
       toast.success("Service connection deleted successfully!")
     } catch (error) {
       console.error("Failed to delete service connection:", error)
@@ -222,36 +123,14 @@ export default function ServiceConnections() {
     try {
       setIsLoading(true)
 
-      // TODO: Uncomment when backend is ready
-      // const updatedConnection = await updateServiceConnection(
-      //   selectedConnection.id,
-      //   {
-      //     ...formData,
-      //     status: formData.status
-      //   }
-      // )
+      await updateServiceConnection(selectedConnection.id, formData)
 
-      // Using local data for frontend testing
-      const updatedConnection = {
-        ...selectedConnection,
-        meterNumber: formData.meterNumber,
-        tariffPlan: formData.tariffPlan,
-        status: formData.status
-      }
-
-      // Update in connections list
-      setConnections(prev => prev.map(c =>
-        c.id === selectedConnection.id ? updatedConnection : c
-      ))
+      await fetchConnections()
 
       setIsEditDialogOpen(false)
       setSelectedConnection(null)
 
-      // Show success toast
       toast.success("Service connection updated successfully!")
-
-      // Refresh connection list
-      await fetchConnections()
     } catch (error) {
       console.error("Failed to update service connection:", error)
       toast.error(error.message || "Failed to update service connection. Please try again.")
@@ -319,7 +198,7 @@ export default function ServiceConnections() {
                         {
                           id: 'status',
                           label: 'Status',
-                          options: ['Active', 'Disconnected', 'Pending']
+                          options: ['Active', 'Disconnected']
                         }
                       ]}
                       showColumnToggle={true}
@@ -337,6 +216,7 @@ export default function ServiceConnections() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSuccess={handleConnectionAdded}
+        customers={customers}
       />
 
       {/* View Details Dialog */}
@@ -386,6 +266,26 @@ export default function ServiceConnections() {
                 </div>
               </div>
             </div>
+
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-medium mb-3">Service Address</h3>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">House No.</p>
+                  <p className="text-base">{selectedConnection.serviceHouseNo || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">Street</p>
+                  <p className="text-base">{selectedConnection.serviceStreet || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-normal text-muted-foreground">City</p>
+                  <p className="text-base">{selectedConnection.serviceCity || "N/A"}</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </ViewDialog>
@@ -396,6 +296,7 @@ export default function ServiceConnections() {
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           onSuccess={handleEditSuccess}
+          customers={customers}
           initialData={{
             customer: selectedConnection.customerName || "",
             utilityType: selectedConnection.utilityType || "",
@@ -413,17 +314,11 @@ export default function ServiceConnections() {
         onOpenChange={setIsDeleteDialogOpen}
         title="Delete Service Connection"
         description="Are you sure you want to delete this service connection?"
-        itemName={selectedConnection?.meterNumber}
+        itemName={`${selectedConnection?.customerName}'s ${selectedConnection?.utilityType} Connection`}
         itemId={selectedConnection?.id}
         onConfirm={confirmDelete}
         isLoading={isLoading}
-      >
-        {selectedConnection && (
-          <p className="text-sm text-muted-foreground">
-            This will permanently delete service connection <span className="font-semibold">{selectedConnection.meterNumber}</span> for <span className="font-semibold">{selectedConnection.customerName}</span>.
-          </p>
-        )}
-      </DeleteDialog>
+      />
     </SidebarProvider>
   )
 }

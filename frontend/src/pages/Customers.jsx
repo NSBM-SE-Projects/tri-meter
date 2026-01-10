@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { getAllCustomers, createCustomer, deleteCustomer, updateCustomer } from "@/services/customerService"
+import { getAllCustomers, createCustomer, updateCustomer } from "@/services/customerService"
 import {
   AppSidebar,
   SiteHeader,
@@ -10,7 +10,6 @@ import {
   createCustomerColumns,
   CustomerForm,
   ViewDialog,
-  DeleteDialog,
   Separator
 } from "@/components"
 import { UserPlus, Loader2 } from "lucide-react"
@@ -19,7 +18,6 @@ export default function Customers() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [customers, setCustomers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -71,36 +69,17 @@ export default function Customers() {
   }
 
   const handleEdit = (customer) => {
-    setSelectedCustomer(customer)
+    // Parse phone numbers from comma-separated string
+    const phoneNumbers = customer.phones
+      ? customer.phones.split(', ').map(p => p.replace('+94', ''))
+      : []
+
+    setSelectedCustomer({
+      ...customer,
+      parsedPhone: phoneNumbers[0] || '',
+      parsedPhone2: phoneNumbers[1] || ''
+    })
     setIsEditDialogOpen(true)
-  }
-
-  const handleDelete = (customer) => {
-    setSelectedCustomer(customer)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const confirmDelete = async () => {
-    if (!selectedCustomer) return
-
-    try {
-      setIsLoading(true)
-      await deleteCustomer(selectedCustomer.id)
-
-      // Remove from customers list
-      setCustomers(prev => prev.filter(c => c.id !== selectedCustomer.id))
-
-      setIsDeleteDialogOpen(false)
-      setSelectedCustomer(null)
-
-      // Show success toast
-      toast.success("Customer deleted successfully!")
-    } catch (error) {
-      console.error("Failed to delete customer:", error)
-      toast.error(error.message || "Failed to delete customer. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   const handleEditSuccess = async (formData, uploadedFile) => {
@@ -111,7 +90,7 @@ export default function Customers() {
         selectedCustomer.id,
         {
           ...formData,
-          status: selectedCustomer.status
+          status: formData.status
         },
         uploadedFile
       )
@@ -140,8 +119,7 @@ export default function Customers() {
   // Create columns with action handlers
   const customerColumns = createCustomerColumns(
     handleViewDetails,
-    handleEdit,
-    handleDelete
+    handleEdit
   )
 
   return (
@@ -152,14 +130,14 @@ export default function Customers() {
           <SiteHeader />
           <main className="flex-1 p-7">
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <h1 className="text-3xl font-bold">Customers</h1>
                   <p className="text-muted-foreground">
                     Manage all customer accounts
                   </p>
                 </div>
-                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
+                <div className="flex w-full gap-2 pt-4 lg:pt-0 sm:w-auto">
                   <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Customer
@@ -169,7 +147,7 @@ export default function Customers() {
 
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
                 </div>
               ) : customers.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
@@ -179,7 +157,7 @@ export default function Customers() {
                 <div className="border rounded-lg bg-card">
                   <div className="p-6">
                     <p className="text-lg font-medium">Customer List</p>
-                    <p className="text-sm text-muted-foreground pb-3">
+                    <p className="pb-3 text-sm text-muted-foreground">
                       A list of all registered customers in the system
                     </p>
                     <DataTable
@@ -196,7 +174,7 @@ export default function Customers() {
                         {
                           id: 'status',
                           label: 'Status',
-                          options: ['Active', 'Pending', 'Inactive']
+                          options: ['Active', 'Inactive']
                         }
                       ]}
                       showColumnToggle={true}
@@ -237,9 +215,8 @@ export default function Customers() {
             </div>
 
             <Separator />
-
             <div>
-              <h3 className="text-lg font-medium mb-3">Customer Information</h3>
+              <h3 className="mb-3 text-lg font-medium">Customer Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Full Name</p>
@@ -275,13 +252,13 @@ export default function Customers() {
               <>
                 <Separator />
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Identity Document</h3>
+                  <h3 className="mb-4 text-lg font-medium">Identity Document</h3>
                   <div className="flex justify-center">
-                    <div className="border rounded-lg overflow-hidden bg-muted/10 shadow-sm max-w-md w-full">
+                    <div className="w-full max-w-md overflow-hidden border rounded-lg shadow-sm bg-muted/10">
                       <img
                         src={selectedCustomer.idImageUrl}
                         alt="Customer ID Document"
-                        className="w-full h-auto object-contain"
+                        className="object-contain w-full h-auto"
                         style={{ maxHeight: '280px' }}
                         onError={(e) => {
                           e.target.onerror = null;
@@ -297,11 +274,11 @@ export default function Customers() {
             <Separator />
 
             <div>
-              <h3 className="text-lg font-medium mb-3">Contact Information</h3>
+              <h3 className="mb-3 text-lg font-medium">Contact Information</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <p className="text-sm font-normal text-muted-foreground">Phone</p>
-                  <p className="text-base">{selectedCustomer.phone}</p>
+                  <p className="text-sm font-normal text-muted-foreground">Phone Number(s)</p>
+                  <p className="text-base">{selectedCustomer.phones || selectedCustomer.phone || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">Email</p>
@@ -311,9 +288,8 @@ export default function Customers() {
             </div>
 
             <Separator />
-
             <div>
-              <h3 className="text-lg font-medium mb-3">Address</h3>
+              <h3 className="mb-3 text-lg font-medium">Address</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <p className="text-sm font-normal text-muted-foreground">House No.</p>
@@ -343,27 +319,17 @@ export default function Customers() {
             fullName: selectedCustomer.name || "",
             customerType: selectedCustomer.type || "Household",
             identityValidation: selectedCustomer.idProof || "",
-            phone: selectedCustomer.phone?.replace("+94", "") || "",
+            phone: selectedCustomer.parsedPhone || "",
+            phone2: selectedCustomer.parsedPhone2 || "",
             email: selectedCustomer.email || "",
             houseNo: selectedCustomer.houseNo || "",
             street: selectedCustomer.street || "",
-            city: selectedCustomer.city || ""
+            city: selectedCustomer.city || "",
+            status: selectedCustomer.status || "Active"
           }}
           isEdit={true}
         />
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        title="Delete Customer"
-        description="Are you sure you want to delete this customer?"
-        itemName={selectedCustomer?.name}
-        itemId={selectedCustomer?.id}
-        onConfirm={confirmDelete}
-        isLoading={isLoading}
-      />
     </SidebarProvider>
   )
 }

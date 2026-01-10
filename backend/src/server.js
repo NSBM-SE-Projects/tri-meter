@@ -11,10 +11,12 @@ import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler.j
 import systemRoutes from './routes/system.js';
 import authRoutes from './routes/auth.js';
 import inquiryRoutes from './routes/inquiry.js';
-import billRoutes from './routes/bill.js';
 import dashboardRoutes from './routes/dashboard.js';
 import customerRoutes from './routes/customer.js';
+import serviceConnectionRoutes from './routes/serviceConnection.js';
 import meterReadingRoutes from './routes/meterReading.js';
+import billRoutes from './routes/bill.js';
+import paymentRoutes from './routes/payment.js';
 import tariffRoutes from './routes/tariff.js';
 import userRoutes from './routes/user.js';
 
@@ -39,10 +41,12 @@ app.use(requestLogger);
 app.use('/api', systemRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/inquiries', inquiryRoutes);
-app.use('/api/bills', billRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/service-connections', serviceConnectionRoutes);
 app.use('/api/meter-readings', meterReadingRoutes);
+app.use('/api/bills', billRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/tariffs', tariffRoutes);
 app.use('/api/users', userRoutes);
 

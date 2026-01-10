@@ -12,8 +12,7 @@
       "mcp__playwright__browser_network_requests",
       "mcp__playwright__browser_wait_for",
       "mcp__playwright__browser_press_key",
-      "mcp__playwright__browser_type",
-      "mcp__playwright__browser_run_code"
+      "mcp__playwright__browser_type"
     ]
   }
 }

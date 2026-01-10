@@ -11,38 +11,37 @@ import {
 const getStatusColor = (status) => {
   switch (status) {
     case "Active":
-      return "bg-green-600/25 text-green-500 hover:bg-green-600/40"
+      return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
     case "Inactive":
-      return "bg-red-600/25 text-red-500 hover:bg-red-600/40"
+      return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
     case "Pending":
-      return "bg-yellow-600/25 text-yellow-500 hover:bg-yellow-600/40"
+      return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
     default:
-      return "bg-gray-600/25 text-gray-500 hover:bg-gray-600/40"
+      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
   }
 }
 
-export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
+export const createCustomerColumns = (onViewDetails, onEdit) => [
   {
     accessorKey: "id",
-    header: () => <div className="pl-4">ID</div>,
-    cell: ({ row }) => (
-      <div className="font-normal pl-4">{row.getValue("id")}</div>
-    ),
-  },
-  {
-    accessorKey: "name",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="-ml-4"
         >
-          Name
-          <ArrowUpDown className="ml-1 h-4 w-4" />
+          ID
+          <ArrowUpDown className="w-4 h-4 ml-1" />
         </Button>
       )
     },
+    cell: ({ row }) => (
+      <div className="pl-4 font-normal">{row.getValue("id")}</div>
+    ),
+  },
+  {
+    accessorKey: "name",
+    header: () => <div>Name</div>,
     cell: ({ row }) => <div className="font-normal">{row.getValue("name")}</div>,
   },
   {
@@ -80,15 +79,15 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
   },
   {
     id: "actions",
-    header: () => <div className="text-center w-20">Actions</div>,
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const customer = row.original
       return (
-        <div className="flex justify-center items-center">
+        <div className="flex items-center justify-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground" aria-label="Open menu">
-                <MoreHorizontal className="h-4 w-4" />
+              <button className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-accent hover:text-accent-foreground" aria-label="Open menu">
+                <MoreHorizontal className="w-4 h-4" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
@@ -97,12 +96,6 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(customer)}>
                 Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-red-700"
-                onClick={() => onDelete(customer)}
-              >
-                Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -113,4 +106,4 @@ export const createCustomerColumns = (onViewDetails, onEdit, onDelete) => [
 ]
 
 // Keep old export for backwards compatibility (static version without actions)
-export const customerColumns = createCustomerColumns(() => {}, () => {}, () => {})
+export const customerColumns = createCustomerColumns(() => {}, () => {})
