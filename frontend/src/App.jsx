@@ -13,6 +13,7 @@ import Bills from './pages/Bills'
 import Payments from './pages/Payments'
 import Tariffs from './pages/Tariffs'
 import SystemUsers from './pages/SystemUsers'
+import Reports from './pages/Reports'
 
 function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, isAuthenticated, loading } = useAuth()
@@ -87,6 +88,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Manager', 'Cashier']}>
               <Bills />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute allowedRoles={['Admin', 'Manager']}>
+              <Reports />
             </ProtectedRoute>
           }
         />

@@ -42,7 +42,7 @@ const allNavItems = [
   },
   {
     title: "Reports",
-    url: "#",
+    url: "#/reports",
     icon: BarChart3,
   },
   {

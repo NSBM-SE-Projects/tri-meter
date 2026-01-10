@@ -19,6 +19,7 @@ import billRoutes from './routes/bill.js';
 import paymentRoutes from './routes/payment.js';
 import tariffRoutes from './routes/tariff.js';
 import userRoutes from './routes/user.js';
+import reportRoutes from './routes/report.js';
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use('/api/bills', billRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/tariffs', tariffRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/reports', reportRoutes);
 
 // ===== ERROR HANDLERS =====
 
