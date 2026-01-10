@@ -15,8 +15,14 @@ import {
 export const createElectricityTariffColumns = (onEdit, onDelete) => [
   {
     accessorKey: "planName",
-    header: "Plan Name",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("planName")}</div>,
+    header: ({ column }) => {
+      return (
+        <div className="pl-4">
+          Plan Name
+        </div>
+      )
+    },
+    cell: ({ row }) => <div className="font-normal pl-4">{row.getValue("planName")}</div>,
   },
   {
     accessorKey: "validFrom",
@@ -35,11 +41,12 @@ export const createElectricityTariffColumns = (onEdit, onDelete) => [
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const tariff = row.original
 
       return (
+        <div className="flex items-center justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -64,7 +71,8 @@ export const createElectricityTariffColumns = (onEdit, onDelete) => [
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       )
     },
   },
@@ -77,8 +85,14 @@ export const createElectricityTariffColumns = (onEdit, onDelete) => [
 export const createWaterTariffColumns = (onEdit, onDelete) => [
   {
     accessorKey: "planName",
-    header: "Plan Name",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("planName")}</div>,
+    header: ({ column }) => {
+      return (
+        <div className="pl-4">
+          Plan Name
+        </div>
+      )
+    },
+    cell: ({ row }) => <div className="font-normal pl-4">{row.getValue("planName")}</div>,
   },
   {
     accessorKey: "flatRate",
@@ -102,11 +116,12 @@ export const createWaterTariffColumns = (onEdit, onDelete) => [
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const tariff = row.original
 
       return (
+        <div className="flex items-center justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -131,7 +146,8 @@ export const createWaterTariffColumns = (onEdit, onDelete) => [
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       )
     },
   },
@@ -144,8 +160,14 @@ export const createWaterTariffColumns = (onEdit, onDelete) => [
 export const createGasTariffColumns = (onEdit, onDelete) => [
   {
     accessorKey: "planName",
-    header: "Plan Name",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("planName")}</div>,
+    header: ({ column }) => {
+      return (
+        <div className="pl-4">
+          Plan Name
+        </div>
+      )
+    },
+    cell: ({ row }) => <div className="font-normal pl-4">{row.getValue("planName")}</div>,
   },
   {
     accessorKey: "slabs",
@@ -169,11 +191,12 @@ export const createGasTariffColumns = (onEdit, onDelete) => [
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const tariff = row.original
 
       return (
+        <div className="flex items-center justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -198,7 +221,8 @@ export const createGasTariffColumns = (onEdit, onDelete) => [
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+          </DropdownMenu>
+        </div>
       )
     },
   },

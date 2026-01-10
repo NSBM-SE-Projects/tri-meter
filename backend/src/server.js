@@ -11,7 +11,6 @@ import { notFoundHandler, globalErrorHandler } from './middleware/errorHandler.j
 import systemRoutes from './routes/system.js';
 import authRoutes from './routes/auth.js';
 import inquiryRoutes from './routes/inquiry.js';
-import billRoutes from './routes/bill.js';
 import dashboardRoutes from './routes/dashboard.js';
 import customerRoutes from './routes/customer.js';
 import serviceConnectionRoutes from './routes/serviceConnection.js';

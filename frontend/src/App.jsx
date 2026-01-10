@@ -7,12 +7,11 @@ import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import ServiceConnections from './pages/ServiceConnections'
 import MeterReadings from './pages/MeterReadings'
-import Bills from './pages/Bills'
-import Tariffs from './pages/Tariffs'
 import AccessDenied from './pages/AccessDenied'
 import { LoadingOverlay } from "@/components"
 import Bills from './pages/Bills'
 import Payments from './pages/Payments'
+import Tariffs from './pages/Tariffs'
 
 function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, isAuthenticated, loading } = useAuth()

@@ -37,7 +37,7 @@ const allNavItems = [
   },
   {
     title: "Tariffs",
-    url: "#",
+    url: "#/tariffs",
     icon: BadgeDollarSign,
   },
   {
