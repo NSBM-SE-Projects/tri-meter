@@ -17,6 +17,7 @@ export { serviceConnectionColumns, createServiceConnectionColumns } from "./tabl
 export { meterReadingColumns, createMeterReadingColumns } from "./tables/meter-reading-columns"
 export { billColumns, createBillColumns } from "./tables/bill-columns"
 export { createPaymentColumns } from "./tables/payment-columns"
+export { createElectricityTariffColumns, createWaterTariffColumns, createGasTariffColumns } from "./tables/tariff-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"
@@ -25,6 +26,7 @@ export { ServiceConnectionForm } from "./forms/service-connection-form"
 export { MeterReadingForm } from "./forms/meter-reading-form"
 export { GenerateBillForm } from "./forms/generate-bill-form"
 export { RecordPaymentForm } from "./forms/record-payment-form"
+export { TariffForm } from "./forms/tariff-form"
 
 // Dialog components
 export { ViewDialog } from "./dialogs/ViewDialog"
