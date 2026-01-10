@@ -16,6 +16,7 @@ export { customerColumns, createCustomerColumns } from "./tables/customer-column
 export { serviceConnectionColumns, createServiceConnectionColumns } from "./tables/service-connection-columns"
 export { meterReadingColumns, createMeterReadingColumns } from "./tables/meter-reading-columns"
 export { billColumns, createBillColumns } from "./tables/bill-columns"
+export { createPaymentColumns } from "./tables/payment-columns"
 
 // Form components
 export { LoginForm } from "./forms/login-form"
@@ -23,11 +24,13 @@ export { CustomerForm } from "./forms/customer-form"
 export { ServiceConnectionForm } from "./forms/service-connection-form"
 export { MeterReadingForm } from "./forms/meter-reading-form"
 export { GenerateBillForm } from "./forms/generate-bill-form"
+export { RecordPaymentForm } from "./forms/record-payment-form"
 
 // Dialog components
 export { ViewDialog } from "./dialogs/ViewDialog"
 export { DeleteDialog } from "./dialogs/DeleteDialog"
 export { BillDetailsDialog } from "./dialogs/bill-details-dialog"
+export { PaymentDetailsDialog } from "./dialogs/payment-details-dialog"
 
 // Common utilities
 export { ThemeProvider } from "./common/theme-provider"

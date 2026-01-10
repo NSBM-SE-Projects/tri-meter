@@ -55,9 +55,9 @@ export const getAllBills = async (req, res) => {
     // Format the data for frontend
     const bills = result.recordset.map(bill => ({
       id: bill.id,
-      billId: `B-${String(bill.id).padStart(3, '0')}`,
+      billId: `B-${String(bill.id)}`,
       name: bill.customerName,
-      customerId: `#CUST-${String(bill.customerId).padStart(3, '0')}`,
+      customerId: `#CUST-${String(bill.customerId)}`,
       utility: bill.utilityType,
       period: formatBillingPeriod(bill.billingPeriodStart, bill.billingPeriodEnd),
       consumption: bill.consumption,
@@ -202,9 +202,9 @@ export const getBillById = async (req, res) => {
     }
 
     const billData = {
-      billId: `B-${String(bill.id).padStart(3, '0')}`,
+      billId: `B-${String(bill.id)}`,
       customerName: bill.customerName,
-      customerId: `#CUST-${String(bill.customerId).padStart(3, '0')}`,
+      customerId: `#CUST-${String(bill.customerId)}`,
       customerEmail: bill.customerEmail,
       customerAddress: bill.customerAddress || 'N/A',
       utility: bill.utilityType,

@@ -16,6 +16,7 @@ import customerRoutes from './routes/customer.js';
 import serviceConnectionRoutes from './routes/serviceConnection.js';
 import meterReadingRoutes from './routes/meterReading.js';
 import billRoutes from './routes/bill.js';
+import paymentRoutes from './routes/payment.js';
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/service-connections', serviceConnectionRoutes);
 app.use('/api/meter-readings', meterReadingRoutes);
 app.use('/api/bills', billRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // ===== ERROR HANDLERS =====
 

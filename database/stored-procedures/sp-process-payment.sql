@@ -1,6 +1,7 @@
 -- Stored Procedure: Record a payment and update bill status
 CREATE PROCEDURE sp_process_payment
   @BillId INT,
+  @UserId INT,
   @Amount DECIMAL(10,2),
   @PaymentDate DATE,
   @Method VARCHAR(50),
@@ -20,8 +21,8 @@ BEGIN
     END;
 
     -- Insert payment record
-    INSERT INTO Payment (B_ID, P_Amount, P_Date, P_Method, P_Reference)
-    VALUES (@BillId, @Amount, @PaymentDate, @Method, @Reference);
+    INSERT INTO Payment (B_ID, U_ID, P_Amount, P_Date, P_Method, P_ReferenceNo)
+    VALUES (@BillId, @UserId, @Amount, @PaymentDate, @Method, @Reference);
 
     -- Calculate total paid for this bill
     DECLARE @TotalPaid DECIMAL(10,2) = (

@@ -10,6 +10,7 @@ import MeterReadings from './pages/MeterReadings'
 import AccessDenied from './pages/AccessDenied'
 import { LoadingOverlay } from "@/components"
 import Bills from './pages/Bills'
+import Payments from './pages/Payments'
 
 function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, isAuthenticated, loading } = useAuth()
@@ -86,7 +87,16 @@ function App() {
               <Bills />
             </ProtectedRoute>
           }
-        /> 
+        />
+
+        <Route
+          path="/payments"
+          element={
+            <ProtectedRoute allowedRoles={['Admin', 'Manager', 'Cashier']}>
+              <Payments />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </HashRouter>
   )
