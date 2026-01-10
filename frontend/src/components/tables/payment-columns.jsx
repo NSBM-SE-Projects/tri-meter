@@ -37,6 +37,7 @@ export function createPaymentColumns(onView, onPrint) {
     {
       accessorKey: "method",
       header: "Method",
+      filterFn: "multiSelect",
       cell: ({ row }) => {
         const method = row.getValue("method")
         const variants = {

@@ -11,10 +11,10 @@ import {
   ViewDialog,
   Separator,
   Badge,
+  UserForm,
 } from "@/components"
-import { UserForm } from "@/components/forms/user-form"
 import { createUserColumns } from "@/components/tables/user-columns"
-import { UserPlus, Loader2 } from "lucide-react"
+import { Plus, Loader2, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,9 @@ export default function SystemUsers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false)
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false)
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false)
+  const [imageViewerSrc, setImageViewerSrc] = useState("")
+  const [imageViewerTitle, setImageViewerTitle] = useState("")
   const [selectedUser, setSelectedUser] = useState(null)
   const [users, setUsers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -103,6 +106,12 @@ export default function SystemUsers() {
   const handleViewDetails = (user) => {
     setSelectedUser(user)
     setIsViewDialogOpen(true)
+  }
+
+  const openImageViewer = (src, title) => {
+    setImageViewerSrc(src)
+    setImageViewerTitle(title)
+    setIsImageViewerOpen(true)
   }
 
   const handleEdit = (user) => {
@@ -244,21 +253,19 @@ export default function SystemUsers() {
         <AppSidebar />
         <div className="flex flex-col flex-1 overflow-x-hidden max-w-full">
           <SiteHeader />
-          <main className="flex-1 p-7 overflow-x-hidden max-w-full">
+          <main className="flex-1 p-6 overflow-x-hidden max-w-full">
             <div className="space-y-6 max-w-full overflow-x-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl font-bold">System Users (Admin)</h1>
+                  <h1 className="text-3xl font-bold">System Users</h1>
                   <p className="text-muted-foreground">
                     Manage system users and permissions
                   </p>
                 </div>
-                <div className="flex pt-4 lg:pt-0 gap-2 w-full sm:w-auto">
-                  <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add User
-                  </Button>
-                </div>
+                <Button onClick={() => setIsAddDialogOpen(true)} className="w-full sm:w-auto">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
               </div>
 
               {isLoading ? (
@@ -272,10 +279,13 @@ export default function SystemUsers() {
               ) : (
                 <div className="border rounded-lg bg-card max-w-full overflow-x-hidden">
                   <div className="p-6 max-w-full overflow-x-hidden">
-                    <p className="text-lg font-medium">User List</p>
-                    <p className="text-sm text-muted-foreground pb-3">
-                      A list of all system users
-                    </p>
+                    <div>
+                      <p className="text-lg font-medium">User List</p>
+                      <p className="text-sm text-muted-foreground">
+                        A list of all system users
+                      </p>
+                    </div>
+                    <div className="mt-4">
                     <DataTable
                       columns={userColumns}
                       data={users}
@@ -295,6 +305,7 @@ export default function SystemUsers() {
                       ]}
                       showColumnToggle={true}
                     />
+                    </div>
                   </div>
                 </div>
               )}
@@ -383,16 +394,14 @@ export default function SystemUsers() {
                   <h3 className="text-lg font-medium mb-3">Documents</h3>
                   <div className="grid grid-cols-2 gap-3 md:gap-4">
                     <div>
-                      <p className="text-sm font-normal text-muted-foreground">ID Card</p>
+                      <p className="text-sm font-normal text-muted-foreground">Identity Validation</p>
                       {selectedUser.idCard ? (
-                        <a
-                          href={selectedUser.idCard}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-700 hover:underline"
+                        <button
+                          onClick={() => openImageViewer(selectedUser.idCard, 'Identity Validation')}
+                          className="text-sm text-blue-700 hover:underline text-left"
                         >
                           View Document
-                        </a>
+                        </button>
                       ) : (
                         <p className="text-base text-muted-foreground">Not uploaded</p>
                       )}
@@ -400,14 +409,12 @@ export default function SystemUsers() {
                     <div>
                       <p className="text-sm font-normal text-muted-foreground">Profile Photo</p>
                       {selectedUser.profilePhoto ? (
-                        <a
-                          href={selectedUser.profilePhoto}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-700 hover:underline"
+                        <button
+                          onClick={() => openImageViewer(selectedUser.profilePhoto, 'Profile Photo')}
+                          className="text-sm text-blue-700 hover:underline text-left"
                         >
                           View Photo
-                        </a>
+                        </button>
                       ) : (
                         <p className="text-base text-muted-foreground">Not uploaded</p>
                       )}
@@ -423,18 +430,21 @@ export default function SystemUsers() {
                 <div>
                   <h3 className="text-lg font-medium mb-4">Profile Photo</h3>
                   <div className="flex justify-center">
-                    <div className="border rounded-lg overflow-hidden bg-muted/10 shadow-sm max-w-md w-full">
+                    <button
+                      onClick={() => openImageViewer(selectedUser.profilePhoto, 'Profile Photo')}
+                      className="border rounded-lg overflow-hidden bg-muted/10 shadow-sm max-w-md w-full hover:shadow-md transition-shadow"
+                    >
                       <img
                         src={selectedUser.profilePhoto}
                         alt="User Profile"
-                        className="w-full h-auto object-contain"
+                        className="w-full h-auto object-contain cursor-pointer"
                         style={{ maxHeight: '280px' }}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250"><rect width="400" height="250" fill="%23f0f0f0"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Image not available</text></svg>';
                         }}
                       />
-                    </div>
+                    </button>
                   </div>
                 </div>
               </>
@@ -499,7 +509,7 @@ export default function SystemUsers() {
               Reset password for {selectedUser?.fullName}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-5">
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
               <Input
@@ -530,7 +540,7 @@ export default function SystemUsers() {
               <p className="text-sm text-red-500">{passwordError}</p>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="pt-4">
             <Button variant="outline" onClick={() => setIsResetPasswordDialogOpen(false)}>
               Cancel
             </Button>
@@ -553,6 +563,31 @@ export default function SystemUsers() {
         isLoading={isLoading}
         confirmText="Deactivate"
       />
+
+      {/* Image Viewer Dialog */}
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{imageViewerTitle}</DialogTitle>
+            <button
+              onClick={() => setIsImageViewerOpen(false)}
+              className="absolute right-4 top-4 p-1 hover:bg-gray-100 dark:hover:bg-gray-900 rounded"
+            >
+            </button>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            <img
+              src={imageViewerSrc}
+              alt={imageViewerTitle}
+              className="max-h-[60vh] max-w-full object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f0f0f0"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999">Image not available</text></svg>';
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 }

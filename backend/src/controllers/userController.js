@@ -203,59 +203,9 @@ export const createUser = async (req, res) => {
       });
     }
 
-    // Handle file uploads
+    // First create user without file URLs, then upload files with proper naming
     let idCardUrl = null;
     let profilePhotoUrl = null;
-
-    if (req.files && azureBlobService.isReady()) {
-      try {
-        // Initialize container
-        await azureBlobService.initializeContainer();
-
-        // Upload ID card (can be image or PDF)
-        if (req.files.idCard && req.files.idCard[0]) {
-          const idCardFile = req.files.idCard[0];
-          let fileBuffer = idCardFile.buffer;
-
-          // Compress only if it's an image
-          if (idCardFile.mimetype.startsWith('image/')) {
-            fileBuffer = await compressImage(idCardFile.buffer);
-            idCardUrl = await azureBlobService.uploadUserFile(
-              fileBuffer,
-              username,
-              'idcard',
-              idCardFile.originalname.replace(/\.[^.]+$/, '.jpg'),
-              'image/jpeg'
-            );
-          } else {
-            // Upload PDF as-is
-            idCardUrl = await azureBlobService.uploadUserFile(
-              fileBuffer,
-              username,
-              'idcard',
-              idCardFile.originalname,
-              idCardFile.mimetype
-            );
-          }
-        }
-
-        // Upload profile photo (always an image)
-        if (req.files.profilePhoto && req.files.profilePhoto[0]) {
-          const profilePhotoFile = req.files.profilePhoto[0];
-          const compressedBuffer = await compressImage(profilePhotoFile.buffer);
-          profilePhotoUrl = await azureBlobService.uploadUserFile(
-            compressedBuffer,
-            username,
-            'profile',
-            profilePhotoFile.originalname.replace(/\.[^.]+$/, '.jpg'),
-            'image/jpeg'
-          );
-        }
-      } catch (uploadError) {
-        console.error('FILE UPLOAD ERROR:', uploadError);
-        // Continue with user creation even if upload fails
-      }
-    }
 
     const pool = await getPool();
     const transaction = new sql.Transaction(pool);
@@ -331,6 +281,79 @@ export const createUser = async (req, res) => {
 
       await transaction.commit();
 
+      // Upload files with ID-based naming after user creation
+      if (req.files && azureBlobService.isReady()) {
+        try {
+          await azureBlobService.initializeContainer();
+
+          // Upload ID card (can be image or PDF)
+          if (req.files.idCard && req.files.idCard[0]) {
+            const idCardFile = req.files.idCard[0];
+            let fileBuffer = idCardFile.buffer;
+
+            // Compress only if it's an image
+            if (idCardFile.mimetype.startsWith('image/')) {
+              fileBuffer = await compressImage(idCardFile.buffer);
+              idCardUrl = await azureBlobService.uploadUserFileWithId(
+                fileBuffer,
+                userId,
+                'iv',
+                idCardFile.originalname.replace(/\.[^.]+$/, '.jpg'),
+                'image/jpeg'
+              );
+            } else {
+              // Upload PDF as-is
+              idCardUrl = await azureBlobService.uploadUserFileWithId(
+                fileBuffer,
+                userId,
+                'iv',
+                idCardFile.originalname,
+                idCardFile.mimetype
+              );
+            }
+          }
+
+          // Upload profile photo (always an image)
+          if (req.files.profilePhoto && req.files.profilePhoto[0]) {
+            const profilePhotoFile = req.files.profilePhoto[0];
+            const compressedBuffer = await compressImage(profilePhotoFile.buffer);
+            profilePhotoUrl = await azureBlobService.uploadUserFileWithId(
+              compressedBuffer,
+              userId,
+              'pp',
+              profilePhotoFile.originalname.replace(/\.[^.]+$/, '.jpg'),
+              'image/jpeg'
+            );
+          }
+
+          // Update user with file URLs if files were uploaded
+          if (idCardUrl || profilePhotoUrl) {
+            const updatePool = await getPool();
+            const updateRequest = updatePool.request();
+
+            let updateQuery = 'UPDATE [User] SET ';
+            const updates = [];
+
+            if (idCardUrl) {
+              updates.push('U_IDCard = @idCard');
+              updateRequest.input('idCard', sql.VarChar(500), idCardUrl);
+            }
+            if (profilePhotoUrl) {
+              updates.push('U_ProfilePhoto = @profilePhoto');
+              updateRequest.input('profilePhoto', sql.VarChar(500), profilePhotoUrl);
+            }
+
+            updateQuery += updates.join(', ') + ' WHERE U_ID = @userId';
+            updateRequest.input('userId', sql.Int, userId);
+
+            await updateRequest.query(updateQuery);
+          }
+        } catch (uploadError) {
+          console.error('FILE UPLOAD ERROR:', uploadError);
+          // Continue - user created successfully even if file upload fails
+        }
+      }
+
       res.status(201).json({
         success: true,
         message: 'User created successfully',
@@ -395,60 +418,8 @@ export const updateUser = async (req, res) => {
       }
 
       const currentAddressId = userCheck.recordset[0].A_ID;
-      const currentUsername = userCheck.recordset[0].U_Username;
       let idCardUrl = userCheck.recordset[0].U_IDCard;
       let profilePhotoUrl = userCheck.recordset[0].U_ProfilePhoto;
-
-      // Handle file uploads if present
-      if (req.files && azureBlobService.isReady()) {
-        try {
-          // Initialize container
-          await azureBlobService.initializeContainer();
-
-          // Upload ID card (can be image or PDF)
-          if (req.files.idCard && req.files.idCard[0]) {
-            const idCardFile = req.files.idCard[0];
-            let fileBuffer = idCardFile.buffer;
-
-            // Compress only if it's an image
-            if (idCardFile.mimetype.startsWith('image/')) {
-              fileBuffer = await compressImage(idCardFile.buffer);
-              idCardUrl = await azureBlobService.uploadUserFile(
-                fileBuffer,
-                currentUsername,
-                'idcard',
-                idCardFile.originalname.replace(/\.[^.]+$/, '.jpg'),
-                'image/jpeg'
-              );
-            } else {
-              // Upload PDF as-is
-              idCardUrl = await azureBlobService.uploadUserFile(
-                fileBuffer,
-                currentUsername,
-                'idcard',
-                idCardFile.originalname,
-                idCardFile.mimetype
-              );
-            }
-          }
-
-          // Upload profile photo (always an image)
-          if (req.files.profilePhoto && req.files.profilePhoto[0]) {
-            const profilePhotoFile = req.files.profilePhoto[0];
-            const compressedBuffer = await compressImage(profilePhotoFile.buffer);
-            profilePhotoUrl = await azureBlobService.uploadUserFile(
-              compressedBuffer,
-              currentUsername,
-              'profile',
-              profilePhotoFile.originalname.replace(/\.[^.]+$/, '.jpg'),
-              'image/jpeg'
-            );
-          }
-        } catch (uploadError) {
-          console.error('FILE UPLOAD ERROR:', uploadError);
-          // Continue with update even if upload fails
-        }
-      }
 
       // Update or create address if provided
       let addressId = currentAddressId;
@@ -497,6 +468,79 @@ export const updateUser = async (req, res) => {
 
       await transaction.commit();
 
+      // Upload files with ID-based naming after user update
+      if (req.files && azureBlobService.isReady()) {
+        try {
+          await azureBlobService.initializeContainer();
+
+          // Upload ID card (can be image or PDF)
+          if (req.files.idCard && req.files.idCard[0]) {
+            const idCardFile = req.files.idCard[0];
+            let fileBuffer = idCardFile.buffer;
+
+            // Compress only if it's an image
+            if (idCardFile.mimetype.startsWith('image/')) {
+              fileBuffer = await compressImage(idCardFile.buffer);
+              idCardUrl = await azureBlobService.uploadUserFileWithId(
+                fileBuffer,
+                id,
+                'iv',
+                idCardFile.originalname.replace(/\.[^.]+$/, '.jpg'),
+                'image/jpeg'
+              );
+            } else {
+              // Upload PDF as-is
+              idCardUrl = await azureBlobService.uploadUserFileWithId(
+                fileBuffer,
+                id,
+                'iv',
+                idCardFile.originalname,
+                idCardFile.mimetype
+              );
+            }
+          }
+
+          // Upload profile photo (always an image)
+          if (req.files.profilePhoto && req.files.profilePhoto[0]) {
+            const profilePhotoFile = req.files.profilePhoto[0];
+            const compressedBuffer = await compressImage(profilePhotoFile.buffer);
+            profilePhotoUrl = await azureBlobService.uploadUserFileWithId(
+              compressedBuffer,
+              id,
+              'pp',
+              profilePhotoFile.originalname.replace(/\.[^.]+$/, '.jpg'),
+              'image/jpeg'
+            );
+          }
+
+          // Update user with new file URLs if files were uploaded
+          if (idCardUrl || profilePhotoUrl) {
+            const updatePool = await getPool();
+            const updateRequest = updatePool.request();
+
+            let updateQuery = 'UPDATE [User] SET ';
+            const updates = [];
+
+            if (idCardUrl) {
+              updates.push('U_IDCard = @idCard');
+              updateRequest.input('idCard', sql.VarChar(500), idCardUrl);
+            }
+            if (profilePhotoUrl) {
+              updates.push('U_ProfilePhoto = @profilePhoto');
+              updateRequest.input('profilePhoto', sql.VarChar(500), profilePhotoUrl);
+            }
+
+            updateQuery += updates.join(', ') + ' WHERE U_ID = @userId';
+            updateRequest.input('userId', sql.Int, id);
+
+            await updateRequest.query(updateQuery);
+          }
+        } catch (uploadError) {
+          console.error('FILE UPLOAD ERROR:', uploadError);
+          // Continue - user update successful even if file upload fails
+        }
+      }
+
       res.status(200).json({
         success: true,
         message: 'User updated successfully'
@@ -535,9 +579,22 @@ export const resetPassword = async (req, res) => {
 
     const pool = await getPool();
 
-    // Hash new password
+    // Check if user exists
+    const userCheck = await pool.request()
+      .input('userId', sql.Int, id)
+      .query(`SELECT U_ID FROM [User] WHERE U_ID = @userId`);
+
+    if (userCheck.recordset.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Hash new password with bcrypt
     const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
+    // Update user password
     await pool.request()
       .input('userId', sql.Int, id)
       .input('password', sql.VarChar(255), hashedPassword)

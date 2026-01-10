@@ -1,4 +1,4 @@
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -50,24 +50,20 @@ export const createElectricityTariffColumns = (onEdit, onDelete) => [
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem
               onClick={() => onEdit(tariff)}
               className="cursor-pointer"
             >
-              <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(tariff)}
               className="cursor-pointer text-red-600"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -125,24 +121,20 @@ export const createWaterTariffColumns = (onEdit, onDelete) => [
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem
               onClick={() => onEdit(tariff)}
               className="cursor-pointer"
             >
-              <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(tariff)}
               className="cursor-pointer text-red-600"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -200,24 +192,20 @@ export const createGasTariffColumns = (onEdit, onDelete) => [
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem
               onClick={() => onEdit(tariff)}
               className="cursor-pointer"
             >
-              <Pencil className="mr-2 h-4 w-4" />
               Edit
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onDelete(tariff)}
               className="cursor-pointer text-red-600"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>

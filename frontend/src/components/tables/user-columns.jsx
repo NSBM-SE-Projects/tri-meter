@@ -1,6 +1,4 @@
-import { MoreHorizontal, Eye, Pencil, Key, UserX } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { MoreHorizontal, Eye, Pencil, Key, UserX, ArrowUpDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +6,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Badge,
+  Button
+} from "@/components"
 
 // Role badge colors
 const getRoleBadgeColor = (role) => {
@@ -43,8 +43,18 @@ const getStatusBadgeColor = (status) => {
 export const createUserColumns = (onViewDetails, onEdit, onResetPassword, onDeactivate) => [
   {
     accessorKey: "userId",
-    header: "User ID",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("userId")}</div>,
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          User ID
+          <ArrowUpDown className="ml-1 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => <div className="font-normal pl-4">{row.getValue("userId")}</div>,
   },
   {
     accessorKey: "fullName",
@@ -54,6 +64,7 @@ export const createUserColumns = (onViewDetails, onEdit, onResetPassword, onDeac
   {
     accessorKey: "role",
     header: "Role",
+    filterFn: "multiSelect",
     cell: ({ row }) => {
       const role = row.getValue("role")
       return (
@@ -79,6 +90,7 @@ export const createUserColumns = (onViewDetails, onEdit, onResetPassword, onDeac
   {
     accessorKey: "status",
     header: "Status",
+    filterFn: "multiSelect",
     cell: ({ row }) => {
       const status = row.getValue("status")
       return (
@@ -93,52 +105,47 @@ export const createUserColumns = (onViewDetails, onEdit, onResetPassword, onDeac
   },
   {
     id: "actions",
-    header: "Actions",
+    header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
       const user = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => onViewDetails(user)}
-              className="cursor-pointer"
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onEdit(user)}
-              className="cursor-pointer"
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onResetPassword(user)}
-              className="cursor-pointer"
-            >
-              <Key className="mr-2 h-4 w-4" />
-              Reset Password
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDeactivate(user)}
-              className="cursor-pointer text-red-600"
-              disabled={user.status === 'Resigned'}
-            >
-              <UserX className="mr-2 h-4 w-4" />
-              Deactivate
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={() => onViewDetails(user)}
+                className="cursor-pointer"
+              >
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onEdit(user)}
+                className="cursor-pointer"
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onResetPassword(user)}
+                className="cursor-pointer"
+              >
+                Reset Password
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDeactivate(user)}
+                className="cursor-pointer text-red-600"
+                disabled={user.status === 'Resigned'}
+              >
+                Deactivate
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )
     },
   },

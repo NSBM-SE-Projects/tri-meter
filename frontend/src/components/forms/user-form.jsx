@@ -202,12 +202,12 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-3 space-y-4 sm:px-14 md:px-16 lg:px-20 sm:pt-6 md:pt-8 sm:space-y-7">
+        <div className="px-3 space-y-4 sm:px-6 md:px-8 lg:px-10 sm:pt-6 md:pt-8 sm:space-y-7">
           {/* User Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">User Information</h3>
 
-            <div className="pb-1 space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="fullName">
                 Full Name<span className="text-red-700">*</span>
               </Label>
@@ -225,7 +225,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
             </div>
 
             {!isEdit && (
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="username">
                   Username<span className="text-red-700">*</span>
                 </Label>
@@ -245,7 +245,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
 
             {!isEdit && (
               <>
-                <div className="pb-1 space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="password">
                     Password<span className="text-red-700">*</span>
                   </Label>
@@ -262,7 +262,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
                   )}
                 </div>
 
-                <div className="pb-1 space-y-2">
+                <div className="space-y-2">
                   <Label htmlFor="confirmPassword">
                     Confirm Password<span className="text-red-700">*</span>
                   </Label>
@@ -281,7 +281,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
               </>
             )}
 
-            <div className="pb-1 space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="role">
                 Role<span className="text-red-700">*</span>
               </Label>
@@ -305,7 +305,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
             </div>
 
             {isEdit && (
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
@@ -324,7 +324,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="phone">
                   Phone No.<span className="text-red-700">*</span>
                 </Label>
@@ -347,7 +347,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
                 )}
               </div>
 
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="email">
                   Email<span className="text-red-700">*</span>
                 </Label>
@@ -372,7 +372,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
             <h3 className="text-lg font-medium">Address</h3>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="houseNo">
                   House No.<span className="text-red-700">*</span>
                 </Label>
@@ -388,7 +388,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
                 )}
               </div>
 
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="street">
                   Street<span className="text-red-700">*</span>
                 </Label>
@@ -404,7 +404,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
                 )}
               </div>
 
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="city">
                   City<span className="text-red-700">*</span>
                 </Label>
@@ -428,7 +428,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Documents</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="idCard">Identity Validation (NIC/BRN)</Label>
                 <div className="flex flex-col gap-2">
                   <Input
@@ -454,7 +454,7 @@ export function UserForm({ open, onOpenChange, onSuccess, initialData, isEdit = 
                 </div>
               </div>
 
-              <div className="pb-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="profilePhoto">Profile Picture</Label>
                 <div className="flex flex-col gap-2">
                   <Input
