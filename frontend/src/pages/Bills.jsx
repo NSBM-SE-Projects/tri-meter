@@ -134,7 +134,7 @@ export default function Bills() {
                         {
                           id: 'period',
                           label: 'Period',
-                          options: ['Jan 2025', 'Dec 2024', 'Nov 2024', 'Oct 2024', 'Sep 2024', 'Aug 2024']
+                          options: ['Jan 2026', 'Dec 2025', 'Nov 2025', 'Oct 2025', 'Sep 2025', 'Aug 2025']
                         }
                       ]}
                       showColumnToggle={true}

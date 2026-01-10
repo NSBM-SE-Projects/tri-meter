@@ -32,7 +32,7 @@ const allNavItems = [
   },
   {
     title: "Payments",
-    url: "#",
+    url: "#/payments",
     icon: CreditCard,
   },
   {
