@@ -37,7 +37,7 @@ BEGIN
     UPDATE Bill
     SET B_Status = CASE
       WHEN @TotalPaid >= @BillAmount THEN 'Paid'
-      WHEN @TotalPaid > 0 THEN 'Partially Paid'
+      WHEN @TotalPaid > 0 THEN 'PartiallyPaid'
       ELSE 'Unpaid'
     END
     WHERE B_ID = @BillId;

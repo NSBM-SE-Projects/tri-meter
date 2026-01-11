@@ -1,4 +1,5 @@
 import express from 'express';
+import { verifyToken, requireRole } from '../middleware/auth.js';
 import {
   getAllPayments,
   getPaymentById,
@@ -19,7 +20,7 @@ router.get('/bills/:customerId', getBillsForPayment);
 // GET /api/payments/:id
 router.get('/:id', getPaymentById);
 
-// POST /api/payments
-router.post('/', recordPayment);
+// POST /api/payments - Requires authentication (Cashier/Admin)
+router.post('/', verifyToken, requireRole('Cashier', 'Admin'), recordPayment);
 
 export default router;
