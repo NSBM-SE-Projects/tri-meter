@@ -1,318 +1,214 @@
-import { getPool } from '../config/database.js';
-import sql from 'mssql';
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { DataTable } from '@/components/tables/data-table'
+import { topConsumersColumns } from '@/components/tables/top-consumers-columns'
+import { getTopConsumers } from '@/services/reportService'
+import { Download, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from 'recharts'
 
-// 1. Get Unpaid Bills Summary
-export const getUnpaidBillsSummary = async (req, res) => {
-  try {
-    const pool = await getPool();
-    const { utilityType, minDaysOverdue } = req.query;
+const formatNumber = (num) => {
+  return new Intl.NumberFormat('en-US').format(num)
+}
 
-    let query = `SELECT * FROM vw_unpaid_bills_summary WHERE 1=1`;
-    const request = pool.request();
+export default function TopConsumersReport() {
+  const [data, setData] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [utilityFilter, setUtilityFilter] = useState('All')
+  const [limitFilter, setLimitFilter] = useState('10')
 
-    if (utilityType && utilityType !== 'All') {
-      query += ` AND UtilityType = @utilityType`;
-      request.input('utilityType', sql.VarChar(50), utilityType);
+  useEffect(() => {
+    fetchData()
+  }, [utilityFilter, limitFilter])
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true)
+      const result = await getTopConsumers({
+        utilityType: utilityFilter,
+        limit: limitFilter
+      })
+      setData(result)
+    } catch (error) {
+      console.error('Failed to fetch top consumers:', error)
+      toast.error('Failed to load report. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
-
-    if (minDaysOverdue) {
-      query += ` AND DaysOverdue >= @minDaysOverdue`;
-      request.input('minDaysOverdue', sql.Int, parseInt(minDaysOverdue));
-    }
-
-    query += ` ORDER BY DaysOverdue DESC`;
-
-    const result = await request.query(query);
-
-    // Transform to camelCase
-    const bills = result.recordset.map(row => ({
-      billId: row.BillId,
-      customerId: row.CustomerId,
-      customerName: row.CustomerName,
-      utilityType: row.UtilityType,
-      meterNumber: row.MeterNumber,
-      periodStart: row.PeriodStart,
-      periodEnd: row.PeriodEnd,
-      billAmount: parseFloat(row.BillAmount),
-      amountPaid: parseFloat(row.AmountPaid),
-      balanceOutstanding: parseFloat(row.BalanceOutstanding),
-      dueDate: row.DueDate,
-      daysOverdue: row.DaysOverdue,
-      status: row.Status
-    }));
-
-    // Calculate summary
-    const summary = {
-      totalUnpaidBills: bills.length,
-      totalAmount: bills.reduce((sum, b) => sum + b.balanceOutstanding, 0),
-      avgDaysOverdue: bills.length > 0
-        ? Math.round(bills.reduce((sum, b) => sum + b.daysOverdue, 0) / bills.length)
-        : 0
-    };
-
-    // Generate chart data (group by utility)
-    const chartData = bills.reduce((acc, bill) => {
-      const existing = acc.find(item => item.utilityType === bill.utilityType);
-      if (existing) {
-        existing.count++;
-        existing.amount += bill.balanceOutstanding;
-      } else {
-        acc.push({
-          utilityType: bill.utilityType,
-          count: 1,
-          amount: bill.balanceOutstanding
-        });
-      }
-      return acc;
-    }, []);
-
-    res.status(200).json({
-      success: true,
-      data: { summary, bills, chartData }
-    });
-
-  } catch (error) {
-    console.error('GET_UNPAID_BILLS_SUMMARY ERROR:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch unpaid bills summary',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
   }
-};
 
-// 2. Get Monthly Revenue
-export const getMonthlyRevenue = async (req, res) => {
-  try {
-    const pool = await getPool();
-    const { startMonth, endMonth, utilityType } = req.query;
-
-    let query = `SELECT * FROM vw_monthly_revenue WHERE 1=1`;
-    const request = pool.request();
-
-    if (startMonth) {
-      query += ` AND YearMonth >= @startMonth`;
-      request.input('startMonth', sql.VarChar(7), startMonth);
-    }
-
-    if (endMonth) {
-      query += ` AND YearMonth <= @endMonth`;
-      request.input('endMonth', sql.VarChar(7), endMonth);
-    }
-
-    if (utilityType && utilityType !== 'All') {
-      query += ` AND UtilityType = @utilityType`;
-      request.input('utilityType', sql.VarChar(50), utilityType);
-    }
-
-    query += ` ORDER BY YearMonth DESC, UtilityType`;
-
-    const result = await request.query(query);
-
-    // Transform to camelCase
-    const revenue = result.recordset.map(row => ({
-      yearMonth: row.YearMonth,
-      year: row.Year,
-      month: row.Month,
-      utilityType: row.UtilityType,
-      billCount: row.BillCount,
-      totalBilled: parseFloat(row.TotalBilled),
-      totalPaid: parseFloat(row.TotalPaid),
-      outstandingAmount: parseFloat(row.OutstandingAmount),
-      paidAmount: parseFloat(row.PaidAmount),
-      unpaidAmount: parseFloat(row.UnpaidAmount)
-    }));
-
-    // Calculate summary
-    const summary = {
-      totalBilled: revenue.reduce((sum, r) => sum + r.totalBilled, 0),
-      totalPaid: revenue.reduce((sum, r) => sum + r.totalPaid, 0),
-      totalOutstanding: revenue.reduce((sum, r) => sum + r.outstandingAmount, 0),
-      collectionRate: 0
-    };
-
-    if (summary.totalBilled > 0) {
-      summary.collectionRate = parseFloat(((summary.totalPaid / summary.totalBilled) * 100).toFixed(2));
-    }
-
-    // Transform for multi-line chart (group by month, pivot utilities)
-    const monthMap = new Map();
-    revenue.forEach(row => {
-      if (!monthMap.has(row.yearMonth)) {
-        monthMap.set(row.yearMonth, {
-          date: row.yearMonth,
-          electricity: 0,
-          water: 0,
-          gas: 0
-        });
-      }
-      const monthData = monthMap.get(row.yearMonth);
-      monthData[row.utilityType.toLowerCase()] = row.totalPaid;
-    });
-
-    const chartData = Array.from(monthMap.values()).sort((a, b) =>
-      a.date.localeCompare(b.date)
-    );
-
-    res.status(200).json({
-      success: true,
-      data: { summary, revenue, chartData }
-    });
-
-  } catch (error) {
-    console.error('GET_MONTHLY_REVENUE ERROR:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch monthly revenue',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+  const handleExport = () => {
+    toast.info('Export feature coming soon')
   }
-};
 
-// 3. Get Customer Billing Summary
-export const getCustomerBillingSummary = async (req, res) => {
-  try {
-    const pool = await getPool();
-    const { customerType, minOutstanding, sortBy, sortOrder } = req.query;
+  // Calculate chart height dynamically (40px per row + padding)
+  const chartHeight = Math.max(275, (data?.chartData?.length || 10) * 40 + 40)
 
-    let query = `SELECT * FROM vw_customer_billing_summary WHERE 1=1`;
-    const request = pool.request();
-
-    if (customerType && customerType !== 'All') {
-      query += ` AND CustomerType = @customerType`;
-      request.input('customerType', sql.VarChar(50), customerType);
-    }
-
-    if (minOutstanding) {
-      query += ` AND OutstandingBalance >= @minOutstanding`;
-      request.input('minOutstanding', sql.Decimal(10, 2), parseFloat(minOutstanding));
-    }
-
-    // Default sort
-    let orderByClause = ' ORDER BY OutstandingBalance DESC';
-
-    if (sortBy) {
-      const columnMap = {
-        'totalBilled': 'TotalBilled',
-        'totalPaid': 'TotalPaid',
-        'outstandingBalance': 'OutstandingBalance'
-      };
-      const sqlColumn = columnMap[sortBy] || 'OutstandingBalance';
-      const order = (sortOrder && sortOrder.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
-      orderByClause = ` ORDER BY ${sqlColumn} ${order}`;
-    }
-
-    query += orderByClause;
-
-    const result = await request.query(query);
-
-    // Transform to camelCase
-    const customers = result.recordset.map(row => ({
-      customerId: row.C_ID,
-      customerName: row.CustomerName,
-      email: row.Email,
-      customerType: row.CustomerType,
-      totalBillsIssued: row.TotalBillsIssued,
-      totalBilled: parseFloat(row.TotalBilled) || 0,
-      totalPaid: parseFloat(row.TotalPaid) || 0,
-      outstandingBalance: parseFloat(row.OutstandingBalance) || 0,
-      paidBillCount: row.PaidBillCount,
-      unpaidBillCount: row.UnpaidBillCount,
-      partiallyPaidCount: row.PartiallyPaidCount,
-      lastBillDate: row.LastBillDate,
-      daysSinceLastBill: row.DaysSinceLastBill
-    }));
-
-    // Calculate summary
-    const summary = {
-      totalCustomers: customers.length,
-      totalBilled: customers.reduce((sum, c) => sum + c.totalBilled, 0),
-      totalPaid: customers.reduce((sum, c) => sum + c.totalPaid, 0),
-      totalOutstanding: customers.reduce((sum, c) => sum + c.outstandingBalance, 0)
-    };
-
-    res.status(200).json({
-      success: true,
-      data: { summary, customers }
-    });
-
-  } catch (error) {
-    console.error('GET_CUSTOMER_BILLING_SUMMARY ERROR:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch customer billing summary',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
-};
 
-// 4. Get Top Consumers
-export const getTopConsumers = async (req, res) => {
-  try {
-    const pool = await getPool();
-    const { utilityType, limit, customerType } = req.query;
-
-    const limitValue = limit ? parseInt(limit) : 10;
-
-    let query = `SELECT TOP ${limitValue} * FROM vw_top_consumers WHERE 1=1`;
-    const request = pool.request();
-
-    if (utilityType && utilityType !== 'All') {
-      query += ` AND UtilityType = @utilityType`;
-      request.input('utilityType', sql.VarChar(50), utilityType);
-    }
-
-    if (customerType && customerType !== 'All') {
-      query += ` AND CustomerType = @customerType`;
-      request.input('customerType', sql.VarChar(50), customerType);
-    }
-
-    query += ` ORDER BY TotalConsumption DESC`;
-
-    const result = await request.query(query);
-
-    // Transform to camelCase
-    const consumers = result.recordset.map((row, index) => ({
-      rank: index + 1,
-      customerId: row.CustomerId,
-      customerName: row.CustomerName,
-      customerType: row.CustomerType,
-      utilityType: row.UtilityType,
-      unit: row.Unit,
-      totalConsumption: parseFloat(row.TotalConsumption),
-      billCount: row.BillCount,
-      totalAmount: parseFloat(row.TotalAmount),
-      avgConsumption: parseFloat(row.AvgConsumption)
-    }));
-
-    // Calculate summary
-    const summary = {
-      totalConsumers: consumers.length,
-      totalConsumption: consumers.reduce((sum, c) => sum + c.totalConsumption, 0),
-      avgConsumption: consumers.length > 0
-        ? parseFloat((consumers.reduce((sum, c) => sum + c.totalConsumption, 0) / consumers.length).toFixed(2))
-        : 0
-    };
-
-    // Chart data (top 10 for chart)
-    const chartData = consumers.slice(0, 10).map(c => ({
-      customerName: c.customerName,
-      consumption: c.totalConsumption,
-      customerType: c.customerType,
-      utility: c.utilityType
-    }));
-
-    res.status(200).json({
-      success: true,
-      data: { summary, consumers, chartData }
-    });
-
-  } catch (error) {
-    console.error('GET_TOP_CONSUMERS ERROR:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch top consumers',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+  if (!data || data.consumers.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <p className="text-muted-foreground">No consumer data found.</p>
+      </div>
+    )
   }
-};
+
+  return (
+    <div className="space-y-6">
+      {/* Header with filters */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Top Consumers</h2>
+        <div className="flex items-center gap-2">
+          <Select value={utilityFilter} onValueChange={setUtilityFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Utility Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Utilities</SelectItem>
+              <SelectItem value="Electricity">Electricity</SelectItem>
+              <SelectItem value="Water">Water</SelectItem>
+              <SelectItem value="Gas">Gas</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={limitFilter} onValueChange={setLimitFilter}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Limit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">Top 10</SelectItem>
+              <SelectItem value="20">Top 20</SelectItem>
+              <SelectItem value="50">Top 50</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-background dark:bg-neutral-900 shadow-base">
+          <CardHeader className="relative pb-2">
+            <CardDescription className="text-sm">Total Consumers</CardDescription>
+            <CardTitle className="text-2xl md:text-3xl font-semibold tabular-nums">
+              {formatNumber(data.summary.totalConsumers)}
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1 text-sm pt-2">
+            <div className="text-muted-foreground line-clamp-1">
+              High consumption accounts
+            </div>
+          </CardFooter>
+        </Card>
+        <Card className="bg-background dark:bg-neutral-900 shadow-base">
+          <CardHeader className="relative pb-2">
+            <CardDescription className="text-sm">Total Consumption</CardDescription>
+            <CardTitle className="text-2xl md:text-3xl font-semibold tabular-nums">
+              {formatNumber(data.summary.totalConsumption.toFixed(2))}
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1 text-sm pt-2">
+            <div className="text-muted-foreground line-clamp-1">
+              Combined usage
+            </div>
+          </CardFooter>
+        </Card>
+        <Card className="bg-background dark:bg-neutral-900 shadow-base">
+          <CardHeader className="relative pb-2">
+            <CardDescription className="text-sm">Avg Consumption</CardDescription>
+            <CardTitle className="text-2xl md:text-3xl font-semibold tabular-nums">
+              {formatNumber(data.summary.avgConsumption.toFixed(2))}
+            </CardTitle>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1 text-sm pt-2">
+            <div className="text-muted-foreground line-clamp-1">
+              Average per account
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Horizontal Bar Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Consumers by Consumption</CardTitle>
+          <CardDescription>Ranked by total consumption ({data?.chartData?.length || 0} consumers)</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <ChartContainer
+            config={{
+              household: { label: 'Household', color: 'hsl(217, 91%, 60%)' },
+              business: { label: 'Business', color: 'hsl(271, 91%, 65%)' },
+              government: { label: 'Government', color: 'hsl(142, 76%, 36%)' },
+            }}
+            className="aspect-auto w-full"
+            style={{ height: `${chartHeight}px` }}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={data.chartData}
+                layout="vertical"
+                margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+                isAnimationActive={true}
+                animationDuration={800}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis type="number" tickLine={false} axisLine={false} />
+                <YAxis
+                  dataKey="customerName"
+                  type="category"
+                  width={150}
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip />
+                <Bar dataKey="consumption" radius={[0, 8, 8, 0]}>
+                  {data.chartData.map((entry, index) => {
+                    const colors = {
+                      Household: 'hsl(217, 91%, 60%)',
+                      Business: 'hsl(271, 91%, 65%)',
+                      Government: 'hsl(142, 76%, 36%)',
+                    }
+                    return (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={colors[entry.customerType] || 'hsl(var(--chart-1))'}
+                      />
+                    )
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <div className="border rounded-lg bg-card">
+        <div className="p-6">
+          <p className="text-lg font-medium">Consumer Details</p>
+          <p className="pb-3 text-sm text-muted-foreground">High consumption accounts</p>
+          <DataTable
+            columns={topConsumersColumns}
+            data={data.consumers}
+            filterColumn="customerName"
+            filterPlaceholder="Search consumers..."
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
