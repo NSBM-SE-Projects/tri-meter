@@ -44,6 +44,9 @@ export default function TopConsumersReport() {
     toast.info('Export feature coming soon')
   }
 
+  // Calculate chart height dynamically (40px per row + padding)
+  const chartHeight = Math.max(275, (data?.chartData?.length || 10) * 40 + 40)
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -140,8 +143,8 @@ export default function TopConsumersReport() {
       {/* Horizontal Bar Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Top 10 Consumers by Consumption</CardTitle>
-          <CardDescription>Ranked by total consumption</CardDescription>
+          <CardTitle>Top Consumers by Consumption</CardTitle>
+          <CardDescription>Ranked by total consumption ({data?.chartData?.length || 0} consumers)</CardDescription>
         </CardHeader>
         <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
           <ChartContainer
@@ -150,7 +153,8 @@ export default function TopConsumersReport() {
               business: { label: 'Business', color: 'hsl(271, 91%, 65%)' },
               government: { label: 'Government', color: 'hsl(142, 76%, 36%)' },
             }}
-            className="aspect-auto h-[275px] w-full"
+            className="aspect-auto w-full"
+            style={{ height: `${chartHeight}px` }}
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
