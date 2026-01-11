@@ -11,7 +11,7 @@ export const getDashboardStats = async (req, res) => {
       .query('SELECT COUNT(*) as totalCustomers FROM Customer');
 
     const metersResult = await pool.request()
-      .query("SELECT COUNT(*) as activeMeters FROM Meter WHERE M_Status = 'Active'");
+      .query("SELECT COUNT(*) as activeMeters FROM ServiceConnection WHERE S_Status = 'Active'");
 
     const revenueResult = await pool.request()
       .query(`

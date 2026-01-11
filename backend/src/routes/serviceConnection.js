@@ -4,7 +4,8 @@ import {
   getServiceConnectionById,
   createServiceConnection,
   updateServiceConnection,
-  deleteServiceConnection
+  deleteServiceConnection,
+  disconnectCustomerConnections
 } from '../controllers/serviceConnectionController.js';
 import { verifyToken } from '../middleware/auth.js';
 
@@ -17,6 +18,9 @@ router.get('/', verifyToken, getAllServiceConnections);
 
 // GET /api/service-connections/:id
 router.get('/:id', verifyToken, getServiceConnectionById);
+
+// PUT /api/service-connections/disconnect-customer/:customerId (must be before /:id route)
+router.put('/disconnect-customer/:customerId', verifyToken, disconnectCustomerConnections);
 
 // POST /api/service-connections
 router.post('/', verifyToken, createServiceConnection);
