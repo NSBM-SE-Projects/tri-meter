@@ -16,6 +16,7 @@ export const getAllTariffs = async (req, res) => {
         t.T_CustomerType as planName,
         t.T_ValidFrom as validFrom,
         t.T_ValidTo as validTo,
+        t.T_InstallationCharge as installationCharge,
         u.Ut_ID as utilityId,
         u.Ut_Name as utilityType
       FROM Tariff t
@@ -102,6 +103,7 @@ export const getAllTariffs = async (req, res) => {
         validTo: tariff.validTo ? formatDate(tariff.validTo) : 'Present',
         validFromRaw: tariff.validFrom,
         validToRaw: tariff.validTo,
+        installationCharge: tariff.installationCharge || 0,
         utilityType: tariff.utilityType,
         utilityId: tariff.utilityId,
         ...details
@@ -141,6 +143,7 @@ export const getTariffById = async (req, res) => {
           t.T_ValidFrom as validFrom,
           t.T_ValidTo as validTo,
           t.T_Description as description,
+          t.T_InstallationCharge as installationCharge,
           u.Ut_ID as utilityId,
           u.Ut_Name as utilityType
         FROM Tariff t
@@ -221,6 +224,7 @@ export const getTariffById = async (req, res) => {
         validFrom: tariff.validFrom,
         validTo: tariff.validTo,
         description: tariff.description,
+        installationCharge: tariff.installationCharge || 0,
         utilityType: tariff.utilityType,
         utilityId: tariff.utilityId,
         ...details
@@ -249,6 +253,7 @@ export const createTariff = async (req, res) => {
       validFrom,
       validTo,
       description,
+      installationCharge,
       // Electricity fields
       slab1Max,
       slab1Rate,
@@ -300,10 +305,13 @@ export const createTariff = async (req, res) => {
         .input('validFrom', sql.Date, validFrom)
         .input('validTo', sql.Date, validTo || null)
         .input('description', sql.Text, description || null)
+        .input('installationCharge', sql.Decimal(10, 2), installationCharge || 0)
         .query(`
-          INSERT INTO Tariff (Ut_ID, T_CustomerType, T_ValidFrom, T_ValidTo, T_Description)
-          OUTPUT INSERTED.T_ID
-          VALUES (@utilityId, @customerType, @validFrom, @validTo, @description)
+          DECLARE @InsertedTariff TABLE (T_ID INT)
+          INSERT INTO Tariff (Ut_ID, T_CustomerType, T_ValidFrom, T_ValidTo, T_Description, T_InstallationCharge)
+          OUTPUT INSERTED.T_ID INTO @InsertedTariff
+          VALUES (@utilityId, @customerType, @validFrom, @validTo, @description, @installationCharge)
+          SELECT T_ID FROM @InsertedTariff
         `);
 
       const tariffId = tariffResult.recordset[0].T_ID;
@@ -399,6 +407,7 @@ export const updateTariff = async (req, res) => {
       validFrom,
       validTo,
       description,
+      installationCharge,
       // Electricity fields
       slab1Max,
       slab1Rate,
@@ -445,12 +454,14 @@ export const updateTariff = async (req, res) => {
         .input('validFrom', sql.Date, validFrom)
         .input('validTo', sql.Date, validTo || null)
         .input('description', sql.Text, description || null)
+        .input('installationCharge', sql.Decimal(10, 2), installationCharge || 0)
         .query(`
           UPDATE Tariff
           SET T_CustomerType = @customerType,
               T_ValidFrom = @validFrom,
               T_ValidTo = @validTo,
-              T_Description = @description
+              T_Description = @description,
+              T_InstallationCharge = @installationCharge
           WHERE T_ID = @tariffId
         `);
 

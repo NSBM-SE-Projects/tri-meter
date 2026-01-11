@@ -299,24 +299,39 @@ export const createServiceConnection = async (req, res) => {
         .input('serviceAddressId', sql.Int, finalServiceAddressId)
         .input('status', sql.VarChar(20), connectionStatus)
         .query(`
+          DECLARE @InsertedRows TABLE (S_ID INT)
           INSERT INTO ServiceConnection (C_ID, M_ID, T_ID, S_ConnectionDate, A_ID, S_Status)
-          OUTPUT INSERTED.S_ID
+          OUTPUT INSERTED.S_ID INTO @InsertedRows
           VALUES (@customerId, @meterId, @tariffId, GETDATE(), @serviceAddressId, @status)
+          SELECT S_ID FROM @InsertedRows
         `);
 
       const connectionId = connectionResult.recordset[0].S_ID;
 
       if (initialReading !== undefined && initialReading !== null) {
         const userId = req.user?.userId; // JWT token contains userId
+        const today = new Date();
 
-        await transaction.request()
+        // Check if reading already exists for this meter today
+        const existingReading = await transaction.request()
           .input('meterId', sql.Int, meterId)
-          .input('readingValue', sql.Decimal(10, 2), initialReading)
-          .input('userId', sql.Int, userId)
+          .input('today', sql.Date, today)
           .query(`
-            INSERT INTO MeterReading (M_ID, R_Date, R_Value, R_Consumption, U_ID)
-            VALUES (@meterId, GETDATE(), @readingValue, 0, @userId)
+            SELECT R_ID FROM MeterReading
+            WHERE M_ID = @meterId AND CAST(R_Date AS DATE) = CAST(@today AS DATE)
           `);
+
+        // Only insert if no reading exists for today
+        if (existingReading.recordset.length === 0) {
+          await transaction.request()
+            .input('meterId', sql.Int, meterId)
+            .input('readingValue', sql.Decimal(10, 2), initialReading)
+            .input('userId', sql.Int, userId)
+            .query(`
+              INSERT INTO MeterReading (M_ID, R_Date, R_Value, R_Consumption, U_ID)
+              VALUES (@meterId, GETDATE(), @readingValue, 0, @userId)
+            `);
+        }
       }
 
       await transaction.commit();

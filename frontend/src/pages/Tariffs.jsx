@@ -82,6 +82,7 @@ export default function Tariffs() {
       validFrom: tariff.validFromRaw ? tariff.validFromRaw : tariff.validFrom,
       validTo: tariff.validToRaw ? tariff.validToRaw : (tariff.validTo === 'Present' ? null : tariff.validTo),
       description: tariff.description || "",
+      installationCharge: tariff.installationCharge || "",
       // Electricity fields
       slab1Max: tariff.slab1Max || "",
       slab1Rate: tariff.slab1Rate || "",
