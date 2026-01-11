@@ -15,7 +15,6 @@ const getStatusColor = (status) => {
     case "Unpaid":
       return "bg-red-500/10 text-red-600 hover:bg-red-500/20 border-red-500/20"
     case "PartiallyPaid":
-    case "Partially Paid":
       return "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 border-yellow-500/20"
     default:
       return "bg-gray-500/10 text-gray-600 hover:bg-gray-500/20"

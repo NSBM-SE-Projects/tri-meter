@@ -10,7 +10,7 @@ BEGIN
   UPDATE b
   SET b.B_Status = CASE
     WHEN payments.TotalPaid >= b.B_TotalAmount THEN 'Paid'
-    WHEN payments.TotalPaid > 0 THEN 'Partially Paid'
+    WHEN payments.TotalPaid > 0 THEN 'PartiallyPaid'
     ELSE b.B_Status
   END
   FROM Bill b

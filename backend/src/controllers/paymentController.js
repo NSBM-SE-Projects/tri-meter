@@ -169,7 +169,7 @@ export const getPaymentById = async (req, res) => {
 export const recordPayment = async (req, res) => {
   try {
     const { billId, amount, method, referenceNo, paymentDate } = req.body;
-    const userId = req.user.id; // From JWT auth middleware
+    const userId = req.user.userId; // From JWT auth middleware
 
     // Validation
     if (!billId || amount === undefined || !method) {
@@ -326,7 +326,7 @@ export const getBillsForPayment = async (req, res) => {
           ) as totalPaid
         FROM Bill b
         WHERE b.C_ID = @customerId
-        AND b.B_Status IN ('Unpaid', 'Partially Paid')
+        AND b.B_Status IN ('Unpaid', 'PartiallyPaid')
         ORDER BY b.B_DueDate ASC
       `);
 

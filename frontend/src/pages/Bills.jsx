@@ -129,7 +129,7 @@ export default function Bills() {
                         {
                           id: 'status',
                           label: 'Status',
-                          options: ['Paid', 'Unpaid', 'Partially Paid']
+                          options: ['Paid', 'Unpaid', 'PartiallyPaid']
                         },
                         {
                           id: 'period',
