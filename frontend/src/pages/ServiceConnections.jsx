@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { getAllServiceConnections, createServiceConnection, deleteServiceConnection, updateServiceConnection } from "@/services/serviceConnectionService"
 import { getAllCustomers } from "@/services/customerService"
@@ -15,11 +14,9 @@ import {
   DeleteDialog,
   Separator
 } from "@/components"
-import { Plus, Loader2, AlertCircle } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 
 export default function ServiceConnections() {
-  const [searchParams] = useSearchParams()
-  const highlightedRowRef = useRef(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -28,8 +25,6 @@ export default function ServiceConnections() {
   const [connections, setConnections] = useState([])
   const [customers, setCustomers] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [highlightedConnectionId, setHighlightedConnectionId] = useState(null)
-  const [urlConnectionId, setUrlConnectionId] = useState(null)
 
   // Fetch service connections and customers on component mount
   useEffect(() => {
@@ -37,52 +32,14 @@ export default function ServiceConnections() {
     fetchCustomers()
   }, [])
 
-  // Handle URL parameter for connection ID - store it separately first
-  useEffect(() => {
-    const connectionId = searchParams.get('connectionId')
-    if (connectionId) {
-      setUrlConnectionId(parseInt(connectionId))
-    }
-  }, [searchParams])
-
-  // Once connections are loaded and we have a URL connection ID, highlight it
-  useEffect(() => {
-    if (!isLoading && urlConnectionId && connections.length > 0) {
-      console.log("Checking for connection:", urlConnectionId, "in", connections.map(c => c.id))
-      const connectionExists = connections.some(c => c.id === urlConnectionId)
-      if (connectionExists) {
-        console.log("Connection found! Highlighting ID:", urlConnectionId)
-        setHighlightedConnectionId(urlConnectionId)
-        // Scroll to the highlighted row after a short delay to ensure rendering
-        setTimeout(() => {
-          const highlightedElement = document.querySelector(`[data-connection-id="${urlConnectionId}"]`)
-          console.log("Looking for element with data-connection-id:", urlConnectionId)
-          console.log("Found element:", highlightedElement)
-          if (highlightedElement) {
-            highlightedElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-        }, 100)
-      } else {
-        console.warn(`Connection ID ${urlConnectionId} not found in loaded data. Available IDs:`, connections.map(c => c.id))
-        toast.error(`Connection ID ${urlConnectionId} not found. It may have been deleted or the data is still loading. Try refreshing the page.`)
-      }
-    }
-  }, [isLoading, urlConnectionId, connections])
-
   const fetchConnections = async () => {
     try {
       setIsLoading(true)
       const data = await getAllServiceConnections()
-      console.log("Fetched connections:", data)
-
       // Deduplicate service connections by ID
       const uniqueConnections = data.filter((connection, index, self) =>
         index === self.findIndex((c) => c.id === connection.id)
       )
-
-      console.log("Unique connections after deduplication:", uniqueConnections)
-      console.log("URL Connection ID to highlight:", urlConnectionId)
-
       setConnections(uniqueConnections)
     } catch (error) {
       console.error("Failed to fetch service connections:", error)
@@ -186,17 +143,8 @@ export default function ServiceConnections() {
   const connectionColumns = createServiceConnectionColumns(
     handleViewDetails,
     handleEdit,
-    handleDelete,
-    highlightedConnectionId
+    handleDelete
   )
-
-  // Sort connections to put highlighted one first
-  const sortedConnections = highlightedConnectionId
-    ? [
-        connections.find(c => c.id === highlightedConnectionId),
-        ...connections.filter(c => c.id !== highlightedConnectionId)
-      ].filter(c => c !== undefined)
-    : connections
 
   return (
     <SidebarProvider>
@@ -221,18 +169,6 @@ export default function ServiceConnections() {
                 </div>
               </div>
 
-              {highlightedConnectionId && (() => {
-                const highlightedConnection = connections.find(c => c.id === highlightedConnectionId)
-                return (
-                  <div className="border border-blue-400 bg-gray-900 rounded-lg p-4 flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-400" />
-                    <p className="text-blue-400">
-                      Customer <span className="font-semibold">{highlightedConnection?.customerName}</span> (ID: <span className="font-semibold">{highlightedConnection?.customerId}</span>) - This customer's connections are selected.
-                    </p>
-                  </div>
-                )
-              })()}
-
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -250,7 +186,7 @@ export default function ServiceConnections() {
                     </p>
                     <DataTable
                       columns={connectionColumns}
-                      data={sortedConnections}
+                      data={connections}
                       filterColumn="customerName"
                       filterPlaceholder="Search connections..."
                       filterConfig={[

@@ -56,7 +56,7 @@ const allNavItems = [
 const rolePermissions = {
   'Admin': ['Dashboard', 'Customers', 'Service Connections', 'Meter Readings', 'Bills', 'Payments', 'Tariffs', 'Reports', 'System Users'],
   'Manager': ['Dashboard', 'Customers', 'Service Connections', 'Meter Readings', 'Bills', 'Payments', 'Reports'],
-  'Field Officer': ['Dashboard', 'Meter Readings', 'Service Connections'],
+  'Field Officer': ['Dashboard', 'Meter Readings', 'Service Connections', 'Customers'],
   'Cashier': ['Dashboard', 'Bills', 'Payments', 'Customers']
 }
 

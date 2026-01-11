@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { getAllCustomers, createCustomer, updateCustomer } from "@/services/customerService"
-import { getAllServiceConnections, disconnectCustomerConnections } from "@/services/serviceConnectionService"
 import {
   AppSidebar,
   SiteHeader,
@@ -12,13 +10,11 @@ import {
   createCustomerColumns,
   CustomerForm,
   ViewDialog,
-  Separator,
-  Badge
+  Separator
 } from "@/components"
 import { UserPlus, Loader2 } from "lucide-react"
 
 export default function Customers() {
-  const navigate = useNavigate()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -34,27 +30,8 @@ export default function Customers() {
   const fetchCustomers = async () => {
     try {
       setIsLoading(true)
-      const [customersData, connectionsData] = await Promise.all([
-        getAllCustomers(),
-        getAllServiceConnections()
-      ])
-
-      // Group connections by customer ID
-      const connectionsByCustomer = {}
-      connectionsData.forEach(connection => {
-        if (!connectionsByCustomer[connection.customerId]) {
-          connectionsByCustomer[connection.customerId] = []
-        }
-        connectionsByCustomer[connection.customerId].push(connection)
-      })
-
-      // Attach connections to customers
-      const customersWithConnections = customersData.map(customer => ({
-        ...customer,
-        serviceConnections: connectionsByCustomer[customer.id] || []
-      }))
-
-      setCustomers(customersWithConnections)
+      const data = await getAllCustomers()
+      setCustomers(data)
     } catch (error) {
       console.error("Failed to fetch customers:", error)
       toast.error("Failed to load customers. Please try again.")
@@ -118,24 +95,6 @@ export default function Customers() {
         uploadedFile
       )
 
-      // If customer status is being changed to Inactive, disconnect all their service connections
-      if (formData.status === "Inactive" && selectedCustomer.status !== "Inactive") {
-        try {
-          console.log(`Disconnecting all service connections for customer ${selectedCustomer.id}`)
-
-          const result = await disconnectCustomerConnections(selectedCustomer.id)
-
-          console.log(`Successfully disconnected ${result.disconnectedCount} service connections`)
-
-          if (result.disconnectedCount > 0) {
-            toast.success(`Customer marked as inactive. ${result.disconnectedCount} active service connection(s) have been automatically disconnected.`)
-          }
-        } catch (disconnectError) {
-          console.error("Failed to disconnect service connections:", disconnectError)
-          toast.error(disconnectError.message || "Customer updated but failed to disconnect service connections.")
-        }
-      }
-
       // Update in customers list
       setCustomers(prev => prev.map(c =>
         c.id === selectedCustomer.id ? updatedCustomer : c
@@ -144,10 +103,8 @@ export default function Customers() {
       setIsEditDialogOpen(false)
       setSelectedCustomer(null)
 
-      // Show success toast if no disconnections were made
-      if (!(formData.status === "Inactive" && selectedCustomer.status !== "Inactive")) {
-        toast.success("Customer updated successfully!")
-      }
+      // Show success toast
+      toast.success("Customer updated successfully!")
 
       // Refresh customer list
       await fetchCustomers()
@@ -157,13 +114,6 @@ export default function Customers() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleConnectionClick = (connectionId) => {
-    // Close the view dialog
-    setIsViewDialogOpen(false)
-    // Navigate to service connections page with the connection ID filter
-    navigate(`/service-connections?connectionId=${connectionId}`)
   }
 
   // Create columns with action handlers
@@ -354,41 +304,6 @@ export default function Customers() {
                   <p className="text-base">{selectedCustomer.city}</p>
                 </div>
               </div>
-            </div>
-
-            <Separator />
-            <div>
-              <h3 className="mb-3 text-lg font-medium">Service Connections</h3>
-              {selectedCustomer.serviceConnections && selectedCustomer.serviceConnections.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedCustomer.serviceConnections.map((connection) => (
-                    <button
-                      key={connection.id}
-                      onClick={() => handleConnectionClick(connection.id)}
-                      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-gray-900 hover:text-white transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{connection.utilityType}</p>
-                          <p className="text-sm text-muted-foreground">Meter: {connection.meterNumber}</p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            connection.status === "Active"
-                              ? "bg-green-500/10 text-green-500"
-                              : "bg-red-500/10 text-red-500"
-                          }`}
-                        >
-                          {connection.status}
-                        </Badge>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">No service connections found for this customer.</p>
-              )}
             </div>
           </div>
         )}

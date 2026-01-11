@@ -87,19 +87,3 @@ export async function deleteServiceConnection(id) {
 
   return data
 }
-
-// Disconnect all active service connections for a customer
-export async function disconnectCustomerConnections(customerId) {
-  const response = await fetch(`${API_URL}/service-connections/disconnect-customer/${customerId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to disconnect customer connections')
-  }
-
-  return data.data
-}

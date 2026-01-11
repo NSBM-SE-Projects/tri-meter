@@ -26,7 +26,6 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
   const [isSelectOpen, setIsSelectOpen] = useState(false)
   const [isMouseOverList, setIsMouseOverList] = useState(false)
   const searchInputRef = useRef(null)
-  const [selectedCustomerStatus, setSelectedCustomerStatus] = useState(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -47,13 +46,6 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
   useEffect(() => {
     if (initialData) {
       setFormData(initialData)
-      // If editing, find the customer status
-      if (isEdit && initialData.customerId) {
-        const customer = customers.find(c => c.id === initialData.customerId)
-        if (customer) {
-          setSelectedCustomerStatus(customer.status)
-        }
-      }
     } else {
       // Reset to default when adding new connection
       setFormData({
@@ -69,9 +61,8 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
         city: "",
         status: "Active"
       })
-      setSelectedCustomerStatus(null)
     }
-  }, [initialData, open, isEdit, customers])
+  }, [initialData, open])
 
   useEffect(() => {
     if (isSelectOpen) {
@@ -395,22 +386,15 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
 
             {/* Status */}
             {isEdit && (
-              <div className="space-y-3 pb-2">
+              <div className="space-y-2 pb-2">
                 <RadioGroup
                   value={formData.status}
                   onValueChange={(value) => handleInputChange("status", value)}
                   className="flex flex-col sm:flex-row gap-6 md:gap-16 lg:gap-16"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="Active"
-                      id="status-active"
-                      disabled={selectedCustomerStatus === 'Inactive'}
-                    />
-                    <Label
-                      htmlFor="status-active"
-                      className={`font-normal ${selectedCustomerStatus === 'Inactive' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
-                    >
+                    <RadioGroupItem value="Active" id="status-active" />
+                    <Label htmlFor="status-active" className="font-normal cursor-pointer">
                       Active
                     </Label>
                   </div>
@@ -421,14 +405,6 @@ export function ServiceConnectionForm({ open, onOpenChange, onSuccess, customers
                     </Label>
                   </div>
                 </RadioGroup>
-
-                {selectedCustomerStatus === 'Inactive' && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-700">
-                      <span className="font-semibold">⚠️ Customer Inactive:</span> This customer's account is inactive, so all their service connections must remain disconnected. The Active status cannot be selected until the customer account is reactivated.
-                    </p>
-                  </div>
-                )}
               </div>
             )}
           </div>

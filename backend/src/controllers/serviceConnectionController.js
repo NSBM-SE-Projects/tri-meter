@@ -412,29 +412,6 @@ export const updateServiceConnection = async (req, res) => {
       let newMeterId = currentConnection.M_ID;
       let updateFields = [];
 
-      // Check customer status if trying to activate the connection
-      if (status === 'Active') {
-        const customerCheck = await transaction.request()
-          .input('connectionId', sql.Int, id)
-          .query(`
-            SELECT c.C_Status, c.C_Name, c.C_ID
-            FROM ServiceConnection sc
-            INNER JOIN Customer c ON sc.C_ID = c.C_ID
-            WHERE sc.S_ID = @connectionId
-          `);
-
-        if (customerCheck.recordset.length > 0) {
-          const customer = customerCheck.recordset[0];
-          if (customer.C_Status === 'Inactive') {
-            await transaction.rollback();
-            return res.status(400).json({
-              success: false,
-              message: `Cannot activate service connection. Customer is currently inactive.`
-            });
-          }
-        }
-      }
-
       // Handle meter change
       if (meterNumber && meterNumber !== currentConnection.M_Number) {
         const newMeterCheck = await transaction.request()
@@ -641,67 +618,6 @@ export const deleteServiceConnection = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete service connection',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
-
-// PUT /api/service-connections/disconnect-customer/:customerId
-export const disconnectCustomerConnections = async (req, res) => {
-  try {
-    const { customerId } = req.params;
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
-
-    await transaction.begin();
-
-    try {
-      // Get all active service connections for the customer
-      const connectionsResult = await transaction.request()
-        .input('customerId', sql.Int, customerId)
-        .query(`
-          SELECT S_ID
-          FROM ServiceConnection
-          WHERE C_ID = @customerId AND S_Status = 'Active'
-        `);
-
-      const connections = connectionsResult.recordset;
-      const connectionCount = connections.length;
-
-      if (connectionCount > 0) {
-        // Disconnect all active connections
-        await transaction.request()
-          .input('customerId', sql.Int, customerId)
-          .query(`
-            UPDATE ServiceConnection
-            SET S_Status = 'Disconnected'
-            WHERE C_ID = @customerId AND S_Status = 'Active'
-          `);
-
-        console.log(`Disconnected ${connectionCount} service connections for customer ${customerId}`);
-      }
-
-      await transaction.commit();
-
-      res.status(200).json({
-        success: true,
-        message: `Successfully disconnected ${connectionCount} active service connection(s)`,
-        data: {
-          customerId,
-          disconnectedCount: connectionCount
-        }
-      });
-
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
-
-  } catch (error) {
-    console.error('DISCONNECT CUSTOMER CONNECTIONS ERROR:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to disconnect customer connections',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

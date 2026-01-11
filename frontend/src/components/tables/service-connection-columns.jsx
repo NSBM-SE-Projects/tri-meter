@@ -1,4 +1,4 @@
-import { ArrowUpDown, MoreHorizontal, Sparkles } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import {
   Button,
   Badge,
@@ -34,7 +34,7 @@ const getStatusColor = (status) => {
   }
 }
 
-export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete, highlightedConnectionId = null) => [
+export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete) => [
   {
     accessorKey: "id",
     header: ({ column }) => {
@@ -48,19 +48,9 @@ export const createServiceConnectionColumns = (onViewDetails, onEdit, onDelete, 
         </Button>
       )
     },
-    cell: ({ row }) => {
-      const id = row.getValue("id")
-      const isHighlighted = highlightedConnectionId === id
-      return (
-        <div
-          data-connection-id={id}
-          className={`font-normal pl-4 flex items-center gap-2 ${isHighlighted ? 'bg-gray-900 text-blue-400 py-2 px-2 rounded' : ''}`}
-        >
-          {isHighlighted && <Sparkles className="w-4 h-4 text-blue-400" />}
-          {id}
-        </div>
-      )
-    },
+    cell: ({ row }) => (
+      <div className="font-normal pl-4">{row.getValue("id")}</div>
+    ),
   },
   {
     accessorKey: "customerName",
