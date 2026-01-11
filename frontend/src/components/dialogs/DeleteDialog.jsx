@@ -42,7 +42,7 @@ export function DeleteDialog({
           )}
         </div>
 
-        <DialogFooter className="flex justify-center gap-3">
+        <DialogFooter className="flex justify-center gap-3 pt-4">
           <Button size="lg" variant="outline" className="" onClick={() => onOpenChange(false)} disabled={isLoading} >
             Cancel
           </Button>

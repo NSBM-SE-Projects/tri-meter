@@ -74,6 +74,80 @@ class AzureBlobService {
   }
 
   /**
+   * Upload a user file to Azure Blob Storage
+   * @param {Buffer} fileBuffer - File buffer
+   * @param {string} username - Username (e.g., john_doe)
+   * @param {string} fileType - File type ('idCard' or 'profilePhoto')
+   * @param {string} originalFilename - Original filename (for extension)
+   * @param {string} mimeType - File MIME type
+   * @returns {Promise<string>} - Blob URL
+   */
+  async uploadUserFile(fileBuffer, username, fileType, originalFilename, mimeType) {
+    if (!this.isConfigured) {
+      throw new Error('Azure Blob Storage is not configured');
+    }
+
+    try {
+      // Create filename based on username and file type (e.g., john_doe_idcard.jpg or john_doe_profile.jpg)
+      const ext = path.extname(originalFilename);
+      const blobName = `users/${username}_${fileType}${ext}`;
+
+      // Get blob client
+      const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+
+      // Upload file (will overwrite if exists)
+      await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
+        blobHTTPHeaders: {
+          blobContentType: mimeType
+        }
+      });
+
+      // Return public URL
+      return blockBlobClient.url;
+    } catch (error) {
+      console.error('ERROR UPLOADING USER FILE TO AZURE BLOB:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload a user file with ID-based naming to Azure Blob Storage
+   * @param {Buffer} fileBuffer - File buffer
+   * @param {number} userId - User ID (for naming: iv-{userId} or pp-{userId})
+   * @param {string} fileType - File type ('iv' for identity validation or 'pp' for profile picture)
+   * @param {string} originalFilename - Original filename (for extension)
+   * @param {string} mimeType - File MIME type
+   * @returns {Promise<string>} - Blob URL
+   */
+  async uploadUserFileWithId(fileBuffer, userId, fileType, originalFilename, mimeType) {
+    if (!this.isConfigured) {
+      throw new Error('Azure Blob Storage is not configured');
+    }
+
+    try {
+      // Create filename based on userId and file type (e.g., iv-123.jpg or pp-123.jpg)
+      const ext = path.extname(originalFilename);
+      const blobName = `users/${fileType}-${userId}${ext}`;
+
+      // Get blob client
+      const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+
+      // Upload file (will overwrite if exists)
+      await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
+        blobHTTPHeaders: {
+          blobContentType: mimeType
+        }
+      });
+
+      // Return public URL
+      return blockBlobClient.url;
+    } catch (error) {
+      console.error('ERROR UPLOADING USER FILE WITH ID TO AZURE BLOB:', error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Delete a file from Azure Blob Storage
    * @param {string} blobUrl - Full blob URL
    * @returns {Promise<boolean>} - Success status

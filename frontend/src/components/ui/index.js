@@ -25,6 +25,10 @@ export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectL
 export { RadioGroup, RadioGroupItem } from "./radio-group"
 export { Toggle } from "./toggle"
 export { ToggleGroup, ToggleGroupItem } from "./toggle-group"
+export { Calendar } from "./calendar"
+export { MonthYearPicker } from "./month-year-picker"
+export { Popover, PopoverTrigger, PopoverContent } from "./popover"
+export { Textarea } from "./textarea"
 
 // Data Display
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "./table"

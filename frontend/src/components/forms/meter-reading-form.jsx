@@ -229,7 +229,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
         meterId: parseInt(formData.meterNumber),
         readingValue: parseFloat(formData.value),
         readingDate: format(formData.date, "yyyy-MM-dd"),
-        isTampered: formData.tampered,
+        isTampered: isTampered(),
         notes: formData.notes || ""
       }
 
@@ -260,7 +260,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
         </DialogHeader>
 
         {/* Desktop/Tablet Layout (md and up) */}
-        <div className="hidden md:block p-5 pt-8 space-y-6">
+        <div className="hidden p-5 pt-8 space-y-6 md:block">
           {/* Two Column Grid */}
           <div className="grid grid-cols-2 gap-8">
             {/* Left Column */}
@@ -348,7 +348,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                     )}
                   </div>
                 ) : (
-                  <div className="border-2 rounded-md p-4 bg-muted/30 h-40 flex items-center justify-center">
+                  <div className="flex items-center justify-center h-40 p-4 border-2 rounded-md bg-muted/30">
                     <p className="text-sm text-muted-foreground">Select a meter to view details</p>
                   </div>
                 )}
@@ -374,7 +374,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               <Label>
                 Current Reading<span className="text-red-700">*</span>
               </Label>
-              <div className="border-2 rounded-md p-3 bg-background">
+              <div className="p-3 border-2 rounded-md bg-background">
                 <p className="text-4xl font-bold break-words">
                   {formData.value || "0"}
                 </p>
@@ -401,7 +401,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               <Button
                 variant="default"
                 size="lg"
-                className="h-16 bg-green-500 hover:bg-green-700 font-semibold"
+                className="h-16 font-semibold bg-green-500 hover:bg-green-700"
                 onClick={handleEnter}
                 type="button"
               >
@@ -453,13 +453,13 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                 <PopoverTrigger asChild >
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal h-12 gap-2"
+                    className="justify-start w-full h-12 gap-2 font-normal text-left"
                   >
-                    <CalendarIcon className="mr-1 h-5 w-5" />
+                    <CalendarIcon className="w-5 h-5 mr-1" />
                     {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                  <PopoverContent className="p-1 w-64 mt-1" align="center">
+                  <PopoverContent className="w-64 p-1 mt-1" align="center">
                   <Calendar
                     mode="single"
                     selected={formData.date}
@@ -485,7 +485,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               </p>
               ) : (
               <>
-              <p className="text-lg font-medium text-center mb-3">Calculated Consumption</p>
+              <p className="mb-3 text-lg font-medium text-center">Calculated Consumption</p>
               <p className="text-4xl font-bold text-center">
                 {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
               </p>
@@ -496,7 +496,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
       </div>
 
       {/* Mobile Layout (below md) */}
-        <div className="md:hidden px-4 py-6 space-y-5">
+        <div className="px-4 py-6 space-y-5 md:hidden">
           {/* Meter Selection */}
           <div className="space-y-2">
             <Label htmlFor="meter-mobile">
@@ -581,7 +581,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
                   </p>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-center mb-2">Calculated Consumption</p>
+                    <p className="mb-2 text-sm font-medium text-center">Calculated Consumption</p>
                     <p className="text-2xl font-bold text-center">
                       {calculatedConsumption.toFixed(2)} {selectedMeter.unit}
                     </p>
@@ -618,13 +618,13 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal h-12 gap-2"
+                  className="justify-start w-full h-12 gap-2 font-normal text-left"
                 >
-                  <CalendarIcon className="mr-1 h-4 w-4" />
+                  <CalendarIcon className="w-4 h-4 mr-1" />
                   {formData.date ? format(formData.date, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="p-1 w-64 mt-1 mb-1" align="center">
+              <PopoverContent className="w-64 p-1 mt-1 mb-1" align="center">
                 <Calendar
                   mode="single"
                   selected={formData.date}
@@ -651,7 +651,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
           </div>
         </div>
 
-        <DialogFooter className="pt-7 lg:pt-10 px-10 md:px-5 pb-2 flex-col-reverse sm:flex-row gap-5 lg:gap-4">
+        <DialogFooter className="flex-col-reverse gap-5 px-10 pb-2 pt-7 lg:pt-10 md:px-5 sm:flex-row lg:gap-4">
           <Button variant="outline" onClick={handleCancel} className="w-full sm:w-auto">
             Cancel
           </Button>

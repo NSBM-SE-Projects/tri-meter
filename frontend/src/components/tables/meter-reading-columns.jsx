@@ -31,11 +31,11 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Meter
-          <ArrowUpDown className="ml-1 h-4 w-4" />
+          <ArrowUpDown className="w-4 h-4 ml-1" />
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-normal pl-4">{row.getValue("meterNumber")}</div>,
+    cell: ({ row }) => <div className="pl-4 font-normal">{row.getValue("meterNumber")}</div>,
   },
   {
     accessorKey: "month",
@@ -93,11 +93,11 @@ export const createMeterReadingColumns = (onViewDetails, onEdit, onDelete) => [
     cell: ({ row }) => {
       const reading = row.original
       return (
-        <div className="flex justify-center items-center">
+        <div className="flex items-center justify-center">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="w-8 h-8 p-0" aria-label="Open menu">
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">

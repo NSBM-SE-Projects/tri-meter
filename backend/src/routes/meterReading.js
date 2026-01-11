@@ -27,10 +27,10 @@ router.get('/', verifyToken, requireRole('Admin', 'Manager', 'Field Officer'), g
 router.get('/:id', verifyToken, requireRole('Admin', 'Manager', 'Field Officer'), getMeterReadingById);
 
 // POST /api/meter-readings
-router.post('/', verifyToken, requireRole('Admin, Field Officer'), createMeterReading);
+router.post('/', verifyToken, requireRole('Admin', 'Field Officer'), createMeterReading);
 
 // PUT /api/meter-readings/:id
-router.put('/:id', verifyToken, requireRole('Admin, Field Officer'), updateMeterReading);
+router.put('/:id', verifyToken, requireRole('Admin', 'Field Officer'), updateMeterReading);
 
 // DELETE /api/meter-readings/:id
 router.delete('/:id', verifyToken, requireRole('Admin', 'Manager'), deleteMeterReading);

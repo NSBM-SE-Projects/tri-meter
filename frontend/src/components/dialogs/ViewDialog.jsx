@@ -19,7 +19,7 @@ export function ViewDialog({ open, onOpenChange, title, description, children })
           )}
         </DialogHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto pr-6">
+        <div className="max-h-[60vh] overflow-y-auto pr-6 pt-6">
             {children}
         </div>
 

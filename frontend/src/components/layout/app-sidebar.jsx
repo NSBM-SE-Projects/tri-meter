@@ -27,27 +27,27 @@ const allNavItems = [
   },
   {
     title: "Bills",
-    url: "#",
+    url: "#/bills",
     icon: Receipt,
   },
   {
     title: "Payments",
-    url: "#",
+    url: "#/payments",
     icon: CreditCard,
   },
   {
     title: "Tariffs",
-    url: "#",
+    url: "#/tariffs",
     icon: BadgeDollarSign,
   },
   {
     title: "Reports",
-    url: "#",
+    url: "#/reports",
     icon: BarChart3,
   },
   {
     title: "System Users",
-    url: "#",
+    url: "#/system-users",
     icon: ShieldCheck,
   },
 ]

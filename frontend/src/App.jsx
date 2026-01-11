@@ -9,6 +9,11 @@ import ServiceConnections from './pages/ServiceConnections'
 import MeterReadings from './pages/MeterReadings'
 import AccessDenied from './pages/AccessDenied'
 import { LoadingOverlay } from "@/components"
+import Bills from './pages/Bills'
+import Payments from './pages/Payments'
+import Tariffs from './pages/Tariffs'
+import SystemUsers from './pages/SystemUsers'
+import Reports from './pages/Reports'
 
 function ProtectedRoute({ children, allowedRoles = null }) {
   const { user, isAuthenticated, loading } = useAuth()
@@ -76,6 +81,51 @@ function App() {
               <MeterReadings />
             </ProtectedRoute>
           }
+        />
+  
+        <Route
+          path="/bills"
+          element={
+            <ProtectedRoute allowedRoles={['Admin', 'Manager', 'Cashier']}>
+              <Bills />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <ProtectedRoute allowedRoles={['Admin', 'Manager']}>
+              <Reports />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/payments"
+          element={
+            <ProtectedRoute allowedRoles={['Admin', 'Manager', 'Cashier']}>
+              <Payments />
+            </ProtectedRoute>
+          }
+        />
+              
+        <Route
+          path="/tariffs"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <Tariffs />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/system-users"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <SystemUsers />
+            </ProtectedRoute>
+        } 
         />
       </Routes>
     </HashRouter>
