@@ -6,16 +6,19 @@ AS
 BEGIN
   SET NOCOUNT ON;
 
-  -- Update bill status based on payment amount
+  -- Update bill status based on total payment amount
   UPDATE b
   SET b.B_Status = CASE
-    WHEN SUM(p.P_Amount) >= b.B_TotalAmount THEN 'Paid'
-    WHEN SUM(p.P_Amount) > 0 THEN 'Partially Paid'
+    WHEN payments.TotalPaid >= b.B_TotalAmount THEN 'Paid'
+    WHEN payments.TotalPaid > 0 THEN 'Partially Paid'
     ELSE b.B_Status
   END
   FROM Bill b
-  INNER JOIN Payment p ON b.B_ID = p.B_ID
-  WHERE b.B_ID IN (SELECT B_ID FROM inserted)
-  GROUP BY b.B_ID, b.B_TotalAmount;
+  INNER JOIN (
+    SELECT B_ID, SUM(P_Amount) as TotalPaid
+    FROM Payment
+    WHERE B_ID IN (SELECT B_ID FROM inserted)
+    GROUP BY B_ID
+  ) payments ON b.B_ID = payments.B_ID;
 END;
 GO

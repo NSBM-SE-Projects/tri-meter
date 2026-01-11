@@ -25,6 +25,5 @@ INNER JOIN Customer c ON b.C_ID = c.C_ID
 INNER JOIN Meter m ON b.M_ID = m.M_ID
 INNER JOIN Utility u ON m.Ut_ID = u.Ut_ID
 WHERE b.B_Status IN ('Unpaid', 'Partially Paid')
-  AND b.B_DueDate < GETDATE()
-ORDER BY DATEDIFF(DAY, b.B_DueDate, GETDATE()) DESC;
+  AND b.B_DueDate < GETDATE();
 GO

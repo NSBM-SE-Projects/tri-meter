@@ -15,7 +15,7 @@ BEGIN
 
     -- Generate bills for all active service connections
     DECLARE bill_cursor CURSOR FOR
-    SELECT sc.S_ID, sc.C_ID, sc.M_ID, sc.T_ID, sc.S_InstallationCharge
+    SELECT sc.S_ID, sc.C_ID, sc.M_ID, sc.T_ID
     FROM ServiceConnection sc
     WHERE sc.S_Status = 'Active'
       AND NOT EXISTS (
@@ -25,10 +25,10 @@ BEGIN
           AND MONTH(b.B_PeriodStart) = @Month
       );
 
-    DECLARE @ServiceConnId INT, @CustomerId INT, @MeterId INT, @TariffId INT, @InstallCharge DECIMAL(10,2);
+    DECLARE @ServiceConnId INT, @CustomerId INT, @MeterId INT, @TariffId INT;
 
     OPEN bill_cursor;
-    FETCH NEXT FROM bill_cursor INTO @ServiceConnId, @CustomerId, @MeterId, @TariffId, @InstallCharge;
+    FETCH NEXT FROM bill_cursor INTO @ServiceConnId, @CustomerId, @MeterId, @TariffId;
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
@@ -36,7 +36,7 @@ BEGIN
       -- (This would be done via application logic or a more complex SP)
       SET @BillCount = @BillCount + 1;
 
-      FETCH NEXT FROM bill_cursor INTO @ServiceConnId, @CustomerId, @MeterId, @TariffId, @InstallCharge;
+      FETCH NEXT FROM bill_cursor INTO @ServiceConnId, @CustomerId, @MeterId, @TariffId;
     END;
 
     CLOSE bill_cursor;
