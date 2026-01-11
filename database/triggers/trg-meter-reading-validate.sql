@@ -10,14 +10,16 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM inserted i
-    INNER JOIN MeterReading mr ON i.M_ID = mr.M_ID
-    WHERE mr.R_Date < i.R_Date
-      AND i.R_Value < mr.R_Value
+    INNER JOIN (
+      SELECT M_ID, MAX(R_Date) as LatestDate
+      FROM MeterReading
+      GROUP BY M_ID
+    ) latest ON i.M_ID = latest.M_ID
+    INNER JOIN MeterReading mr ON latest.M_ID = mr.M_ID AND latest.LatestDate = mr.R_Date
+    WHERE i.R_Value < mr.R_Value
   )
   BEGIN
-    RAISERROR('Meter reading cannot be less than previous reading', 16, 1);
-    ROLLBACK TRANSACTION;
-    RETURN;
+    RAISERROR('Meter reading cannot be less than the most recent reading', 16, 1);
   END;
 END;
 GO

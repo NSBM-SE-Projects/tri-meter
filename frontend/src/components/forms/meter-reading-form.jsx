@@ -229,7 +229,7 @@ export function MeterReadingForm({ open, onOpenChange, onSuccess, initialData = 
         meterId: parseInt(formData.meterNumber),
         readingValue: parseFloat(formData.value),
         readingDate: format(formData.date, "yyyy-MM-dd"),
-        isTampered: formData.tampered,
+        isTampered: isTampered(),
         notes: formData.notes || ""
       }
 
