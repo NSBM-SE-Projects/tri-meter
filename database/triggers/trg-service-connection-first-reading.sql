@@ -7,13 +7,13 @@ BEGIN
   SET NOCOUNT ON;
 
   -- Create initial meter reading of 0 for new service connections
-  INSERT INTO MeterReading (M_ID, R_Date, R_Value, R_TamperedFlag, U_ID)
+  INSERT INTO MeterReading (M_ID, R_Date, R_Value, R_IsTampered, U_ID)
   SELECT
     i.M_ID,
     GETDATE(),
     0,
     0,
-    (SELECT U_ID FROM User WHERE U_Role = 'Field Officer' LIMIT 1)
+    (SELECT TOP 1 U_ID FROM [User] WHERE U_Role = 'Field Officer')
   FROM inserted i
   WHERE NOT EXISTS (
     SELECT 1 FROM MeterReading WHERE M_ID = i.M_ID
