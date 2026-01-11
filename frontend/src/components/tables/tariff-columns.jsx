@@ -40,6 +40,11 @@ export const createElectricityTariffColumns = (onEdit, onDelete) => [
     cell: ({ row }) => <div>{row.getValue("validTo")}</div>,
   },
   {
+    accessorKey: "installationCharge",
+    header: "Installation Charge",
+    cell: ({ row }) => <div>${row.getValue("installationCharge") || "0.00"}</div>,
+  },
+  {
     id: "actions",
     header: () => <div className="text-center">Actions</div>,
     cell: ({ row }) => {
@@ -76,7 +81,7 @@ export const createElectricityTariffColumns = (onEdit, onDelete) => [
 
 /**
  * Water Tariff Columns
- * Columns: Plan Name, Rate, Fixed, Date, Actions
+ * Columns: Plan Name, Rate, Fixed, Date, Installation Charge, Actions
  */
 export const createWaterTariffColumns = (onEdit, onDelete) => [
   {
@@ -109,6 +114,11 @@ export const createWaterTariffColumns = (onEdit, onDelete) => [
     accessorKey: "validTo",
     header: "Valid To",
     cell: ({ row }) => <div>{row.getValue("validTo")}</div>,
+  },
+  {
+    accessorKey: "installationCharge",
+    header: "Installation Charge",
+    cell: ({ row }) => <div>${row.getValue("installationCharge") || "0.00"}</div>,
   },
   {
     id: "actions",
@@ -147,7 +157,7 @@ export const createWaterTariffColumns = (onEdit, onDelete) => [
 
 /**
  * Gas Tariff Columns
- * Columns: Plan Name, Slabs, Subsidy, Date, Actions
+ * Columns: Plan Name, Slabs, Subsidy, Date, Installation Charge, Actions
  */
 export const createGasTariffColumns = (onEdit, onDelete) => [
   {
@@ -180,6 +190,11 @@ export const createGasTariffColumns = (onEdit, onDelete) => [
     accessorKey: "validTo",
     header: "Valid To",
     cell: ({ row }) => <div>{row.getValue("validTo")}</div>,
+  },
+  {
+    accessorKey: "installationCharge",
+    header: "Installation Charge",
+    cell: ({ row }) => <div>${row.getValue("installationCharge") || "0.00"}</div>,
   },
   {
     id: "actions",

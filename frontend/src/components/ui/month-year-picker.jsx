@@ -2,7 +2,7 @@ import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -18,6 +18,7 @@ function MonthYearPicker({
   onSelect,
   fromYear = 2020,
   toYear = new Date().getFullYear() + 5,
+  onConfirm,
   ...props
 }) {
   const [currentMonth, setCurrentMonth] = React.useState(selected || new Date())
@@ -33,7 +34,8 @@ function MonthYearPicker({
   )
 
   const handleMonthChange = (monthIndex) => {
-    const newDate = new Date(currentMonth.getFullYear(), parseInt(monthIndex), 1)
+    const month = parseInt(monthIndex)
+    const newDate = new Date(currentMonth.getFullYear(), month, 1)
     setCurrentMonth(newDate)
     if (onSelect) {
       onSelect(newDate)
@@ -41,7 +43,8 @@ function MonthYearPicker({
   }
 
   const handleYearChange = (year) => {
-    const newDate = new Date(parseInt(year), currentMonth.getMonth(), 1)
+    const yearNum = parseInt(year)
+    const newDate = new Date(yearNum, currentMonth.getMonth(), 1)
     setCurrentMonth(newDate)
     if (onSelect) {
       onSelect(newDate)
@@ -56,7 +59,7 @@ function MonthYearPicker({
           onValueChange={handleMonthChange}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Month" />
+            <SelectValue>{months[currentMonth.getMonth()]}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {months.map((month, index) => (
@@ -72,7 +75,7 @@ function MonthYearPicker({
           onValueChange={handleYearChange}
         >
           <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Year" />
+            <SelectValue>{currentMonth.getFullYear()}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {years.map((year) => (
@@ -82,6 +85,22 @@ function MonthYearPicker({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      <div className="flex justify-center">
+        <Button
+          size="sm"
+          onClick={() => {
+            if (onSelect) {
+              onSelect(currentMonth)
+            }
+            if (onConfirm) {
+              onConfirm()
+            }
+          }}
+          className="w-full"
+        >
+          Confirm
+        </Button>
       </div>
     </div>
   )

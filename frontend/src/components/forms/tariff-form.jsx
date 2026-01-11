@@ -30,6 +30,7 @@ export function TariffForm({ open, onOpenChange, onSuccess, initialData, isEdit 
     validFrom: null,
     validTo: null,
     description: "",
+    installationCharge: "",
     // Electricity fields
     slab1Max: "",
     slab1Rate: "",
@@ -138,6 +139,7 @@ export function TariffForm({ open, onOpenChange, onSuccess, initialData, isEdit 
       validFrom: null,
       validTo: null,
       description: "",
+      installationCharge: "",
       slab1Max: "",
       slab1Rate: "",
       slab2Max: "",
@@ -287,6 +289,24 @@ export function TariffForm({ open, onOpenChange, onSuccess, initialData, isEdit 
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="installationCharge">
+                Installation Charge ($)
+              </Label>
+              <Input
+                id="installationCharge"
+                type="number"
+                step="0.01"
+                value={formData.installationCharge}
+                onChange={(e) => handleInputChange("installationCharge", e.target.value)}
+                className={formErrors.installationCharge ? "border-red-500" : ""}
+                placeholder="e.g., 100.00"
+              />
+              {formErrors.installationCharge && (
+                <p className="text-sm text-red-500">{formErrors.installationCharge}</p>
+              )}
             </div>
           </div>
 

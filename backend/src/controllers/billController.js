@@ -290,35 +290,41 @@ export const generateBill = async (req, res) => {
 
       const sc = scResult.recordset[0];
 
-      // Get first and last meter readings within the period
-      const readingsResult = await transaction.request()
+      // Get meter readings: first reading on or before periodFrom, and last reading on or before periodTo
+      const previousReadingResult = await transaction.request()
         .input('meterId', sql.Int, sc.M_ID)
         .input('periodFrom', sql.Date, periodFrom)
+        .query(`
+          SELECT TOP 1 R_Value
+          FROM MeterReading
+          WHERE M_ID = @meterId AND R_Date <= @periodFrom
+          ORDER BY R_Date DESC
+        `);
+
+      const currentReadingResult = await transaction.request()
+        .input('meterId', sql.Int, sc.M_ID)
         .input('periodTo', sql.Date, periodTo)
         .query(`
-          SELECT
-            MIN(R_Value) as FirstReading,
-            MAX(R_Value) as LastReading,
-            COUNT(*) as ReadingCount
+          SELECT TOP 1 R_Value
           FROM MeterReading
-          WHERE M_ID = @meterId
-            AND R_Date BETWEEN @periodFrom AND @periodTo
+          WHERE M_ID = @meterId AND R_Date <= @periodTo
+          ORDER BY R_Date DESC
         `);
 
       let consumption = 0;
       let previousReading = 0;
       let currentReading = 0;
 
-      if (readingsResult.recordset.length > 0 && readingsResult.recordset[0].ReadingCount > 0) {
-        previousReading = readingsResult.recordset[0].FirstReading;
-        currentReading = readingsResult.recordset[0].LastReading;
-        consumption = currentReading - previousReading;
-      } else {
-        // If no meter readings, use a default consumption of 0
-        consumption = 0;
-        previousReading = 0;
-        currentReading = 0;
+      if (previousReadingResult.recordset.length > 0) {
+        previousReading = previousReadingResult.recordset[0].R_Value;
       }
+
+      if (currentReadingResult.recordset.length > 0) {
+        currentReading = currentReadingResult.recordset[0].R_Value;
+      }
+
+      // Calculate consumption as difference between current and previous
+      consumption = Math.max(0, currentReading - previousReading);
 
       // 3. Calculate charges based on tariff
       let consumptionCharge = 0;
@@ -373,19 +379,27 @@ export const generateBill = async (req, res) => {
 
         if (tariffResult.recordset.length > 0) {
           const tariff = tariffResult.recordset[0];
-          // Slab-based calculation
-          if (consumption <= tariff.G_Slab1Max) {
-            consumptionCharge = consumption * tariff.G_Slab1Rate;
-          } else {
-            consumptionCharge = (tariff.G_Slab1Max * tariff.G_Slab1Rate) +
-              ((consumption - tariff.G_Slab1Max) * tariff.G_Slab2Rate);
-          }
-          // Apply subsidy for household customers
+
+          // Get customer type for subsidy eligibility
           const customerTypeResult = await transaction.request()
             .input('customerId', sql.Int, customerId)
             .query(`SELECT C_Type FROM Customer WHERE C_ID = @customerId`);
-          if (customerTypeResult.recordset[0]?.C_Type === 'Household') {
-            consumptionCharge = Math.max(0, consumptionCharge - tariff.G_SubsidyAmount);
+
+          const customerType = customerTypeResult.recordset[0]?.C_Type;
+
+          // Calculate billable consumption (subsidy deducts free units for household customers)
+          let billableConsumption = consumption;
+          if (customerType === 'Household' && tariff.G_SubsidyAmount > 0) {
+            // Subsidy represents free units per month
+            billableConsumption = Math.max(0, consumption - tariff.G_SubsidyAmount);
+          }
+
+          // Slab-based calculation on billable consumption
+          if (billableConsumption <= tariff.G_Slab1Max) {
+            consumptionCharge = billableConsumption * tariff.G_Slab1Rate;
+          } else {
+            consumptionCharge = (tariff.G_Slab1Max * tariff.G_Slab1Rate) +
+              ((billableConsumption - tariff.G_Slab1Max) * tariff.G_Slab2Rate);
           }
         }
       }
@@ -405,8 +419,19 @@ export const generateBill = async (req, res) => {
         ? previousBalanceResult.recordset[0].B_TotalAmount
         : 0;
 
+      // Check if this is the first bill for this meter to add installation charge
+      const billCountBeforeResult = await transaction.request()
+        .input('meterId', sql.Int, sc.M_ID)
+        .query(`SELECT COUNT(*) as billCount FROM Bill WHERE M_ID = @meterId`);
+
+      let installationCharge = 0;
+      if (billCountBeforeResult.recordset[0].billCount === 0) {
+        // This will be the first bill, add installation charge
+        installationCharge = sc.T_InstallationCharge || 0;
+      }
+
       const lateFee = 0; // No late fee for new bills
-      const totalAmount = consumptionCharge + fixedCharges + previousBalance + lateFee;
+      const totalAmount = consumptionCharge + fixedCharges + previousBalance + lateFee + installationCharge;
 
       // 5. Create bill
       const billResult = await transaction.request()
@@ -425,19 +450,21 @@ export const generateBill = async (req, res) => {
         .input('dueDate', sql.Date, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) // 30 days from now
         .input('status', sql.VarChar(20), 'Unpaid')
         .query(`
+          DECLARE @InsertedBill TABLE (B_ID INT)
           INSERT INTO Bill (
             C_ID, M_ID, T_ID, B_PeriodStart, B_PeriodEnd,
             B_Consumption, B_ConsumptionCharge, B_FixedCharges,
             B_LateFee, B_PreviousBalance, B_TotalAmount,
             B_Date, B_DueDate, B_Status
           )
-          OUTPUT INSERTED.B_ID
+          OUTPUT INSERTED.B_ID INTO @InsertedBill
           VALUES (
             @customerId, @meterId, @tariffId, @periodStart, @periodEnd,
             @consumption, @consumptionCharge, @fixedCharges,
             @lateFee, @previousBalance, @totalAmount,
             @issueDate, @dueDate, @status
           )
+          SELECT B_ID FROM @InsertedBill
         `);
 
       const billId = billResult.recordset[0].B_ID;
@@ -475,33 +502,18 @@ export const generateBill = async (req, res) => {
           `);
       }
 
-      // Check if this is the first bill for this service connection (add installation charge)
-      const billCountResult = await transaction.request()
-        .input('meterId', sql.Int, sc.M_ID)
-        .query(`SELECT COUNT(*) as billCount FROM Bill WHERE M_ID = @meterId`);
-
-      if (billCountResult.recordset[0].billCount === 1) {
-        // This is the first bill, add installation charge
+      // Add installation charge line item if applicable
+      if (installationCharge > 0) {
         await transaction.request()
           .input('billId', sql.Int, billId)
           .input('lineNumber', sql.Int, lineNumber++)
           .input('description', sql.VarChar(255), 'Installation Charge')
           .input('quantity', sql.Decimal(10, 2), 1)
-          .input('rate', sql.Decimal(10, 2), sc.T_InstallationCharge || 0)
-          .input('amount', sql.Decimal(10, 2), sc.T_InstallationCharge || 0)
+          .input('rate', sql.Decimal(10, 2), installationCharge)
+          .input('amount', sql.Decimal(10, 2), installationCharge)
           .query(`
             INSERT INTO BillLineItem (B_ID, Bl_LineNumber, Bl_Description, Bl_Quantity, Bl_Rate, Bl_Amount)
             VALUES (@billId, @lineNumber, @description, @quantity, @rate, @amount)
-          `);
-
-        // Update total amount to include installation charge
-        await transaction.request()
-          .input('billId', sql.Int, billId)
-          .input('installationCharge', sql.Decimal(10, 2), sc.T_InstallationCharge || 0)
-          .query(`
-            UPDATE Bill
-            SET B_TotalAmount = B_TotalAmount + @installationCharge
-            WHERE B_ID = @billId
           `);
       }
 

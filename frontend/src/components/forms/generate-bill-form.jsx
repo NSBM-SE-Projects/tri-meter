@@ -20,6 +20,9 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
     estimatedAmount: 0,
   })
 
+  const [periodFromOpen, setPeriodFromOpen] = useState(false)
+  const [periodToOpen, setPeriodToOpen] = useState(false)
+
   // Real data from API
   const [customers, setCustomers] = useState([])
   const [meterConnections, setMeterConnections] = useState([])
@@ -75,6 +78,15 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
       setPreview({ consumption: 0, estimatedAmount: 0 })
     }
   }, [formData.meterServiceConnection, formData.periodFrom, formData.periodTo])
+
+  const calculatePreview = () => {
+    // Placeholder preview calculation
+    // In a real scenario, this would fetch meter readings and calculate consumption
+    setPreview({
+      consumption: 0,
+      estimatedAmount: 0
+    })
+  }
 
   const validateForm = () => {
     const errors = {}
@@ -217,7 +229,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
               <Label htmlFor="periodFrom">
                 From<span className="text-red-500">*</span>
               </Label>
-              <Popover>
+              <Popover open={periodFromOpen} onOpenChange={setPeriodFromOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -231,6 +243,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
                   <MonthYearPicker
                     selected={formData.periodFrom}
                     onSelect={(date) => handleInputChange("periodFrom", date)}
+                    onConfirm={() => setPeriodFromOpen(false)}
                   />
                 </PopoverContent>
               </Popover>
@@ -243,7 +256,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
               <Label htmlFor="periodTo">
                 To<span className="text-red-500">*</span>
               </Label>
-              <Popover>
+              <Popover open={periodToOpen} onOpenChange={setPeriodToOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -257,6 +270,7 @@ export function GenerateBillForm({ open, onOpenChange, onSuccess }) {
                   <MonthYearPicker
                     selected={formData.periodTo}
                     onSelect={(date) => handleInputChange("periodTo", date)}
+                    onConfirm={() => setPeriodToOpen(false)}
                   />
                 </PopoverContent>
               </Popover>
