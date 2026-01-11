@@ -214,6 +214,9 @@ export const createMeterReading = async (req, res) => {
 
     const consumption = parseFloat(readingValue) - parseFloat(previousValue);
 
+    // Convert isTampered to boolean (handles both boolean and string values)
+    const tampered = isTampered === true || isTampered === 'true';
+
     // Create meter reading
     const result = await pool.request()
       .input('meterId', sql.Int, meterId)
@@ -221,13 +224,13 @@ export const createMeterReading = async (req, res) => {
       .input('date', sql.Date, readingDate)
       .input('value', sql.Decimal(10, 2), readingValue)
       .input('consumption', sql.Decimal(10, 2), consumption)
-      .input('isTampered', sql.Bit, isTampered ? 1 : 0)
-      .input('tamperingFine', sql.Decimal(10, 2), isTampered ? 500.00 : 0.00)
+      .input('isTampered', sql.Bit, tampered ? 1 : 0)
+      .input('tamperingFine', sql.Decimal(10, 2), tampered ? 500.00 : 0.00)
       .input('notes', sql.NVarChar(sql.MAX), notes || null)
       .query(`
         INSERT INTO MeterReading (M_ID, U_ID, R_Date, R_Value, R_Consumption, R_IsTampered, R_TamperingFine, R_Notes)
-        OUTPUT INSERTED.R_ID
-        VALUES (@meterId, @userId, @date, @value, @consumption, @isTampered, @tamperingFine, @notes)
+        VALUES (@meterId, @userId, @date, @value, @consumption, @isTampered, @tamperingFine, @notes);
+        SELECT SCOPE_IDENTITY() AS R_ID;
       `);
 
     const readingId = result.recordset[0].R_ID;
@@ -342,14 +345,17 @@ export const updateMeterReading = async (req, res) => {
 
     const consumption = parseFloat(readingValue) - parseFloat(previousValue);
 
+    // Convert isTampered to boolean (handles both boolean and string values)
+    const tampered = isTampered === true || isTampered === 'true';
+
     // Update meter reading
     await pool.request()
       .input('readingId', sql.Int, id)
       .input('value', sql.Decimal(10, 2), readingValue)
       .input('date', sql.Date, readingDate)
       .input('consumption', sql.Decimal(10, 2), consumption)
-      .input('isTampered', sql.Bit, isTampered ? 1 : 0)
-      .input('tamperingFine', sql.Decimal(10, 2), isTampered ? 500.00 : 0.00)
+      .input('isTampered', sql.Bit, tampered ? 1 : 0)
+      .input('tamperingFine', sql.Decimal(10, 2), tampered ? 500.00 : 0.00)
       .input('notes', sql.NVarChar(sql.MAX), notes || null)
       .query(`
         UPDATE MeterReading
